@@ -222,3 +222,42 @@ The DeGram client allowlist becomes every command of `CanvasBridgeCommands.All`.
 ### 7.5 Canvas tags (DG.gha, no wire change)
 
 While a session has open questions or waits for apply, CONNECTOR draws on the canvas (overlay, not document objects, never saved) a coloured frame around each item's component with a tag: `DG ? GlassPanel | BottomTriangularPanel` (ambiguous, orange), `DG · GlassPanel` (suggested, yellow), `DG ✓ GlassPanel` (confirmed, green), `DG ↺ GlassPanel` (auto by profile, blue). Removed once the session is applied. After the last answer CONNECTOR waits 10 s before apply, so the last answer can still be undone.
+
+## 8. DG Revit connector (plans 1303-11..14, owner decisions 2026-10-18, D-44..D-51)
+
+Additive: every earlier field stays.
+
+### 8.1 Revit descriptor
+
+Section 1 with `platform: "revit"`, `nativeId` = element `UniqueId`, `category`, `family`, `type`, `name` (`<family> : <type>`), `ifc` (from IfcExportAs / IfcExportType parameters, EN or RU), and `parameters`: display values, plus `<name>_m` in metres for length doubles. `geometry` carries only `vertexCount` = the number of adaptive placement points of an adaptive component instance; it is absent for other elements. No `widthM` / `heightM` / `planarityDeviationM` are sent, so the GH range rules are never fed Revit bounding boxes. Cross-platform profiles (`platform: "*"`, selector `geometry.vertexCount`) and the vertex-count equality rules therefore apply to Revit unchanged.
+
+### 8.2 Session from the connector
+
+- Read scope: the Revit selection when it is not empty, else every model element instance visible in the active view (no annotations, views or types), at most 5000.
+- `POST /mapping/sessions` body `{project, platform: "revit", label: "<document key> · HH:MM:SS", elements}`. The document key is the `.rvt` file name under the GH `DocumentKey` rule (lower case, every character other than a letter, digit, `-` or `_` becomes `-`). The session's `document` is the label part before « · ».
+- Populations: `context.populationsFromSessionId` wins; otherwise the latest applied Grasshopper session of the project is used and recorded in the session context. `populations_of` returns `{classLocal: [sizes]}`, one size per applied group: per GH `stream`, else per `groupId`. A Revit group gets population evidence only when its size matches exactly one class (125 = GlassPanel and BottomTriangularPanel gives none). The old `{class: n}` shape is still read.
+- No LLM proposal is asked for Revit sessions.
+
+### 8.3 Connector routes (pyRevit Routes API `dg_revit`, `http://127.0.0.1:48884/dg_revit/…`) and MCP tools
+
+| Route | MCP tool | Body / result |
+|---|---|---|
+| `GET /mapping_status/` | `dg_mapping_status` | `{signedIn, project, user?, document, sessionId, message}` |
+| `POST /start_mapping/` | `dg_start_mapping` | `{}` → `{started, sessionId, message}` (needs sign-in; reads the scope, posts the session, colours the elements) |
+| `POST /show_elements/` | `dg_show_elements(unique_ids)` | `{uniqueIds: [..]}` (1..5000) → `{found, shown, missing: [..]}`; selects the elements and zooms the active view to them |
+| `POST /clear_colours/` | `dg_clear_mapping_colours` | `{}` → `{cleared}`; removes the connector's overrides in the session view |
+
+Every upstream revit-mcp route and tool is also registered under `dg_revit`, writes included (D-45).
+
+### 8.4 Apply and writes
+
+- The connector polls the open session every 3 s. When `openQuestions == 0` and the session is not applied, it waits 10 s after the newest answer (undo grace, as D-40) and then calls `POST /mapping/sessions/{id}/apply`.
+- Colours: solid-fill graphic overrides in the session's view, in the GH palette (confirmed #2E7D32, auto #1565C0, suggested #F9A825, ambiguous #E65100, unmapped #9E9E9E). They are set when the session is created and refreshed when element states change and at apply. Transaction «DG mapping colours».
+- Parameters at apply: shared instance text parameters `DG_Class` (class labels joined by `;`) and `DG_MappingState` (element state), bound from the connector's `DG_SharedParameters.txt` to the categories of the mapped elements that allow bound parameters. Transaction «DG mapping parameters».
+- Every write is one Revit transaction (undoable). A closed or switched document stops the loop; the connector never writes into another document.
+
+### 8.5 DeGram
+
+- `degram.mapping.start {app: "revit"}` calls `dg_start_mapping`.
+- `degram.mapping.focus {app: "revit", sessionId, itemId}` resolves the group `itemId` to the `nativeId`s of its elements from the full session and calls `dg_show_elements`.
+- Revit sessions are matched to the open Revit model by `document`.

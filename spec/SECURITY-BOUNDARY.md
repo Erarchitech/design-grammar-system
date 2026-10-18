@@ -158,6 +158,17 @@ The Speckle read token is one credential for the whole Speckle server. It never 
 - **Revocation.** `require_principal` re-validates the credential on every request, so a logout, a revoked delegated token or a removed membership stops further object reads at once (401 or 403 as in Section 3.5). The browser loader runs with its IndexedDB cache off so geometry does not outlive the session on the device.
 - **Reverse proxy.** `ui-v2/nginx.conf` has a prefix location `/data-service/speckle-proxy/` (HTTP/1.1, `proxy_buffering off`, `proxy_read_timeout` above the proxy's own 60 s read limit, `client_max_body_size 4m`, no `add_header` of its own so the server-level security headers are inherited).
 
+### 3.8 DG Revit connector (Phase 1303, owner decision 2026-10-18, D-44..D-51)
+
+`apps/dg-revit-connector` is Design Grammars' own fork of revit-mcp-server: a pyRevit extension (Routes API `dg_revit` on the pyRevit Routes port 48884) plus a stdio MCP server. It is a second client zone on the user's workstation, beside the Grasshopper CONNECTOR.
+
+- **Writes to Revit are allowed (owner decision, D-45).** The 1301 read-only allowlists (`degram_readonly.py` in the adapter, `REVIT_TOOL_NAMES` in DeGram) do not apply to this fork. It registers every upstream route and MCP tool, including parameter writes, element creation and deletion, colour overrides, selection, view operations and code execution, and DeGram's agent reaches all of them. Phase 1306's Revit write allowlist is superseded for this fork by that decision. Each connector write runs in one Revit transaction, which the user can undo in Revit.
+- **Transport hygiene kept.**
+  - The extension registers nothing unless the pyRevit Routes host is loopback.
+  - In DeGram the MCP server is a stdio child with no HTTP/SSE port (`DEGRAM_MODE=1`).
+  - The connector talks to data-service on loopback or https only (plain http to a remote host is refused, as in Section 3.2).
+- **DG principal.** The connector signs in like the Grasshopper CONNECTOR (Section 3.2) with `connector_id = "revit"`. It holds the `dgk_` session only in Revit's process memory and never stores the password. As the connector principal it uses exactly the existing connector rows of the mapping routes (`POST|GET /mapping/sessions`, `GET /mapping/sessions/{session_id}`, `POST /mapping/sessions/{session_id}/apply`, `GET /mapping/profiles`) for its bound project. No route, principal or policy row is added: the machine-checked blocks of Section 4 are unchanged. DeGram answers and undoes answers with its delegated token as before (Section 3.5, plan 1303-10).
+
 ## 4. Machine-Checked Blocks
 
 Each block is enclosed by an HTML-comment marker pair. The drift test compares it to the code or compose file named in the heading.

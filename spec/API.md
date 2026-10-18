@@ -448,6 +448,8 @@ Group questions, decisions and learned profiles that map element descriptors fro
 | GET | `/mapping/profiles` | Query: `project` | member viewer, connector, delegated (DeGram) | Active learned and authored profiles with computed confidence (retired ones are left out). |
 | POST | `/mapping/profiles` | `{project, platform: grasshopper\|revit\|*, selector, roles, comment?}` | member editor | Author a profile (e.g. Revit category + parameters → classes); repeating it adds a confirmation. |
 
+Revit (plan 1303-11/12): the DG Revit connector (`apps/dg-revit-connector`, `spec/SECURITY-BOUNDARY.md` Section 3.8) signs in as connector `revit` and posts Revit sessions itself. A Revit descriptor carries `geometry.vertexCount` from the adaptive placement points, so cross-platform profiles and vertex-count rules apply. A Revit session label is `<document key> · HH:MM:SS`, and its `document` is the part before « · ». Without `context.populationsFromSessionId`, a Revit session takes its population evidence from the latest applied Grasshopper session of the project. Populations are kept per applied group (`{class: [sizes]}`), and a group size that matches more than one class gives no evidence.
+
 Errors use the structured `{error, hint, code}` detail: `MAPPING_SESSION_NOT_FOUND` (404), `MAPPING_QUESTION_NOT_FOUND` (404), `MAPPING_OPTION_INVALID` (400), `MAPPING_INPUT_INVALID` (400), `MAPPING_TOO_MANY_ELEMENTS` (400, more than 5000 elements), `MAPPING_ANSWER_NOT_FOUND` (404, unknown or already undone answer), `MAPPING_SESSION_APPLIED` (409, undo on an applied session), `MAPPING_FAILED` (502, correlation id only).
 
 ### Identity (`/identity/*`, Phase 32.1/1203)
