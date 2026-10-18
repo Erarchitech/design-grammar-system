@@ -285,6 +285,124 @@ def test_revit_like_population_and_names():
     assert metrics["overall"]["precision"] == 1.0 and metrics["overall"]["recall"] == 1.0
 
 
+# 7b — population evidence per applied group, not per class (D-49) -----------
+#
+# Live session ms-56907a90d11f (2026-10-18): confirmed/auto counts per GH stream.
+# Per class this collapsed to BottomTriangularPanel 250, GlassPanel 125,
+# GroundFloorUnit 26, HexagonalUnit 100, Facade 1, so a 125 group of triangles
+# was given «GlassPanel» and the 25 ground-floor modules nothing.
+LIVE_STREAMS = (
+    ("Panels A", "BottomTriangularPanel", 125),
+    ("Panels C", "BottomTriangularPanel", 125),
+    ("Panels B", "GlassPanel", 125),
+    ("5-Module contours", "GroundFloorUnit", 25),
+    ("Basement contour", "GroundFloorUnit", 1),
+    ("6-Module contours", "HexagonalUnit", 100),
+    ("bbox F", "Facade", 1),
+)
+
+LIVE_POPULATIONS = {
+    "BottomTriangularPanel": [125, 125],
+    "Facade": [1],
+    "GlassPanel": [125],
+    "GroundFloorUnit": [1, 25],
+    "HexagonalUnit": [100],
+}
+
+
+def _live_result():
+    """The live result shape: `stream` carries the GH source component id."""
+    elements = []
+    for stream, cls, count in LIVE_STREAMS:
+        for i in range(count):
+            elements.append(
+                {
+                    "nativeId": f"{stream}/{i}",
+                    "groupId": f"G-{stream}",
+                    "state": "confirmed",
+                    "stream": stream,
+                    "roles": [{"classIri": f"ex:{cls}", "label": cls, "state": "confirmed", "source": "human", "confidence": 1.0}],
+                }
+            )
+    return {"elements": elements}
+
+
+def _known():
+    return {c.local for c in _setup()[0]}
+
+
+def test_populations_of_counts_applied_groups_not_classes():
+    assert m.populations_of(_live_result()) == LIVE_POPULATIONS
+    # Without `stream` the base group is the unit; only confirmed/auto elements count.
+    result = {
+        "elements": [
+            {"groupId": "G-a", "state": "confirmed", "roles": [{"classIri": "ex:GlassPanel"}]},
+            {"groupId": "G-a", "state": "auto", "roles": [{"classIri": "ex:GlassPanel"}]},
+            {"groupId": "G-a", "state": "suggested", "roles": [{"classIri": "ex:GlassPanel"}]},
+            {"groupId": "G-b", "state": "confirmed", "roles": [{"classIri": "ex:GlassPanel"}, {"classIri": "ex:Facade"}]},
+            {"groupId": "G-c", "state": "unmapped", "roles": []},
+        ]
+    }
+    assert m.populations_of(result) == {"Facade": [1], "GlassPanel": [1, 2]}
+
+
+def test_population_evidence_only_for_an_unambiguous_group_size():
+    populations, known = m.populations_of(_live_result()), _known()
+    # 125 is Panels A/C (triangles) and Panels B (glass): no evidence either way.
+    assert m.ev_population(125, populations, known, m.CONFIG) == []
+    # 1 is the basement contour and the bbox: ambiguous as well.
+    assert m.ev_population(1, populations, known, m.CONFIG) == []
+    [gfu] = m.ev_population(25, populations, known, m.CONFIG)
+    assert (gfu.class_local, gfu.kind, gfu.weight) == ("GroundFloorUnit", "population", m.CONFIG["w_population"])
+    assert gfu.detail == "group size 25 equals a confirmed group of GroundFloorUnit"
+    [hu] = m.ev_population(100, populations, known, m.CONFIG)
+    assert hu.class_local == "HexagonalUnit" and hu.detail == "group size 100 equals a confirmed group of HexagonalUnit"
+    # A size no confirmed group has gives nothing.
+    assert m.ev_population(26, populations, known, m.CONFIG) == []
+
+
+def test_population_evidence_accepts_the_old_class_shape():
+    known = _known()
+    [gp] = m.ev_population(125, {"GlassPanel": 125}, known, m.CONFIG)
+    assert gp.class_local == "GlassPanel" and gp.detail == "group size 125 equals a confirmed group of GlassPanel"
+    # Absence and ambiguity give nothing, exactly as in the new shape.
+    assert m.ev_population(1, {"GlassPanel": 125}, known, m.CONFIG) == []
+    assert m.ev_population(125, {"Nope": 125}, known, m.CONFIG) == []
+    assert m.ev_population(125, {"GlassPanel": 125, "Facade": 125}, known, m.CONFIG) == []
+    # Malformed values are skipped, never raised on.
+    assert m.ev_population(125, {"GlassPanel": "abc", "Facade": None}, known, m.CONFIG) == []
+    assert m.ev_population(125, {"GlassPanel": {"n": 125}}, known, m.CONFIG) == []
+    assert m.ev_population(125, {"GlassPanel": [125, "abc"], "Facade": 125}, known, m.CONFIG) == []
+    [gp2] = m.ev_population(125, {"GlassPanel": [125, "abc"]}, known, m.CONFIG)
+    assert gp2.class_local == "GlassPanel"
+
+
+def test_compute_takes_population_evidence_from_group_sizes():
+    """A 125 group gets nothing, 25 gets GroundFloorUnit, 26 nothing (the live bug)."""
+    populations = m.populations_of(_live_result())
+    pent = {"geometry": {"kind": "curve", "vertexCount": 5}, "properties": {"hasVertexCount": 5, "hasGapCount": 0}}
+
+    def population_evidence(size):
+        r = _compute([dict(pent, nativeId=f"n{i}") for i in range(size)], populations=populations, platform_default="revit")
+        [group] = r["groups"]
+        assert group["size"] == size
+        return [(c["label"], e["detail"]) for c in group["candidates"] for e in c["evidence"] if e["kind"] == "population"]
+
+    assert population_evidence(125) == []
+    assert population_evidence(26) == []
+    assert population_evidence(25) == [("GroundFloorUnit", "group size 25 equals a confirmed group of GroundFloorUnit")]
+
+
+def test_population_counts_and_evidence_are_deterministic():
+    result = _live_result()
+    shuffled = list(result["elements"])
+    random.Random(11).shuffle(shuffled)
+    for _ in range(3):
+        assert m.populations_of(result) == LIVE_POPULATIONS
+        assert m.populations_of({"elements": list(shuffled)}) == LIVE_POPULATIONS
+        assert m.ev_population(25, LIVE_POPULATIONS, _known(), m.CONFIG) == m.ev_population(25, LIVE_POPULATIONS, _known(), m.CONFIG)
+
+
 def test_range_rules_do_not_outvote_a_signature():
     """A triangle that also satisfies all four GlassPanel range rules is not mapped to
     GlassPanel: the satisfied signature (hasVertexCount == 3) decides, GlassPanel stays a

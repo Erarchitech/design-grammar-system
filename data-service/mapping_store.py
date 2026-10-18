@@ -297,6 +297,15 @@ ORDER BY s.createdAt DESC, s.sessionId DESC
 LIMIT $limit
 """
 
+SESSION_LATEST_APPLIED_QUERY = """
+// op=mapping_session_latest_applied
+MATCH (s:MappingSession {project: $project, platform: $platform})
+WHERE s.appliedAt IS NOT NULL
+RETURN s.sessionId AS sessionId
+ORDER BY s.appliedAt DESC, s.sessionId DESC
+LIMIT 1
+"""
+
 DECISION_CREATE_QUERY = """
 // op=mapping_decision_create
 MATCH (s:MappingSession {sessionId: $sessionId, project: $project})
@@ -378,6 +387,11 @@ def record_apply(session, project: str, session_id: str, actor: str, at: str, co
         SESSION_UPDATE_QUERY,
         {"project": project, "sessionId": session_id, "props": {"appliedAt": at, "appliedBy": actor, "appliedCount": int(count)}},
     )
+
+
+def latest_applied_session_id(session, project: str, platform: str = "grasshopper") -> Optional[str]:
+    rows = _run(session, SESSION_LATEST_APPLIED_QUERY, {"project": project, "platform": platform})
+    return rows[0]["sessionId"] if rows else None
 
 
 def list_sessions(session, project: str, limit: int) -> list:
@@ -521,12 +535,18 @@ def _engine_properties(session, project: str, vocabulary: Optional[dict], constr
 
 
 def document_of(platform: Optional[str], label: Optional[str], descriptors: Optional[list] = None) -> Optional[str]:
-    """The GH document a session was read from: the label before « · », else the `gh:<key>:` prefix."""
-    if str(platform or "").lower() != "grasshopper":
+    """The document a session was read from: the label before « · »; for GH also the `gh:<key>:` prefix.
+
+    The Revit connector labels its sessions `<document key> · HH:MM:SS` (D-48).
+    """
+    kind = str(platform or "").lower()
+    if kind not in ("grasshopper", "revit"):
         return None
     text = str(label or "")
     if " · " in text:
         return text.split(" · ", 1)[0] or None
+    if kind != "grasshopper":
+        return None
     first = str((descriptors or [{}])[0].get("nativeId") or "") if descriptors else ""
     parts = first.split(":")
     return parts[1] if len(parts) > 2 and parts[0] == "gh" else None
@@ -609,6 +629,11 @@ def create_session(session, project, platform, label, elements, context, actor, 
     if parameters or measures:
         properties = _engine_properties(session, project, ctx.get("vocabulary"), constraints)
     populations = None
+    if platform == "revit" and not ctx.get("populationsFromSessionId"):
+        # D-49: a Revit read compares its group sizes with the latest applied GH session.
+        latest = latest_applied_session_id(session, project, "grasshopper")
+        if latest:
+            ctx["populationsFromSessionId"] = latest
     if ctx.get("populationsFromSessionId"):
         ref = load_session(session, project, ctx["populationsFromSessionId"])
         if ref is None:

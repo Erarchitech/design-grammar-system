@@ -82,6 +82,15 @@ class FakeStore:
         s = self.sessions.get((project, session_id))
         return None if s is None else {**s, "descriptors": list(s["descriptors"]), "result": dict(s["result"])}
 
+    def latest_applied_session_id(self, session, project, platform="grasshopper"):
+        rows = [
+            s
+            for (p, _), s in self.sessions.items()
+            if p == project and s.get("platform") == platform and s.get("appliedAt")
+        ]
+        rows.sort(key=lambda s: (s["appliedAt"], s["sessionId"]), reverse=True)
+        return rows[0]["sessionId"] if rows else None
+
     def update_session_result(self, session, project, session_id, result, at):
         self.sessions[(project, session_id)]["result"] = result
         self.sessions[(project, session_id)]["updatedAt"] = at
@@ -123,6 +132,7 @@ def fake_store(monkeypatch):
         "save_profile",
         "save_session",
         "load_session",
+        "latest_applied_session_id",
         "update_session_result",
         "record_apply",
         "list_sessions",
@@ -327,6 +337,92 @@ def test_get_and_list_sessions(fake_store):
     assert one.status_code == 200 and one.json()["sessionId"] == sid
     many = client.get("/mapping/sessions", params={"project": PROJECT})
     assert many.status_code == 200 and many.json()["sessions"][0]["sessionId"] == sid
+
+
+# Revit slice (D-48/D-49, plan 1303-12) -------------------------------------
+
+V1_POPULATIONS = {
+    "BottomTriangularPanel": [125],
+    "Facade": [1],
+    "GlassPanel": [125],
+    "GroundFloorUnit": [25],
+    "HexagonalUnit": [100],
+}
+
+
+def _apply(fake_store, session_id):
+    r = client.post(f"/mapping/sessions/{session_id}/apply", json={"project": PROJECT}, headers=CSRF)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _stored_context(fake_store, session_id):
+    return fake_store.sessions[(PROJECT, session_id)]["context"]
+
+
+def test_revit_session_takes_populations_from_the_latest_applied_gh_session(fake_store):
+    applied, _ = _learn(fake_store)
+    _apply(fake_store, applied)
+    # Newer sessions that must not win: an unapplied Grasshopper one and an applied Revit one.
+    _create(fx.facade_v2_descriptors())
+    first = _create(fx.revit_like_descriptors(), platform="revit", label="AdaptComponent_V18 · 10:00:00")
+    assert first.status_code == 200, first.text
+    _apply(fake_store, first.json()["sessionId"])
+
+    second = _create(fx.revit_like_descriptors("r2"), platform="revit", label="AdaptComponent_V18 · 10:05:00")
+    assert second.status_code == 200, second.text
+    ctx = _stored_context(fake_store, second.json()["sessionId"])
+    assert ctx["populationsFromSessionId"] == applied
+    assert ctx["populations"] == V1_POPULATIONS
+
+
+def test_explicit_populations_from_session_id_wins_for_a_revit_session(fake_store):
+    # A cold session (no profiles yet, nothing confirmed), so its populations differ
+    # from those of the applied session that would be the default.
+    explicit = _create(fx.facade_v2_descriptors()).json()["sessionId"]
+    applied, _ = _learn(fake_store)
+    _apply(fake_store, applied)
+    revit = _create(
+        fx.revit_like_descriptors(), platform="revit", label="AdaptComponent_V18 · 10:10:00",
+        context={"populationsFromSessionId": explicit},
+    )
+    assert revit.status_code == 200, revit.text
+    ctx = _stored_context(fake_store, revit.json()["sessionId"])
+    assert ctx["populationsFromSessionId"] == explicit
+    assert ctx["populations"] == mapping_engine.populations_of(fake_store.sessions[(PROJECT, explicit)]["result"])
+    assert ctx["populations"] != V1_POPULATIONS
+    missing = _create(
+        fx.revit_like_descriptors("r2"), platform="revit", context={"populationsFromSessionId": "ms-nope"}
+    )
+    assert missing.status_code == 404 and missing.json()["detail"]["code"] == "MAPPING_SESSION_NOT_FOUND"
+
+
+def test_revit_session_without_an_applied_gh_session_gets_no_populations(fake_store):
+    r = _create(fx.revit_like_descriptors(), platform="revit", label="AdaptComponent_V18 · 10:00:00")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    ctx = _stored_context(fake_store, body["sessionId"])
+    assert "populationsFromSessionId" not in ctx and "populations" not in ctx
+    assert not [e for g in body["groups"] for c in g["candidates"] for e in c["evidence"] if e["kind"] == "population"]
+
+
+def test_revit_session_row_carries_its_document(fake_store):
+    sid = _create(fx.revit_like_descriptors(), platform="revit", label="AdaptComponent_V18 · 10:00:00").json()["sessionId"]
+    rows = client.get("/mapping/sessions", params={"project": PROJECT}).json()["sessions"]
+    assert rows[0]["sessionId"] == sid and rows[0]["document"] == "AdaptComponent_V18"
+    plain = _create(fx.revit_like_descriptors("r2"), platform="revit", label="AdaptComponent_V18")
+    assert plain.json()["document"] is None
+
+
+def test_document_of_is_widened_to_revit_and_leaves_grasshopper_as_it_was():
+    assert mapping_store.document_of("revit", "AdaptComponent_V18 · 10:00:00") == "AdaptComponent_V18"
+    assert mapping_store.document_of("revit", "AdaptComponent_V18") is None
+    assert mapping_store.document_of("revit", " · 10:00:00") is None
+    assert mapping_store.document_of("revit", "AdaptComponent_V18 · 10:00:00", [{"nativeId": "gh:doc:HU:{0;1}:0"}]) == "AdaptComponent_V18"
+    assert mapping_store.document_of(None, "AdaptComponent_V18 · 10:00:00") is None
+    assert mapping_store.document_of("grasshopper", "facade-copy · 10:54:09") == "facade-copy"
+    assert mapping_store.document_of("grasshopper", "plain", [{"nativeId": "gh:doc:HU:{0;1}:0"}]) == "doc"
+    assert mapping_store.document_of("grasshopper", "plain", [{"nativeId": "r-0001"}]) is None
 
 
 def test_profiles_list_and_authored(fake_store):

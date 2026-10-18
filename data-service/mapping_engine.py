@@ -623,13 +623,28 @@ def ev_ifc(feats: Mapping, classes: Sequence[ClassInfo], cfg: Mapping) -> list[E
     return out
 
 
+def _population_sizes(value: Any) -> set:
+    """Group sizes of one class: `[n, …]` (per applied group) or a plain `n` (older sessions)."""
+    values = value if isinstance(value, (list, tuple)) else [value]
+    sizes = set()
+    for v in values:
+        if isinstance(v, int) and not isinstance(v, bool):
+            sizes.add(v)
+    return sizes
+
+
 def ev_population(group_size: int, populations: Optional[Mapping], known: set, cfg: Mapping) -> list[Evidence]:
+    """Population evidence only when exactly one class has a confirmed group of this size (D-49)."""
     if not populations:
         return []
-    hits = sorted(local_name(c) for c, n in populations.items() if int(n) == int(group_size) and local_name(c) in known)
+    hits = sorted(
+        local_name(c)
+        for c, sizes in populations.items()
+        if local_name(c) in known and int(group_size) in _population_sizes(sizes)
+    )
     if len(hits) != 1:
         return []
-    return [Evidence(hits[0], "population", cfg["w_population"], f"group size {group_size} equals the confirmed population of {hits[0]}")]
+    return [Evidence(hits[0], "population", cfg["w_population"], f"group size {group_size} equals a confirmed group of {hits[0]}")]
 
 
 # ---------------------------------------------------------------------------
@@ -2296,13 +2311,22 @@ def partition(result: Mapping, constraints: Optional[Sequence[Constraint]] = Non
 
 
 def populations_of(result: Mapping) -> dict:
-    counts: dict[str, int] = {}
+    """Confirmed group sizes per class: one size per applied GH stream (else per group), D-49.
+
+    Per-class totals merged streams (Panels A + C = 250 triangles) and hid the real
+    group sizes another platform compares against.
+    """
+    counts: dict[tuple, int] = {}
     for el in result.get("elements", []):
-        if el["state"] in ("confirmed", "auto"):
-            for r in el["roles"]:
-                key = local_name(r["classIri"])
+        if el.get("state") in ("confirmed", "auto"):
+            unit = el.get("stream") or el.get("groupId")
+            for r in el.get("roles") or ():
+                key = (str(unit), local_name(r["classIri"]))
                 counts[key] = counts.get(key, 0) + 1
-    return dict(sorted(counts.items()))
+    sizes: dict[str, list] = {}
+    for (_, cls), n in counts.items():
+        sizes.setdefault(cls, []).append(n)
+    return {cls: sorted(v) for cls, v in sorted(sizes.items())}
 
 
 def evaluate_against_gold(elements: Sequence[Mapping], gold: Mapping) -> dict:
