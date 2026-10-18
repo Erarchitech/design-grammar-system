@@ -58,17 +58,67 @@ Grammars mapping session of the open model:
 | `dg_show_elements` | `POST /show_elements/` | Selects the given `unique_ids` (≤ 5000) in Revit and zooms the active view to them |
 | `dg_clear_mapping_colours` | `POST /clear_colours/` | Removes the mapping graphic overrides from the active view |
 
-These four routes are added by a later task of plan 1303-11; until that module
-(`dg_revit_mcp/dg_connector_routes.py`) exists, `startup.py` registers every
-Revit route and the tools answer `EXTENSION_NOT_LOADED`.
+The four routes live in `dg_revit_mcp/dg_connector_routes.py`; the reader,
+writers, apply loop and ribbon panel in `lib/dg_connector/` and
+`DG.tab/Connector.panel/`.
 
-## Install and tests
+## Install
 
-- Install the extension with `install.py` (later task of plan 1303-11) into
-  `%APPDATA%\pyRevit\Extensions\dg-revit-connector.extension`, then reload
-  pyRevit. The old `revit-mcp.extension` is left untouched.
-- Offline tests: `python -m pytest -q tests` (needs `mcp`, `httpx`, `pytest`).
-  No Revit and no pyRevit are required.
+The pyRevit half installs as its own extension,
+`%APPDATA%\pyRevit\Extensions\dg-revit-connector.extension`, beside the upstream
+`revit-mcp.extension` (which is **never** modified; the installer refuses that
+target name). The installer also refuses a target that overlaps this source
+folder and an existing non-empty target without `extension.json`, so it can
+only ever move an earlier connector installation. The MCP half is not copied —
+the MCP client runs `main.py` from this repository path.
+
+1. Check the plan first: `python install.py --dry-run` prints every file it
+   would copy, the target and the backup path, and writes nothing.
+2. Install: `python install.py`. It copies `extension.json`, `startup.py`,
+   `dg_transport.py`, `dg_revit_mcp/`, `lib/`, `DG.tab/` and
+   `DG_SharedParameters.txt` (no `tests/`, `tools/`, `main.py` or
+   `__pycache__`) and prints what it did.
+   Other targets: `--target <folder>`, `--backup-root <folder>`.
+3. Reload pyRevit: **pyRevit tab → Reload** (or restart Revit). Routes must be
+   enabled and bound to `127.0.0.1` (pyRevit Settings → Routes); the extension
+   registers nothing on a non-loopback host.
+4. Sign in: the **DG** tab → **Вход**. The dialog asks for the DG URL (default
+   `http://localhost:8000`), the user, the password and the project (default
+   `v12-hexagonal-facade-01`). The `dgk_` token stays in Revit's process memory;
+   the password is never stored or logged.
+5. **Меппинг DG** reads the scope (the selection, else the model instances
+   visible in the active view, ≤ 5000) and creates the mapping session;
+   **Очистить цвета** removes the graphic overrides; **Выход** deletes the
+   connector session and forgets the token.
+
+The apply loop writes only into the document the session was started in
+(matched by `CreationGUID` and path) and colours only the view the session was
+started in; when that document is closed, nothing is written and polling stops
+for the session. Writes are one transaction per step («DG mapping colours»,
+«DG mapping parameters», «DG mapping colours (clear)»), so each is one undo.
+After «DG sign-in expired» polling resumes once **Вход** stores a new token.
+
+### Rollback
+
+A previous installation is moved to
+`%LOCALAPPDATA%\DG\revit-connector-backups\<UTC yyyymmddTHHMMSSZ>\` before the
+copy (the installer prints the path). To roll back:
+
+1. Delete `%APPDATA%\pyRevit\Extensions\dg-revit-connector.extension`.
+2. Move the folder from the newest backup directory back into
+   `%APPDATA%\pyRevit\Extensions\`.
+3. Reload pyRevit.
+
+The upstream `revit-mcp.extension`, and the `DG_Class` / `DG_MappingState`
+bindings and values already written into Revit projects, are untouched by a
+rollback.
+
+### Offline tests
+
+`python -m pytest -q tests` (needs `mcp`, `httpx`, `pytest`). No Revit and no
+pyRevit are required; the Revit API is stubbed and a temporary extension target
+is used, never `%APPDATA%\pyRevit`.
+
 
 The developer documentation below is the **upstream** README. It describes the
 upstream project under its old names — package `revit_mcp/`, Routes API

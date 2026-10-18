@@ -71,6 +71,10 @@ def install_pyrevit_stubs(monkeypatch, routes_host="127.0.0.1"):
     routes.make_response = make_response
 
     db = _AnyModule("pyrevit.DB")
+    # Autodesk.Revit.UI: ExternalEvent, IExternalEventHandler, dialogs. The
+    # connector's runner implements UI.IExternalEventHandler, so this name has to
+    # resolve to a class, not to a module attribute lookup of the test.
+    ui = _AnyModule("pyrevit.UI")
     revit = types.ModuleType("pyrevit.revit")
     revit.doc = None
     revit.db = types.ModuleType("pyrevit.revit.db")
@@ -80,9 +84,22 @@ def install_pyrevit_stubs(monkeypatch, routes_host="127.0.0.1"):
     userconfig = types.ModuleType("pyrevit.userconfig")
     userconfig.user_config = SimpleNamespace(routes_host=routes_host)
 
+    # Ribbon dialogs: forms.alert (messages) and forms.WPFWindow (sign-in dialog).
+    alerts = []
+    forms = types.ModuleType("pyrevit.forms")
+
+    def alert(message="", **kwargs):
+        alerts.append(message)
+        return None
+
+    forms.alert = alert
+    forms.WPFWindow = _any_class("WPFWindow")
+
     pyrevit = types.ModuleType("pyrevit")
     pyrevit.routes = routes
     pyrevit.DB = db
+    pyrevit.UI = ui
+    pyrevit.forms = forms
     pyrevit.revit = revit
 
     system = _AnyModule("System")
@@ -95,6 +112,8 @@ def install_pyrevit_stubs(monkeypatch, routes_host="127.0.0.1"):
         "pyrevit": pyrevit,
         "pyrevit.routes": routes,
         "pyrevit.DB": db,
+        "pyrevit.UI": ui,
+        "pyrevit.forms": forms,
         "pyrevit.revit": revit,
         "pyrevit.revit.db": revit.db,
         "pyrevit.revit.db.query": revit.db.query,

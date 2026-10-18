@@ -13,22 +13,54 @@ another machine.
 
 Routes are served under the pyRevit Routes API name ``dg_revit``, beside the
 still-installed ``revit_mcp`` extension of the upstream project.
+
+On top of the routes, the DG connector is armed here: the poll thread of the
+mapping apply loop and the one ``ExternalEvent`` that runs its Revit writes
+(``lib/dg_connector/runner.py``). A failure there is logged and never breaks
+route registration.
 """
 
-from pyrevit import routes
 import importlib
 import logging
+import os
+import sys
+
+from pyrevit import routes
 
 import dg_transport
-
-logger = logging.getLogger(__name__)
 
 #: pyRevit Routes API name of this extension.
 API_NAME = "dg_revit"
 
+#: Directory of this extension (the folder holding this file).
+EXTENSION_DIR = os.path.dirname(os.path.abspath(__file__))
+
+#: The extension's pure connector library (``lib/dg_connector``).
+LIB_DIR = os.path.join(EXTENSION_DIR, "lib")
+
+# pyRevit puts <extension>/lib on sys.path for ribbon button scripts, but the
+# startup engine is not guaranteed to see it, so it is inserted before
+# dg_connector is imported (D-47).
+if LIB_DIR not in sys.path:
+    sys.path.insert(0, LIB_DIR)
+
+logger = logging.getLogger(__name__)
+
+try:
+    # The pure connector library plus the Revit-side runner of the apply loop.
+    # A broken library must not take every Revit route down with it, so the
+    # failure is logged and the connector commands are simply not armed.
+    import dg_connector  # noqa: F401 - importing it proves lib/ is on sys.path
+    from dg_connector import runner as dg_runner
+except Exception as dg_import_error:
+    dg_connector = None
+    dg_runner = None
+    logger.error("dg_connector (lib/) failed to import: %s", str(dg_import_error))
+
 #: (module under dg_revit_mcp, register function) - every upstream route module
 #: at Demolinator/revit-mcp-server merge base 74a8ddc, in registration order,
-#: plus the fork's identity-pinned document read routes.
+#: plus the fork's identity-pinned document read routes and the DG connector
+#: routes of the Design Grammars mapping session.
 ROUTE_MODULES = (
     ("status", "register_status_routes"),
     ("model_info", "register_model_info_routes"),
@@ -53,13 +85,13 @@ ROUTE_MODULES = (
     ("clash", "register_clash_routes"),
     ("document", "register_document_routes"),
     ("documents", "register_document_read_routes"),
+    ("dg_connector_routes", "register_dg_connector_routes"),
 )
 
-#: DG connector routes. Written by a later task, so their absence is not an
-#: error: the extension then serves every Revit route and the MCP tools that
-#: depend on these four routes answer EXTENSION_NOT_LOADED until it lands.
+#: The DG connector route module: a broken import of *this* module is reported
+#: as a warning and tolerated, because the Revit routes still make sense without
+#: the mapping session (the four DG tools then answer EXTENSION_NOT_LOADED).
 DG_CONNECTOR_MODULE = "dg_connector_routes"
-DG_CONNECTOR_FUNCTION = "register_dg_connector_routes"
 
 # Initialize the main API
 api = routes.API(API_NAME)
@@ -79,24 +111,23 @@ def register_routes():
         return []
 
     registered = []
-    try:
-        for module_name, function_name in ROUTE_MODULES:
+    for module_name, function_name in ROUTE_MODULES:
+        try:
             module = importlib.import_module("dg_revit_mcp." + module_name)
+        except ImportError as import_error:
+            if module_name == DG_CONNECTOR_MODULE:
+                logger.warning(
+                    "dg_revit_mcp.%s failed to import, DG connector routes NOT "
+                    "registered: %s", DG_CONNECTOR_MODULE, str(import_error))
+                continue
+            logger.error("Failed to register DG Revit routes: %s", str(import_error))
+            raise
+        try:
             getattr(module, function_name)(api)
-            registered.append((module_name, function_name))
-    except Exception as e:
-        logger.error("Failed to register DG Revit routes: %s", str(e))
-        raise
-
-    try:
-        connector = importlib.import_module("dg_revit_mcp." + DG_CONNECTOR_MODULE)
-    except ImportError:
-        logger.info(
-            "dg_revit_mcp.%s is not installed; DG connector routes not registered",
-            DG_CONNECTOR_MODULE)
-    else:
-        getattr(connector, DG_CONNECTOR_FUNCTION)(api)
-        registered.append((DG_CONNECTOR_MODULE, DG_CONNECTOR_FUNCTION))
+        except Exception as e:
+            logger.error("Failed to register DG Revit routes: %s", str(e))
+            raise
+        registered.append((module_name, function_name))
 
     logger.info("Registered %d route modules under the Routes API %r",
                 len(registered), API_NAME)
@@ -105,3 +136,12 @@ def register_routes():
 
 # Register the routes when the extension loads
 register_routes()
+
+# Arm the DG connector: one ExternalEvent and one daemon poll thread per Revit
+# process (runner.install is idempotent). A failure here must never break route
+# registration, so it is only logged.
+if dg_runner is not None:
+    try:
+        dg_runner.install(__revit__, EXTENSION_DIR)
+    except Exception as install_error:
+        logger.error("DG connector runner install failed: %s", str(install_error))
