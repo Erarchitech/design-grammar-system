@@ -2,6 +2,8 @@
 
 Shared contract for plans 1303-01 (engine), 1303-02 (routes/persistence), 1303-03 (Grasshopper script), 1303-04 (Revit read adapter) and 1303-05 (Web UI). Any change to these shapes is made here first and announced to every dependent plan. JSON keys are camelCase. All numbers in SI (metres, square metres) unless a field name says otherwise.
 
+Latest rollout evidence: [1303-EXPLICIT-CONFIRMATION-ROLLOUT.md](1303-EXPLICIT-CONFIRMATION-ROLLOUT.md). Implementation checkpoints below are historical; the rollout note distinguishes deployed services/plugins from the pending Desktop build and live CAD acceptance.
+
 ## Owner amendment — 2026-10-19: explicit partial commits
 
 The former ten-second auto-apply is superseded. Answering a proposal stores a draft; it must not activate learned profiles or write CAD parameters. One **Confirm and write (N)** action commits exactly the pending accepted answers, even while other questions remain. A session can have several immutable batches; committed answers cannot be undone as drafts. Suggested/automatic results outside the selected answers are not included.
