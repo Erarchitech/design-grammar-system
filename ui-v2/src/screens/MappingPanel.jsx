@@ -19,7 +19,7 @@ import {
   labelFromFileName,
   listProfiles,
   listSessions,
-  mergeProfiles,
+  pendingAnswerIds,
   optionKind,
   parseDescriptorUpload,
   postDecision,
@@ -750,7 +750,7 @@ export function AnswerCard({ answer, expanded, onToggleExpanded, labelOf, undoab
             <Button size="sm" variant="outline" disabled={!undoable || busy} onClick={() => onUndo(answer)}>
               {undoing ? t("Undoing…") : t("Undo decision")}
             </Button>
-            {!undoable && <span style={MUTED}>{t("The session is applied — undo is not available")}</span>}
+            {!undoable && <span style={MUTED}>{t("Committed decisions cannot be undone as drafts")}</span>}
           </div>
           {error && <div style={ERR_STYLE}>{describeError(error, t("Could not undo the decision."))}</div>}
         </div>
@@ -909,15 +909,18 @@ function MeasuresTable({ measures }) {
   );
 }
 
-function ApplyResult({ result, labelOf }) {
-  const { t, tp } = useT();
-  const rows = appliedByClass(result);
-  const skipped = list(result.skipped).length;
+export function ApplyResult({ result, labelOf }) {
+  const { t } = useT();
+  const payload = result.payload || {};
+  const rows = appliedByClass(payload);
+  const state = result.delivery?.state;
+  const status = state === "written" ? t("Written to CAD")
+    : state === "failed" ? t("CAD delivery failed") : t("Confirmed on server — waiting for CAD");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <div style={BODY}>
-        {tp("{n} element applied", number(result.applied))}
-        {skipped ? ` · ${t("Skipped: {n}", { n: skipped })}` : ""}
+        {status} · {t("Accepted decisions: {n}", { n: list(result.answerIds).length })}
+        {state === "written" ? ` · ${number(result.delivery.written)}` : ""}
       </div>
       {rows.length > 0 && (
         <ul style={{ margin: 0, paddingLeft: 16, ...MUTED }}>
@@ -963,6 +966,7 @@ export default function MappingPanel({ project, active }) {
   const readRef = React.useRef(0);
   const selectedRef = React.useRef(null);
   const fileRef = React.useRef(null);
+  const commitRef = React.useRef(null);
   const bodyId = React.useId();
   const busy = posting !== null || undoing !== null || creating || applying || sessionBusy;
   // CONNECTOR creates sessions by itself (owner amendment 2026-10-18): while the panel is open the newest session
@@ -1054,10 +1058,11 @@ export default function MappingPanel({ project, active }) {
     return () => clearInterval(timer);
   }, [open, active, status, project, load]);
 
-  // The LLM proposal refines a session in the background; re-read it until the proposal lands.
+  // Read proposal refinement and CAD receipts without interpreting server commit as CAD success.
   const llmPending = session?.llm?.status === "pending";
+  const deliveryPending = list(session?.batches).some((batch) => batch.delivery?.state === "queued");
   React.useEffect(() => {
-    if (!(open && active && llmPending && selectedId)) return undefined;
+    if (!(open && active && (llmPending || deliveryPending) && selectedId)) return undefined;
     const timer = setInterval(() => {
       if (busyRef.current) return;
       const scope = scopeRef.current;
@@ -1065,12 +1070,12 @@ export default function MappingPanel({ project, active }) {
       getSession(project, selectedId)
         .then((full) => {
           if (scope !== scopeRef.current || read !== readRef.current || busyRef.current) return;
-          if (full && typeof full === "object" && full.llm?.status !== "pending") setSession(full);
+          if (full && typeof full === "object") setSession(full);
         })
         .catch(() => {});
     }, FOLLOW_MS);
     return () => clearInterval(timer);
-  }, [open, active, llmPending, selectedId, project]);
+  }, [open, active, llmPending, deliveryPending, selectedId, project]);
 
   const selectSession = (id) => {
     if (!id || id === selectedId || busy) return;
@@ -1186,7 +1191,7 @@ export default function MappingPanel({ project, active }) {
         setSession(merged);
         setSessions((items) => upsertSession(items, merged));
       }
-      if (Array.isArray(res?.profiles)) setProfiles((items) => mergeProfiles(items, res.profiles));
+      // Proposed profiles stay drafts until the shared confirmation succeeds.
       setExcluded((prev) => {
         const rest = { ...prev };
         delete rest[question.questionId];
@@ -1236,22 +1241,52 @@ export default function MappingPanel({ project, active }) {
   };
 
   const apply = async () => {
-    if (!session || busy) return;
+    if (!session || busy || busyRef.current || !awaitingApply(session)) return;
     const scope = scopeRef.current;
+    const sessionId = session.sessionId;
+    const answerIds = pendingAnswerIds(session);
+    const key = JSON.stringify([project, sessionId, session.revision, answerIds]);
+    if (commitRef.current?.key !== key) {
+      // The server revision identifies this exact draft; retries survive a panel or page reload, too.
+      commitRef.current = { key, requestId: `commit-${session.revision}`, revision: session.revision, answerIds };
+    }
+    busyRef.current = true;
+    readRef.current += 1;
     setApplying(true);
     setApplyErr(null);
     setApplied(null);
     setNotice(null);
     try {
-      const res = await applySession(project, session.sessionId);
+      const res = await applySession(project, sessionId, commitRef.current);
       if (scope !== scopeRef.current) return;
-      setApplying(false);
-      setApplied(res && typeof res === "object" ? res : { applied: 0 });
-      setNotice({ kind: "applied", n: number(res?.applied) });
+      // Update locally before refresh: a failed refresh must not offer the same drafts again.
+      setSession((current) => current?.sessionId === sessionId ? {
+        ...current,
+        pendingAnswerIds: pendingAnswerIds(current).filter((id) => !answerIds.includes(id)),
+        answers: list(current.answers).map((entry) => answerIds.includes(entry.answerId)
+          ? { ...entry, committedAt: res.committedAt, undoable: false } : entry),
+        batches: [...list(current.batches).filter((batch) => batch.batchId !== res.batchId), res]
+      } : current);
+      setApplied(res);
+      try {
+        const full = await getSession(project, sessionId);
+        if (scope !== scopeRef.current) return;
+        setSession(full);
+        setSessions((items) => upsertSession(items, full));
+        const profileList = await listProfiles(project);
+        if (scope === scopeRef.current) setProfiles(list(profileList?.profiles));
+      } catch (err) {
+        // Confirmation already succeeded; a read failure is not a failed commit.
+        if (scope === scopeRef.current) setSessionErr(err);
+      }
     } catch (err) {
       if (scope !== scopeRef.current) return;
-      setApplying(false);
       setApplyErr(err);
+    } finally {
+      if (scope === scopeRef.current) {
+        busyRef.current = false;
+        setApplying(false);
+      }
     }
   };
 
@@ -1376,7 +1411,7 @@ export default function MappingPanel({ project, active }) {
               );
             })}
             {waitingApply ? (
-              <div style={MUTED}>{t("All questions are answered. CONNECTOR applies the mapping in about 10 s; until then a decision can be undone.")}</div>
+              <div style={MUTED}>{t("Accepted answers are drafts. Confirm once to write only these decisions; unanswered proposals remain available.")}</div>
             ) : (
               questions.length === 0 && (
                 <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
@@ -1426,13 +1461,15 @@ export default function MappingPanel({ project, active }) {
         {session && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <Button size="sm" disabled={busy} onClick={apply}>
-                {applying ? t("Applying…") : t("Apply mapping")}
+              <Button size="sm" disabled={busy || !waitingApply} onClick={apply}>
+                {applying ? t("Confirming…") : t("Confirm and write ({n})", { n: pendingAnswerIds(session).length })}
               </Button>
               {totals.openQuestions > 0 && <span style={MUTED}>{t("Groups without an answer are skipped.")}</span>}
             </div>
             {applyErr && <div style={ERR_STYLE}>{describeError(applyErr, t("Could not apply the mapping."))}</div>}
-            {applied && <ApplyResult result={applied} labelOf={labelOf} />}
+            {list(session.batches).map((batch) => <ApplyResult key={batch.batchId} result={batch} labelOf={labelOf} />)}
+            {applied && !list(session.batches).some((batch) => batch.batchId === applied.batchId)
+              && <ApplyResult result={applied} labelOf={labelOf} />}
           </div>
         )}
       </>

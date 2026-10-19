@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 """Mapping state -> RGB colour, the Grasshopper/Rhino palette (D-50).
 
 The Revit connector paints solid-fill graphic overrides in the active view with
@@ -23,5 +25,12 @@ UNMAPPED_COLOUR = STATE_COLOURS["unmapped"]
 
 def colour_for(state):
     """RGB tuple for a mapping state; an unknown or missing state is unmapped grey."""
-    key = "" if state is None else str(state).strip().lower()
+    if state is None:
+        key = u""
+    else:
+        try:
+            key = state if isinstance(state, unicode) else unicode(state)
+        except NameError:
+            key = str(state)
+        key = key.strip().lower()
     return STATE_COLOURS.get(key, UNMAPPED_COLOUR)

@@ -238,6 +238,15 @@ def test_show_elements_accepts_a_json_text_body(handlers, runner, monkeypatch):
     assert response.data["missing"] == ["gone"]
 
 
+def test_show_elements_accepts_unicode_unique_ids_from_decoded_json(handlers, runner, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(runner, "show", lambda uidoc, doc, ids: seen.setdefault("ids", ids) or {})
+    response = handlers["/show_elements/"](fake_uiapp(), None, None,
+                                           SimpleNamespace(data='{"uniqueIds": ["фасад-элемент"]}'.encode("utf-8")))
+    assert response.status == 200
+    assert seen["ids"] == ["фасад-элемент"]
+
+
 # --- the other three routes delegate -------------------------------------------
 
 def test_mapping_status_delegates_to_the_runner(handlers, runner, monkeypatch):

@@ -117,6 +117,46 @@ def world(client):
     return {"cookie": cookie, "session": session_token, "token": token}
 
 
+# -- explicit mapping confirmation -------------------------------------------
+
+
+def test_delegated_editor_mapping_commit_is_bound_and_receipts_stay_connector_only(client, monkeypatch):
+    cookie, _ = _session(memberships={"P1": "editor", "P2": "editor"})
+    token = _minted(client, cookie, "P1")
+    calls = []
+
+    def capture(fn, *args):
+        calls.append((fn, args))
+        return {"batchId": "commit-test", "delivery": {"state": "queued"}}
+
+    monkeypatch.setattr(app_module, "_mapping_call", capture)
+    path = "/mapping/sessions/ms-test/apply"
+    intent = {"project": "P1", "requestId": "commit-test", "revision": "a" * 24, "answerIds": ["A-1"]}
+    response = client.post(path, json=intent, headers=_bearer(token))
+    assert response.status_code == 200, response.text
+    assert calls[0][0] is app_module.mapping_store.apply_session
+    assert calls[0][1][0] == "P1" and calls[0][1][-3:] == ("commit-test", "a" * 24, ["A-1"])
+    foreign = client.post(path, json={**intent, "project": "P2"}, headers=_bearer(token))
+    assert foreign.status_code == 403 and _code(foreign) == "PROJECT_FORBIDDEN"
+    receipt = client.post(path, json={"project": "P1", "batchId": "commit-test",
+        "delivery": {"state": "written", "written": 1, "skipped": 0}}, headers=_bearer(token))
+    assert receipt.status_code == 403 and _code(receipt) == "PRINCIPAL_NOT_PERMITTED"
+    assert len(calls) == 1
+    assert client.delete("/auth/delegated-token", headers=_bearer(token)).status_code == 204
+    revoked = client.post(path, json=intent, headers={**cookie, **_bearer(token)})
+    assert revoked.status_code == 401 and len(calls) == 1, "no cookie fallback after explicit bearer revocation"
+
+
+def test_delegated_viewer_cannot_commit_mapping(client, monkeypatch):
+    cookie, _ = _session(memberships={"P1": "viewer"})
+    token = _minted(client, cookie)
+    calls = []
+    monkeypatch.setattr(app_module, "_mapping_call", lambda *args: calls.append(args))
+    response = client.post("/mapping/sessions/ms-test/apply", json={"project": "P1",
+        "requestId": "commit-test", "revision": "a" * 24, "answerIds": ["A-1"]}, headers=_bearer(token))
+    assert response.status_code == 403 and not calls
+
+
 # -- issue ------------------------------------------------------------------
 
 

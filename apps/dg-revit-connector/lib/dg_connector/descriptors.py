@@ -50,11 +50,19 @@ On top of the port, ``geometry.vertexCount`` is added only when
 ``planarityDeviationM`` are deliberately never produced, so the Grasshopper
 range rules are never fed Revit bounding boxes (D-48).
 
-Standard library only; Python 3.4 syntax (IronPython 3.4 under Revit).
+Standard library only; Python 2.7 / 3 syntax (pyRevit's IronPython 2.7 under Revit).
 """
+from __future__ import unicode_literals
 
 import math
 import re
+
+try:
+    _UNICODE_TYPE = unicode
+    _TEXT_TYPES = (basestring,)
+except NameError:
+    _UNICODE_TYPE = str
+    _TEXT_TYPES = (str,)
 
 #: Value of the descriptor's ``platform`` field; nativeId is the Revit UniqueId.
 PLATFORM = "revit"
@@ -69,8 +77,8 @@ FEET_TO_METRES = 0.3048
 #: ifc.entity / ifc.predefinedType.
 IFC_ENTITY_PARAMETERS = ("IfcExportAs", "Export to IFC As", "Экспорт в IFC как", "Экспортировать в IFC как")
 IFC_PREDEFINED_TYPE_PARAMETERS = ("IfcExportType", "Export Type to IFC As", "Тип экспорта в IFC")
-_IFC_ENTITY_KEYS = frozenset(name.casefold() for name in IFC_ENTITY_PARAMETERS)
-_IFC_PREDEFINED_KEYS = frozenset(name.casefold() for name in IFC_PREDEFINED_TYPE_PARAMETERS)
+_IFC_ENTITY_KEYS = frozenset(name.lower() for name in IFC_ENTITY_PARAMETERS)
+_IFC_PREDEFINED_KEYS = frozenset(name.lower() for name in IFC_PREDEFINED_TYPE_PARAMETERS)
 
 #: Instance parameters that may carry a Unicode-safe family name (the Revit
 #: reader cannot report a non-ASCII family name unescaped in every route).
@@ -96,11 +104,30 @@ _LENGTH_TOKENS = frozenset(["mm", "cm", "dm", "m", "ft", "in", "мм", "см", "
 # --- small helpers ------------------------------------------------------------
 
 def _text(value):
-    return "" if value is None else str(value)
+    """Preserve IronPython 2 Unicode parameter names and values."""
+    if value is None:
+        return u""
+    if isinstance(value, _UNICODE_TYPE):
+        return value
+    if isinstance(value, _TEXT_TYPES):
+        try:
+            return value.decode("utf-8", "replace")
+        except Exception:
+            pass
+    try:
+        return _UNICODE_TYPE(value)
+    except Exception:
+        return _UNICODE_TYPE(str(value), "utf-8", "replace")
 
 
 def _is_number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    """True for finite numeric values, including IronPython 2.7 numbers."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return not math.isinf(value) and not math.isnan(value)
+    except (TypeError, ValueError):
+        return False
 
 
 def _positive_int(value):
@@ -141,10 +168,10 @@ def length_in_metres(row):
 def parameter_value(row):
     """Display value of an instance parameter row, else its raw value, else None."""
     display = row.get("displayValue")
-    if isinstance(display, str) and display.strip():
+    if isinstance(display, _TEXT_TYPES) and display.strip():
         return display
     value = row.get("value")
-    if isinstance(value, str):
+    if isinstance(value, _TEXT_TYPES):
         return value if value.strip() else None
     return value if _is_number(value) else None
 
@@ -166,7 +193,7 @@ def ifc_from_parameters(pairs):
     """
     entity = predefined = None
     for name, value in pairs:
-        key = _text(name).strip().casefold()
+        key = _text(name).strip().lower()
         if key in _IFC_ENTITY_KEYS:
             entity_parameter = True
         elif key in _IFC_PREDEFINED_KEYS:

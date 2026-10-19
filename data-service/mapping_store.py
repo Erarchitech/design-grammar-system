@@ -87,10 +87,7 @@ def _run(session, query: str, params: dict) -> list:
 CLASSES_QUERY = """
 // op=mapping_classes
 MATCH (c:Class)
-WHERE c.project = $project
-   OR EXISTS {
-     MATCH (r:Rule {project: $project, graph: 'Metagraph'})-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:REFERS_TO]->(c)
-   }
+WHERE c.project = $project AND c.graph = 'OntoGraph'
 RETURN DISTINCT c.iri AS iri, coalesce(c.label, c.iri) AS label
 ORDER BY iri
 """
@@ -188,7 +185,7 @@ OPTIONAL MATCH (d:MappingDecision {decisionId: $decisionId, project: $project})
 FOREACH (_ IN CASE WHEN d IS NULL THEN [] ELSE [1] END | MERGE (d)-[:CREATED_PROFILE]->(p))
 WITH p
 UNWIND $roles AS role
-OPTIONAL MATCH (c:Class {iri: role})
+OPTIONAL MATCH (c:Class {iri: role, project: $project, graph: 'OntoGraph'})
 WITH p, role, head(collect(c)) AS cls
 FOREACH (_ IN CASE WHEN cls IS NULL THEN [] ELSE [1] END | MERGE (p)-[:ASSIGNS_ROLE]->(cls))
 RETURN count(*) AS linked
@@ -300,9 +297,9 @@ LIMIT $limit
 SESSION_LATEST_APPLIED_QUERY = """
 // op=mapping_session_latest_applied
 MATCH (s:MappingSession {project: $project, platform: $platform})
-WHERE s.appliedAt IS NOT NULL
+WHERE s.appliedAt IS NOT NULL OR s.lastCommittedAt IS NOT NULL
 RETURN s.sessionId AS sessionId
-ORDER BY s.appliedAt DESC, s.sessionId DESC
+ORDER BY coalesce(s.lastCommittedAt, s.appliedAt) DESC, s.sessionId DESC
 LIMIT 1
 """
 
@@ -366,6 +363,7 @@ def load_session(session, project: str, session_id: str) -> Optional[dict]:
         "context": json.loads(s.get("contextJson") or "{}"),
         "descriptors": unpack(s.get("descriptorsZ")) or [],
         "result": unpack(s.get("resultZ")) or {},
+        "batches": json.loads(s.get("batchesJson") or "[]"),
     }
 
 
@@ -440,6 +438,9 @@ def fetch_decisions(session, project: str, session_id: str) -> list:
                 "decidedBy": props.get("decidedBy"),
                 "decidedAt": props.get("decidedAt"),
                 "undoneAt": props.get("undoneAt"),
+                "committedAt": props.get("committedAt"),
+                "roles": json.loads(props.get("rolesJson") or "[]"),
+                "profileId": props.get("profileId"),
             }
         )
     return out
@@ -575,7 +576,9 @@ def answers_of(decisions: list, applied: bool) -> list:
             "decidedAt": d.get("decidedAt"),
             "decidedBy": d.get("decidedBy"),
             # Answers recorded before plan 1303-10 carry no profile effects to reverse.
-            "undoable": bool(d.get("answerId")) and not applied,
+            "undoable": bool(d.get("answerId")) and not applied and not d.get("committedAt"),
+            "committedAt": d.get("committedAt"),
+            "accepted": any(it.get("proposal") for it in a.get("items") or []),
         }
     return list(seen.values())
 
@@ -586,6 +589,9 @@ def public_session(meta: dict, result: dict, answers: Optional[list] = None) -> 
         "project": meta["project"],
         "document": document_of(meta.get("platform") or result.get("platform"), meta.get("label"), meta.get("descriptors")),
         "answers": answers or [],
+        "revision": session_revision(meta, result, answers or []),
+        "pendingAnswerIds": [a["answerId"] for a in (answers or []) if a.get("accepted") and not a.get("committedAt")],
+        "batches": meta.get("batches") or [],
         "platform": meta.get("platform") or result.get("platform"),
         "label": meta.get("label"),
         "engineVersion": result.get("engineVersion", engine.ENGINE_VERSION),
@@ -638,7 +644,14 @@ def create_session(session, project, platform, label, elements, context, actor, 
         ref = load_session(session, project, ctx["populationsFromSessionId"])
         if ref is None:
             raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", "populationsFromSessionId does not name a session of this project", 404)
-        populations = engine.populations_of(ref["result"])
+        if ref.get("appliedAt"):
+            populations = engine.populations_of(ref["result"])  # historical whole-session contract
+        else:
+            committed = {el["nativeId"]: {**el, "state": "confirmed",
+                         "roles": [{"classIri": iri} for iri in el["roles"]]}
+                         for batch in ref.get("batches") or []
+                         for el in batch["payload"].get("elements") or []}
+            populations = engine.populations_of({"elements": list(committed.values())})
         ctx["populations"] = populations
     def run(llm=None):
         return engine.compute(
@@ -686,16 +699,18 @@ LLM_ASYNC = True
 def _refine_with_llm(project, session_id, elements, measures, parameters, classes, properties, constraints) -> None:
     proposal = mapping_llm.propose_mapping(elements, measures, parameters, classes, properties, constraints)
     try:
-        with _get_driver().session() as session:
-            s = load_session(session, project, session_id)
+        def refine(tx):
+            lock_session(tx, project, session_id)
+            s = load_session(tx, project, session_id)
             if s is None:
                 return
             ctx = dict(s.get("context") or {})
             ctx["llm"] = proposal
             result = s["result"]
-            # An applied session keeps the result it was applied with; the proposal is only recorded.
+            # Serialize with answers and commits; a late proposal cannot overwrite their result.
             if proposal.get("status") == "ok" and not s.get("appliedAt"):
-                c2, k2, rule_classes, profiles = _engine_inputs(session, project, ctx.get("vocabulary"))
+                c2, k2, rule_classes, profiles = _engine_inputs(tx, project, ctx.get("vocabulary"))
+                current_properties = _engine_properties(tx, project, ctx.get("vocabulary"), k2)
                 result = engine.compute(
                     s["descriptors"], c2, k2, profiles,
                     populations=ctx.get("populations"),
@@ -704,18 +719,21 @@ def _refine_with_llm(project, session_id, elements, measures, parameters, classe
                     splits=result.get("splits") or {},
                     rule_classes=rule_classes,
                     parameters=ctx.get("parameters") or None,
-                    properties=properties,
+                    properties=current_properties,
                     decided_parameters=result.get("decidedParameters") or {},
                     measures=ctx.get("measures") or None,
                     decided_measures=result.get("decidedMeasures") or {},
                     llm=proposal,
                 )
-            _run(session, SESSION_UPDATE_QUERY, {"project": project, "sessionId": session_id, "props": {
+            _run(tx, SESSION_UPDATE_QUERY, {"project": project, "sessionId": session_id, "props": {
                 "contextJson": engine.canonical_json(ctx),
                 "resultZ": pack(result),
                 "summaryJson": engine.canonical_json(result["summary"]),
                 "updatedAt": utc_now(),
             }})
+
+        with _get_driver().session() as session:
+            session.execute_write(refine)
     except Exception:  # noqa: BLE001 - a lost refinement leaves the deterministic session in place
         return
 
@@ -789,6 +807,8 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
     s = load_session(session, project, session_id)
     if s is None:
         raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", f"mapping session {session_id} not found", 404)
+    if s.get("appliedAt"):
+        raise engine.MappingInputError("MAPPING_SESSION_APPLIED", "historical applied sessions are read-only", 409)
     ctx = s.get("context") or {}
     classes, constraints, rule_classes, profiles = _engine_inputs(session, project, ctx.get("vocabulary"))
     result = s["result"]
@@ -814,17 +834,16 @@ def post_decision(session, project, session_id, question_id, option_id, group_id
         "title": question.get("title"),
         "titleRu": question.get("titleRu"),
         "items": _answer_items(question, out),
-        "effects": _profile_effects(profiles, out["profiles"]),
+        "effects": [],
+        "draftProfiles": out["profiles"],
     }
-    created = {d["profileId"]: d["decisionId"] for d in out["decisions"]}
     for d in out["decisions"]:
         d["sessionId"] = session_id
         d["answerId"] = answer["answerId"]
         d["answer"] = answer
         save_decision(session, project, session_id, d)
-    for p in out["profiles"]:
-        save_profile(session, project, p, created.get(p["profileId"]))
-    merged = engine.merge_profiles(profiles, out["profiles"])
+    # Draft choices affect only this session's explicit decided maps, never global profiles.
+    merged = profiles
     decided = dict(result.get("decided") or {})
     decided.update(out["decided"])
     splits = dict(result.get("splits") or {})
@@ -853,6 +872,8 @@ def undo_answer(session, project: str, session_id: str, answer_id: str, actor: s
     decisions = [d for d in fetch_decisions(session, project, session_id) if d.get("answerId") == answer_id and not d.get("undoneAt")]
     if not decisions or not decisions[0].get("answer"):
         raise engine.MappingInputError("MAPPING_ANSWER_NOT_FOUND", f"answer {answer_id} not found or already undone", 404)
+    if any(d.get("committedAt") for d in decisions):
+        raise engine.MappingInputError("MAPPING_ANSWER_COMMITTED", "a committed answer cannot be undone as a draft", 409)
     answer = decisions[0]["answer"]
     result = s["result"]
     decided = dict(result.get("decided") or {})
@@ -888,18 +909,145 @@ def undo_answer(session, project: str, session_id: str, answer_id: str, actor: s
     return public_session(s, result2, answers_of(fetch_decisions(session, project, session_id), False))
 
 
-def apply_session(session, project: str, session_id: str, actor: str, at: str) -> dict:
+def session_revision(meta: dict, result: dict, answers: list) -> str:
+    return engine._sha(engine.canonical_json({"result": result, "answers": answers,
+                                            "batches": meta.get("batches") or []}), 24)
+
+
+def lock_session(session, project: str, session_id: str) -> None:
+    # Called within one explicit Neo4j transaction, before reading or changing the draft.
+    if session is not None:
+        _run(session, "MATCH (s:MappingSession {project:$project, sessionId:$sid}) "
+             "SET s.commitLock = coalesce(s.commitLock, 0) + 1 RETURN s.sessionId AS id",
+             {"project": project, "sid": session_id})
+
+
+def save_batches(session, project: str, session_id: str, batches: list) -> None:
+    _run(session, SESSION_UPDATE_QUERY, {"project": project, "sessionId": session_id,
+                                       "props": {"batchesJson": engine.canonical_json(batches),
+                                                 "lastCommittedAt": batches[-1]["committedAt"] if batches else None}})
+
+
+def mark_decisions_committed(session, project, session_id, ids, actor, at):
+    _run(session, "MATCH (s:MappingSession {project:$project, sessionId:$sid})-[:HAS_DECISION]->(d:MappingDecision) "
+         "WHERE d.answerId IN $ids AND d.undoneAt IS NULL SET d.committedAt=$at, d.committedBy=$actor",
+         {"project": project, "sid": session_id, "ids": ids, "actor": actor, "at": at})
+
+
+def _batch_subset(result: dict, decisions: list) -> dict:
+    selected = {"elements": set(), "parameters": set(), "measures": set()}
+    for d in decisions:
+        gid = str(d.get("groupId") or "")
+        kind = "parameters" if gid.startswith("parameters:") else "measures" if gid.startswith("measures:") else "elements"
+        # One parameter/measure answer may contain both accepted and excluded rows.
+        decided_key = {"elements": "decided", "parameters": "decidedParameters", "measures": "decidedMeasures"}[kind]
+        decided = result.get(decided_key) or {}
+        selected[kind].update(nid for nid in d.get("memberIds") or [] if decided.get(nid))
+    return {**result, **{kind: [r for r in result.get(kind) or [] if r["nativeId"] in ids]
+                         for kind, ids in selected.items()}}
+
+
+def apply_session(session, project: str, session_id: str, actor: str, at: str,
+                  request_id=None, revision=None, answer_ids=None) -> dict:
     s = load_session(session, project, session_id)
     if s is None:
         raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", f"mapping session {session_id} not found", 404)
+    ids = sorted(answer_ids or [])
+    batches = list(s.get("batches") or [])
+    for batch in batches:
+        if batch["batchId"] == request_id:
+            if batch["answerIds"] != ids or batch["revision"] != revision:
+                raise engine.MappingInputError("MAPPING_COMMIT_CONFLICT", "requestId already names another intent", 409)
+            return batch
+    decisions = fetch_decisions(session, project, session_id)
+    answers = answers_of(decisions, bool(s.get("appliedAt")))
+    pending = sorted(a["answerId"] for a in answers if a.get("accepted") and not a.get("committedAt"))
+    if s.get("appliedAt") or not request_id or not ids or len(ids) != len(set(ids)) or ids != pending:
+        raise engine.MappingInputError("MAPPING_COMMIT_CONFLICT", "confirm the current nonempty pending answer set", 409)
+    if revision != session_revision(s, s["result"], answers):
+        raise engine.MappingInputError("MAPPING_COMMIT_CONFLICT", "the draft changed; refresh before confirming", 409)
+    chosen = [d for d in decisions if d.get("answerId") in ids and not d.get("undoneAt")]
+    subset = _batch_subset(s["result"], chosen)
+    known_classes = {c.iri for c in fetch_classes(session, project)}
     constraints = engine.constraints_from_rows(fetch_rule_rows(session, project))
-    part = engine.partition(s["result"], constraints)
-    record_apply(session, project, session_id, actor, at, part["applied"])
-    return {"project": project, "sessionId": session_id, **part}
+    known_props = {p.iri for p in fetch_properties(session, project, constraints)}
+    object_decisions = [d for d in chosen if not str(d.get("groupId") or "").startswith(("parameters:", "measures:"))]
+    if any(role not in known_classes for d in object_decisions for role in d.get("roles") or []):
+        raise engine.MappingInputError("MAPPING_INPUT_INVALID", "a selected class is no longer in the project OntoGraph", 409)
+    selected_elements = {el["nativeId"]: sorted(r["classIri"] for r in el.get("roles") or []) for el in subset["elements"]}
+    if any(selected_elements.get(nid) != sorted(d["roles"]) for d in object_decisions
+           if d.get("roles") for nid in d.get("memberIds") or []):
+        raise engine.MappingInputError("MAPPING_COMMIT_CONFLICT", "the selected element mapping changed", 409)
+    if any(r["classIri"] not in known_classes for el in subset["elements"] for r in el.get("roles") or []):
+        raise engine.MappingInputError("MAPPING_INPUT_INVALID", "a selected class is no longer in the project OntoGraph", 409)
+    if any((r.get("property") or {}).get("iri") not in known_props for r in subset["measures"]):
+        raise engine.MappingInputError("MAPPING_INPUT_INVALID", "a selected property is no longer in the project ontology", 409)
+    part = engine.partition(subset, constraints)
+    # Bindings may connect this batch to earlier committed objects/measures, never to remaining drafts.
+    # Failed deliveries are excluded; queued predecessors are delivered in order by the connector.
+    history = [b["payload"] for b in batches if b.get("delivery", {}).get("state") != "failed"]
+    committed_elements = {el["nativeId"]: {**el, "state": "confirmed",
+                          "roles": [{"classIri": iri} for iri in el["roles"]]}
+                          for payload in history for el in payload.get("elements") or []}
+    committed_measures = {m["nativeId"]: {**m, "state": "confirmed", "property": {"iri": m["propertyIri"]}}
+                          for payload in history for m in payload.get("measures") or []}
+    committed_elements.update({el["nativeId"]: el for el in subset["elements"]})
+    committed_measures.update({m["nativeId"]: m for m in subset.get("measures") or []})
+    part["bindings"] = engine.rule_bindings({"elements": list(committed_elements.values()),
+                                            "measures": list(committed_measures.values())}, constraints)
+    batch = {"batchId": request_id, "revision": revision, "answerIds": ids, "committedAt": at,
+             "payload": part, "delivery": {"state": "queued"}}
+    # Activate only profiles belonging to accepted answers, once, under the same lock.
+    current = {p["profileId"]: p for p in fetch_profiles(session, project)}
+    seen_answers = set()
+    for d in chosen:
+        aid = d["answerId"]
+        if aid in seen_answers:
+            continue
+        seen_answers.add(aid)
+        accepted_decisions = {row["decisionId"] for row in chosen if row.get("answerId") == aid and row.get("roles")}
+        for draft in (d.get("answer") or {}).get("draftProfiles") or []:
+            if not draft.get("roles") or not accepted_decisions.intersection(draft.get("decisionIds") or []):
+                continue
+            p = dict(draft)
+            previous = current.get(p["profileId"])
+            if previous and previous.get("state") == "retired":
+                continue  # manual retirement is not undone by a mapping confirmation
+            p["confirmations"] = int((previous or {}).get("confirmations", 0)) + 1
+            p["state"], p["updatedAt"] = "active", at
+            if previous:
+                p["decisionIds"] = sorted(set(previous.get("decisionIds") or []) | set(p.get("decisionIds") or []))
+            save_profile(session, project, p, d["decisionId"])
+            current[p["profileId"]] = p
+    mark_decisions_committed(session, project, session_id, ids, actor, at)
+    save_batches(session, project, session_id, batches + [batch])
+    return batch
+
+
+def acknowledge_batch(session, project, session_id, batch_id, delivery):
+    s = load_session(session, project, session_id)
+    if s is None:
+        raise engine.MappingInputError("MAPPING_SESSION_NOT_FOUND", "session not found", 404)
+    batches = list(s.get("batches") or [])
+    batch = next((b for b in batches if b["batchId"] == batch_id), None)
+    if batch is None:
+        raise engine.MappingInputError("MAPPING_COMMIT_CONFLICT", "unknown batch", 409)
+    state = delivery.get("state")
+    written, skipped = delivery.get("written"), delivery.get("skipped")
+    total = batch["payload"]["applied"]
+    if (state not in ("written", "failed") or type(written) is not int or type(skipped) is not int
+            or min(written, skipped) < 0 or written + skipped != total
+            or (state == "written" and skipped != 0)):
+        raise engine.MappingInputError("MAPPING_INPUT_INVALID", "invalid CAD delivery counts")
+    if batch["delivery"]["state"] != "queued" and batch["delivery"] != delivery:
+        raise engine.MappingInputError("MAPPING_COMMIT_CONFLICT", "batch already acknowledged", 409)
+    batch["delivery"] = dict(delivery)
+    save_batches(session, project, session_id, batches)
+    return batch
 
 
 def list_profiles(session, project: str) -> dict:
-    # Only profiles that map: retired ones stay in the graph (an answer can switch them back on).
+    # Retired profiles stay in the graph and are never reactivated by draft answers or batch confirmation.
     return {"profiles": [p for p in fetch_profiles(session, project) if p.get("state", "active") == "active"]}
 
 

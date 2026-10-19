@@ -5625,8 +5625,19 @@ class MappingDecisionRequest(BaseModel):
     comment: str | None = Field(default=None, max_length=500)
 
 
+class MappingDeliveryReceipt(BaseModel):
+    state: str = Field(pattern="^(written|failed)$")
+    written: int = Field(ge=0, strict=True)
+    skipped: int = Field(ge=0, strict=True)
+
+
 class MappingApplyRequest(BaseModel):
     project: str
+    requestId: str | None = Field(default=None, min_length=3, max_length=64)
+    revision: str | None = Field(default=None, min_length=24, max_length=24)
+    answerIds: list[str] | None = None
+    batchId: str | None = Field(default=None, min_length=3, max_length=64)
+    delivery: MappingDeliveryReceipt | None = None
 
 
 class MappingUndoRequest(BaseModel):
@@ -5654,6 +5665,13 @@ def _mapping_error(exc: mapping_engine.MappingInputError) -> HTTPException:
 def _mapping_call(fn, *args):
     try:
         with driver.session() as session:
+            mutations = (mapping_store.post_decision, mapping_store.undo_answer,
+                         mapping_store.apply_session, mapping_store.acknowledge_batch)
+            if fn in mutations:
+                def write(tx):
+                    mapping_store.lock_session(tx, args[0], args[1])
+                    return fn(tx, *args)
+                return session.execute_write(write)
             return fn(session, *args)
     except mapping_engine.MappingInputError as exc:
         raise _mapping_error(exc)
@@ -5723,9 +5741,22 @@ def post_mapping_undo(session_id: str, payload: MappingUndoRequest, request: Req
 
 @router.post("/mapping/sessions/{session_id}/apply")
 def post_mapping_apply(session_id: str, payload: MappingApplyRequest, request: Request):
-    """Partition confirmed and auto-mapped elements by class for the OBJECT STATE components (DGMAP-05)."""
+    """Commit the accepted draft batch, or acknowledge its CAD delivery (connector only)."""
+    principal = getattr(request.state, "principal", None)
+    if payload.batchId is not None or payload.delivery is not None:
+        if getattr(principal, "kind", None) != "connector":
+            raise _structured_error_response("Only a CAD connector may acknowledge delivery.", "", "PRINCIPAL_NOT_PERMITTED", 403)
+        if not payload.batchId or payload.delivery is None or any(
+            x is not None for x in (payload.requestId, payload.revision, payload.answerIds)
+        ):
+            raise _mapping_error(mapping_engine.MappingInputError("MAPPING_INPUT_INVALID", "send only batchId and delivery"))
+        return _mapping_call(mapping_store.acknowledge_batch, payload.project, session_id,
+                             payload.batchId, payload.delivery.model_dump())
+    if getattr(principal, "kind", None) == "connector":
+        raise _structured_error_response("Confirm the mapping in the mapping panel.", "", "PRINCIPAL_NOT_PERMITTED", 403)
     return _mapping_call(
-        mapping_store.apply_session, payload.project, session_id, _mapping_actor(request), mapping_store.utc_now()
+        mapping_store.apply_session, payload.project, session_id, _mapping_actor(request), mapping_store.utc_now(),
+        payload.requestId, payload.revision, payload.answerIds,
     )
 
 

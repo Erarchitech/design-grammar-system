@@ -373,6 +373,13 @@ def test_sign_in_trailing_slash_and_connector_id_override():
     assert json.loads(opener.requests[1].data.decode("utf-8"))["connector_id"] == "revit"
 
 
+def test_unicode_project_is_utf8_percent_encoded_in_a_session_query():
+    opener = FakeOpener([FakeResponse(200, json.dumps({"sessionId": "ms-1"}))])
+    project = "фасад"
+    dg_client.get_session("http://127.0.0.1:8000", "dgk_token", project, "ms-1", opener=opener)
+    assert "project=%D1%84%D0%B0%D1%81%D0%B0%D0%B4" in opener.requests[0].full_url
+
+
 @pytest.mark.parametrize("base_url", ["http://localhost:8000", "http://127.0.0.1:8000",
                                       "http://[::1]:8000", "https://dg.example"])
 def test_sign_in_allowed_transports(base_url):
@@ -557,6 +564,23 @@ def test_get_session_uses_a_project_query():
     assert opener.timeouts == [60.0]
 
 
+def test_acknowledge_batch_posts_only_the_delivery_receipt():
+    delivery = {"state": "written", "written": 4, "skipped": 0}
+    opener = FakeOpener([FakeResponse(200, json.dumps({"batchId": "batch-four", "delivery": delivery}))])
+    result = dg_client.acknowledge_batch(
+        "http://localhost:8000", "dgk_token", "p1", "ms-0123456789ab", "batch-four", delivery,
+        opener=opener)
+    assert result["delivery"] == delivery
+    [request] = opener.requests
+    assert request.get_method() == "POST"
+    assert request.full_url == "http://localhost:8000/mapping/sessions/ms-0123456789ab/apply"
+    assert json.loads(request.data.decode("utf-8")) == {
+        "project": "p1", "batchId": "batch-four", "delivery": delivery,
+    }
+    assert header(request, "Authorization") == "Bearer dgk_token"
+    assert header(request, "X-DG-CSRF") == "1"
+
+
 def test_apply_session_posts_the_project():
     opener = FakeOpener([FakeResponse(200, json.dumps({"applied": 2}))])
     result = dg_client.apply_session("http://localhost:8000", "dgk_token",
@@ -621,7 +645,8 @@ def memo_of(session):
 
 
 def test_loop_constants():
-    assert loop.GRACE_SECONDS == 10
+    assert "wait-grace" not in loop.ACTIONS
+    assert not hasattr(loop, "GRACE_SECONDS")
     assert loop.POLL_SECONDS == 3
 
 
@@ -664,51 +689,22 @@ def test_loop_idles_while_questions_are_open():
     assert "secondsLeft" not in action
 
 
-def test_loop_waits_ten_seconds_after_the_newest_answer():
-    session = mapping_session(
-        [element("u1", "confirmed", ["ex:A"])], open_questions=0,
-        answers=[{"answerId": "A-1", "decidedAt": "2026-10-18T09:00:10Z"},
-                 {"answerId": "A-2", "decidedAt": "2026-10-18T09:00:20Z"}])
+@pytest.mark.parametrize("seconds", [3, 10, 30, 3600])
+def test_loop_never_applies_a_draft_after_any_delay(seconds):
+    session = mapping_session([element("u1", "confirmed", ["ex:A"])], open_questions=0,
+                              answers=[{"decidedAt": "2026-10-18T09:00:00Z"}])
     action = loop.next_action(session, memo_of(session),
-                              datetime.datetime(2026, 10, 18, 9, 0, 25))
-    assert action["action"] == "wait-grace"
-    assert action["secondsLeft"] == 5.0
-
-    action = loop.next_action(session, memo_of(session),
-                              datetime.datetime(2026, 10, 18, 9, 0, 20))
-    assert action["secondsLeft"] == 10.0
+                             datetime.datetime(2026, 10, 18, 9) + datetime.timedelta(seconds=seconds))
+    assert action["action"] == "idle" and "secondsLeft" not in action
 
 
-def test_loop_waits_from_creation_when_there_is_no_answer():
-    session = mapping_session([element("u1", "confirmed", ["ex:A"])], open_questions=0)
-    action = loop.next_action(session, memo_of(session),
-                              datetime.datetime(2026, 10, 18, 9, 0, 4))
-    assert action["action"] == "wait-grace"
-    assert action["secondsLeft"] == 6.0
-
-
-def test_loop_applies_once_the_grace_has_elapsed():
-    session = mapping_session([element("u1", "confirmed", ["ex:A"])], open_questions=0)
-    assert loop.next_action(session, memo_of(session),
-                            datetime.datetime(2026, 10, 18, 9, 0, 10))["action"] == "apply"
-    assert loop.next_action(session, memo_of(session),
-                            datetime.datetime(2026, 10, 18, 9, 0, 30))["action"] == "apply"
-
-    answered = mapping_session(
-        [element("u1", "confirmed", ["ex:A"])], open_questions=0,
-        answers=[{"decidedAt": "2026-10-18T09:00:00Z"}])
-    assert loop.next_action(answered, memo_of(answered),
-                            datetime.datetime(2026, 10, 18, 9, 0, 30))["action"] == "apply"
-
-
-def test_loop_falls_back_to_creation_when_an_answer_has_no_timestamp():
-    session = mapping_session(
-        [element("u1", "confirmed", ["ex:A"])], open_questions=0,
-        answers=[{"answerId": "A-1", "decidedAt": None}])
-    action = loop.next_action(session, memo_of(session),
-                              datetime.datetime(2026, 10, 18, 9, 0, 3))
-    assert action["action"] == "wait-grace"
-    assert action["secondsLeft"] == 7.0
+def test_loop_delivers_explicit_batch_while_other_questions_remain():
+    session = mapping_session([element("u1", "confirmed", ["ex:A"])], open_questions=6)
+    batch = {"batchId": "batch-one", "delivery": {"state": "queued"}, "payload": {}}
+    session["batches"] = [batch]
+    assert loop.next_action(session, memo_of(session), NOW)["batch"] == batch
+    batch["delivery"] = {"state": "written", "written": 1, "skipped": 0}
+    assert loop.next_action(session, memo_of(session), NOW)["action"] == "idle"
 
 
 def test_loop_idles_without_a_session_or_a_summary():

@@ -80,7 +80,7 @@ const cases = [
   ['mapping.getSession', () => mapping.getSession(project, 'ms/1 ?#'), 'GET', `/data-service/mapping/sessions/${encodeURIComponent('ms/1 ?#')}?project=${encoded}`],
   ['mapping.createSession', () => mapping.createSession(project, { project: 'FOREIGN', platform: 'grasshopper', label: 'act1', elements: [{ nativeId: 'gh:f:HU:{0;0}:0' }] }), 'POST', '/data-service/mapping/sessions', { project, platform: 'grasshopper', label: 'act1', elements: [{ nativeId: 'gh:f:HU:{0;0}:0' }] }],
   ['mapping.postDecision', () => mapping.postDecision(project, 'ms/1', { questionId: 'Q-1', optionId: 'accept-all', groupIds: ['G-1'] }), 'POST', '/data-service/mapping/sessions/ms%2F1/decisions', { project, questionId: 'Q-1', optionId: 'accept-all', groupIds: ['G-1'] }],
-  ['mapping.applySession', () => mapping.applySession(project, 'ms/1'), 'POST', '/data-service/mapping/sessions/ms%2F1/apply', { project }],
+  ['mapping.applySession', () => mapping.applySession(project, 'ms/1', { requestId: 'batch-security', revision: 'a'.repeat(24), answerIds: ['A-1'] }), 'POST', '/data-service/mapping/sessions/ms%2F1/apply', { project, requestId: 'batch-security', revision: 'a'.repeat(24), answerIds: ['A-1'] }],
   ['mapping.listProfiles', () => mapping.listProfiles(project), 'GET', `/data-service/mapping/profiles?project=${encoded}`],
   ['mapping.createProfile', () => mapping.createProfile(project, { platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }), 'POST', '/data-service/mapping/profiles', { project, platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }]
 ];

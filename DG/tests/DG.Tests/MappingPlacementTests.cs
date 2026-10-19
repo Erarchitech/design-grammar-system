@@ -95,6 +95,98 @@ public sealed class MappingPlacementTests
     }
 
     [Fact]
+    public void WholeStreamGuard_NeverIncludesUnacceptedRemainder()
+    {
+        var snapshot = new MappingSnapshot
+        {
+            Elements = Enumerable.Range(1, 10).Select(i => new MappingElement { NativeId = $"e{i}", Stream = "S" }).ToList(),
+        };
+        MappingApplyResult Selection(int count) => new()
+        {
+            RolesByElement = Enumerable.Range(1, count).ToDictionary(i => $"e{i}", _ => (IReadOnlyList<string>)new[] { "ex:GlassPanel" }),
+            ElementStreams = Enumerable.Range(1, count).ToDictionary(i => $"e{i}", _ => "S"),
+        };
+        Assert.False(MappingPlacementPlan.CoversWholeStreams(Selection(4), snapshot));
+        Assert.True(MappingPlacementPlan.CoversWholeStreams(Selection(10), snapshot));
+        Assert.False(MappingPlacementPlan.CoversWholeStreams(Selection(11), snapshot));
+        var separate = new MappingSnapshot
+        {
+            Elements = Enumerable.Range(1, 10).Select(i => new MappingElement { NativeId = $"e{i}", Stream = i <= 4 ? "S" : "Other" }).ToList(),
+        };
+        Assert.True(MappingPlacementPlan.CoversWholeStreams(Selection(4), separate));
+    }
+
+    [Fact]
+    public void ExactSelection_FourOfTenAndSplitRoles_DoNotExpandTheStream()
+    {
+        var snapshot = new MappingSnapshot
+        {
+            Elements = Enumerable.Range(0, 10).Select(i => new MappingElement { NativeId = $"e{i}", Stream = "S" }).ToArray(),
+        };
+        var applied = new MappingApplyResult
+        {
+            RolesByElement = Enumerable.Range(0, 4).ToDictionary(i => $"e{i}", i => (IReadOnlyList<string>)new[] { i < 2 ? "ex:A" : "ex:B" }),
+            ElementStreams = Enumerable.Range(0, 4).ToDictionary(i => $"e{i}", _ => "S"),
+        };
+        var classes = MappingSelection.Classes(applied, snapshot);
+        Assert.Equal(new[] { "e0", "e1" }, classes.Single(c => c.ClassIri == "ex:A").ElementIds);
+        Assert.Equal(new[] { "e2", "e3" }, classes.Single(c => c.ClassIri == "ex:B").ElementIds);
+        Assert.Equal(4, classes.Sum(c => c.ElementIds.Count));
+        var addresses = Enumerable.Range(0, 10).ToDictionary(i => $"e{i}", i => new MappingSourceAddress("{0}", i, false));
+        var selected = MappingSelection.Addresses(classes.SelectMany(c => c.ElementIds), addresses);
+        Assert.Equal(new[] { 0, 1, 2, 3 }, selected.Select(a => a.Index));
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Addresses(new[] { "e0", "unknown" }, addresses));
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Addresses(new[] { "e0", "e0" }, addresses));
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Classes(new MappingApplyResult
+        {
+            RolesByElement = applied.RolesByElement,
+            ElementStreams = applied.ElementStreams.ToDictionary(kv => kv.Key, _ => "other"),
+        }, snapshot));
+    }
+
+    [Fact]
+    public void SourceResolution_PreservesBranchMembersAndPairsOnlyTheirMeasure()
+    {
+        var tree = new Dictionary<string, IReadOnlyList<int>> { ["{0}"] = new[] { 10, 11, 12, 13, 14, 15 } };
+        var items = new[] { new MappingSourceAddress("{0}", 1, false), new MappingSourceAddress("{0}", 4, false) };
+        Assert.Equal(new[] { 11, 14 }, MappingSelection.Resolve(items, tree, false).Select(r => Assert.Single(r)));
+        var branch = new[] { new MappingSourceAddress("{0}", 0, true) };
+        Assert.Equal(tree["{0}"], Assert.Single(MappingSelection.Resolve(branch, tree, false)));
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Resolve(branch, tree, true));
+        var values = new Dictionary<string, IReadOnlyList<int>> { ["{0}"] = new[] { 99 } };
+        Assert.Equal(99, Assert.Single(Assert.Single(MappingSelection.Resolve(branch, values, true))));
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Resolve(items, values, true));
+    }
+
+    [Fact]
+    public void PartialHistory_BindsOnlyCommittedObjectsAndMeasures_AndRejectsReplay()
+    {
+        var first = new MappingApplyResult
+        {
+            RolesByElement = new Dictionary<string, IReadOnlyList<string>> { ["e1"] = new[] { "ex:A" } },
+            ElementStreams = new Dictionary<string, string> { ["e1"] = "S" },
+        };
+        var binding = new MappingRuleBinding("R", "ex:A", "ex:p", "m", "S");
+        var second = new MappingApplyResult
+        {
+            Measures = new[] { new MappingMeasureState("m", "Measure", "applied", "p", "ex:p", "S") },
+            Bindings = new[] { binding, binding with { ClassIri = "ex:Unaccepted" } },
+        };
+        var merged = MappingSelection.Append(first, second);
+        Assert.Equal(binding, Assert.Single(merged.Bindings));
+        Assert.Equal("e1", Assert.Single(merged.RolesByElement).Key);
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Append(merged, first));
+        Assert.Throws<InvalidOperationException>(() => MappingSelection.Append(merged, second));
+        var sliders = MappingSelection.Append(merged, new MappingApplyResult
+        {
+            Parameters = new[] { new MappingParameterState("slider", "Width", "applied", null, null) },
+        });
+        Assert.Single(sliders.Parameters);
+        Assert.Single(sliders.RolesByElement);
+        Assert.Single(sliders.Measures);
+    }
+
+    [Fact]
     public void StreamDedupe_DropsDuplicatesAndUnions()
     {
         var found = MappingStreamDedupe.Find(new (string, string, IReadOnlyCollection<string>)[]

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 """Revit API side of the DG connector: read, colour, clear, write and show.
 
 This is the only library module that talks to Revit. It runs inside Revit under
@@ -73,11 +75,22 @@ UNMAPPED_STATE = "unmapped"
 def _text(value):
     """Unicode-safe text; None becomes an empty string."""
     if value is None:
-        return ""
+        return u""
     try:
-        return str(value)
-    except Exception:
-        return ""
+        if isinstance(value, unicode):
+            return value
+        if isinstance(value, str):
+            return value.decode("utf-8", "replace")
+    except NameError:
+        if isinstance(value, str):
+            return value
+    try:
+        return unicode(value)
+    except NameError:
+        try:
+            return str(value)
+        except Exception:
+            return u""
 
 
 def _norm_path(path):
@@ -836,7 +849,11 @@ def _set_text_parameter(element, name, value):
         return False
 
 
-def write_parameters(doc, app, shared_file, roles_by_uid, states_by_uid):
+class TransactionPendingError(RuntimeError):
+    """Revit has not returned a terminal outcome; delivery must not be replayed."""
+
+
+def write_parameters(doc, app, shared_file, roles_by_uid, states_by_uid, atomic=False):
     """Write ``DG_Class`` / ``DG_MappingState`` -> ``{written, skipped, categories}``.
 
     The shared definitions are read from ``shared_file`` (the shipped
@@ -896,7 +913,15 @@ def write_parameters(doc, app, shared_file, roles_by_uid, states_by_uid):
                 result["written"] += 1
             else:
                 result["skipped"] += 1
-        transaction.Commit()
+        if atomic and result["skipped"]:
+            raise RuntimeError("the committed mapping batch could not be written in full")
+        status = transaction.Commit()
+        if atomic and _text(status) == "Pending":
+            raise TransactionPendingError("Revit has not finalized the mapping transaction")
+        if atomic and _text(status) != "Committed":
+            raise RuntimeError("Revit did not commit the mapping transaction")
+    except TransactionPendingError:
+        raise
     except Exception:
         _roll_back(transaction)
         raise

@@ -18,8 +18,7 @@ def ensure_lib():
     here = os.path.dirname(os.path.abspath(__file__))
     pushbutton = os.path.dirname(here)
     panel = os.path.dirname(pushbutton)
-    tab = os.path.dirname(panel)
-    extension = os.path.dirname(tab)
+    extension = os.path.dirname(panel)
     lib = os.path.join(extension, "lib")
     if lib not in sys.path:
         sys.path.insert(0, lib)

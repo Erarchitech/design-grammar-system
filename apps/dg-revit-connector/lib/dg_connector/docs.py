@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 """Document key and session label (D-48, contract section 8.2).
 
 The Grasshopper connector labels a mapping session with the key of the
@@ -40,7 +42,21 @@ def _file_name(path_or_title):
 
 
 def _text(value):
-    return "" if value is None else str(value)
+    """Text without converting IronPython 2 Unicode through an ASCII str."""
+    if value is None:
+        return u""
+    try:
+        if isinstance(value, unicode):
+            return value
+        if isinstance(value, str):
+            return value.decode("utf-8", "replace")
+    except NameError:
+        if isinstance(value, str):
+            return value
+    try:
+        return unicode(value)
+    except NameError:
+        return str(value)
 
 
 def _strip_extension(name):

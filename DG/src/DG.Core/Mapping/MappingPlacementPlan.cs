@@ -55,6 +55,21 @@ public sealed class MappingPlacementPlan
         return cut >= 0 ? nativeId[(cut + 1)..] : nativeId;
     }
 
+    /// <summary>Reject unsafe whole-stream wiring before any canvas write. Unaccepted members are never added.</summary>
+    public static bool CoversWholeStreams(MappingApplyResult applied, MappingSnapshot snapshot)
+    {
+        var original = snapshot.Elements.ToDictionary(e => e.NativeId, StringComparer.Ordinal);
+        if (applied.RolesByElement.Any(kv => !original.TryGetValue(kv.Key, out var e)
+                || kv.Value.Count == 0 || !applied.ElementStreams.TryGetValue(kv.Key, out var stream) || stream != e.Stream))
+        {
+            return false;
+        }
+
+        var streams = applied.ElementStreams.Values.ToHashSet(StringComparer.Ordinal);
+        return snapshot.Elements.Where(e => streams.Contains(e.Stream))
+            .All(e => applied.RolesByElement.ContainsKey(e.NativeId));
+    }
+
     public static MappingPlacementPlan From(MappingApplyResult applied)
     {
         var notes = new List<string>();

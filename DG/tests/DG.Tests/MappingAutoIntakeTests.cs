@@ -189,22 +189,61 @@ public sealed class MappingAutoIntakeTests
     }
 
     [Fact]
-    public async Task Client_Apply_ParsesRolesAndSliderProperties()
+    public async Task Client_Receipt_DoesNotCommitOrSendDraftAnswers()
     {
-        const string applied = """
-        {"project":"v12","sessionId":"s","applied":2,"byClass":{},
+        const string batch = """
+        {"batchId":"batch-four","delivery":{"state":"written"},"payload":{"applied":2,
          "elements":[{"nativeId":"a","roles":["ex:HexagonalUnit"]},{"nativeId":"b","roles":["ex:GlassPanel","ex:FacadeModule"]}],
-         "skipped":[],"parameters":[{"nativeId":"gh:doc:slider:1","name":"Module Width F1"}],
-         "measures":[{"nativeId":"gh:doc:measure:m1","name":"W","propertyIri":"ex:hasWidthM","stream":"PB"}]}
+         "parameters":[{"nativeId":"gh:doc:slider:1","name":"Module Width F1"}],
+         "measures":[{"nativeId":"gh:doc:measure:m1","name":"W","propertyIri":"ex:hasWidthM","stream":"PB"}]}}
         """;
-        var handler = new RecordingHandler((_, _) => Json(HttpStatusCode.OK, applied));
-        var result = await new MappingSessionClient(handler).ApplyAsync(Url, Token, "v12", "s");
+        var handler = new RecordingHandler((_, _) => Json(HttpStatusCode.OK, batch));
+        var result = await new MappingSessionClient(handler).AcknowledgeAsync(Url, Token, "v12", "s",
+            "batch-four", new MappingDeliveryReceipt("written", 2, 0));
 
         Assert.True(result.Ok);
-        Assert.Equal("{\"project\":\"v12\"}", handler.Requests[0].Body);
-        Assert.Equal(new[] { "ex:GlassPanel", "ex:FacadeModule" }, result.Value!.RolesByElement["b"]);
-        Assert.Equal("Module Width F1", Assert.Single(result.Value.Parameters).Name);
-        Assert.Equal("hasWidthM", Assert.Single(result.Value.Measures).PropertyLabel);
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("{\"project\":\"v12\",\"batchId\":\"batch-four\",\"delivery\":{\"state\":\"written\",\"written\":2,\"skipped\":0}}", request.Body);
+        Assert.Equal($"Bearer {Token}", request.Auth);
+        Assert.DoesNotContain(Token, request.Body);
+        Assert.Equal(new[] { "ex:GlassPanel", "ex:FacadeModule" }, result.Value!.Payload.RolesByElement["b"]);
+        Assert.Equal("Module Width F1", Assert.Single(result.Value.Payload.Parameters).Name);
+        Assert.Equal("hasWidthM", Assert.Single(result.Value.Payload.Measures).PropertyLabel);
+    }
+
+    [Theory]
+    [InlineData("{\"applied\":\"1\",\"elements\":[]}")]
+    [InlineData("{\"applied\":1,\"elements\":[{\"nativeId\":\"a\",\"roles\":[\"ex:A\",\"ex:A\"]}]}")]
+    [InlineData("{\"applied\":1,\"elements\":[{\"nativeId\":\"a\",\"roles\":[\"ex:A\"]},{\"nativeId\":\"a\",\"roles\":[\"ex:B\"]}]}")]
+    [InlineData("{\"applied\":0,\"elements\":[],\"measures\":[{\"nativeId\":\"m\"}]}")]
+    [InlineData("{\"applied\":0,\"elements\":[],\"parameters\":[{\"nativeId\":\"p\"},{\"nativeId\":\"p\"}]}")]
+    public void Client_RejectsMalformedImmutableBatch(string payload)
+    {
+        Assert.Throws<FormatException>(() => MappingSessionClient.ParseBatch(
+            "{\"batchId\":\"bad\",\"delivery\":{\"state\":\"queued\"},\"payload\":" + payload + "}"));
+    }
+
+    [Fact]
+    public void Client_ExplicitBatches_AreIndependentOfOpenQuestionCount()
+    {
+        var state = MappingSessionClient.ParseSession("""
+        {"sessionId":"s","revision":"123456789012345678901234","summary":{"openQuestions":6},
+         "batches":[{"batchId":"four","delivery":{"state":"queued"},"payload":{"applied":1,
+          "elements":[{"nativeId":"selected","roles":["ex:GlassPanel"]}]}},
+         {"batchId":"later","delivery":{"state":"failed"},"payload":{"applied":0,"elements":[]}}]}
+        """);
+        Assert.Equal(6, state.OpenQuestions);
+        Assert.Equal("123456789012345678901234", state.Revision);
+        Assert.Equal(2, state.Batches.Count);
+        Assert.Equal("queued", state.Batches[0].DeliveryState);
+        Assert.Equal("selected", Assert.Single(state.Batches[0].Payload.RolesByElement).Key);
+        Assert.Equal("failed", state.Batches[1].DeliveryState);
+        var legacy = MappingSessionClient.ParseSession("""{"sessionId":"old","appliedAt":"2026-10-18"}""");
+        Assert.NotNull(legacy.AppliedAt);
+        Assert.Empty(legacy.Batches);
+        Assert.Throws<FormatException>(() => MappingSessionClient.ParseBatch("""
+        {"batchId":"bad","delivery":{"state":"queued"},"payload":{"applied":4,"elements":[]}}
+        """));
     }
 
     [Fact]

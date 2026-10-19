@@ -26,10 +26,15 @@ route never contains it and the DG client scrubs it from every error.
 also imported by ``startup.py`` before the extension's ``lib`` path is on
 ``sys.path`` in some tooling contexts (and by the offline route tests).
 
-Python 3.4 syntax (IronPython 3.4 under Revit).
+Python 2.7 / 3 syntax (pyRevit's IronPython 2.7 under Revit).
 """
 
 import logging
+
+try:
+    _TEXT_TYPES = (basestring,)
+except NameError:
+    _TEXT_TYPES = (str,)
 
 from pyrevit import routes
 
@@ -82,7 +87,7 @@ def _unique_ids(payload):
         return None, "uniqueIds must be a list of Revit UniqueId strings"
     unique_ids = []
     for value in values:
-        if not isinstance(value, str):
+        if not isinstance(value, _TEXT_TYPES):
             return None, "every UniqueId must be a string, got {}".format(type(value).__name__)
         text = value.strip()
         if not text:

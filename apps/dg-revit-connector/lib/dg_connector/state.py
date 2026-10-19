@@ -26,8 +26,9 @@ Keys used by the connector:
 ``message``       last status message for the ribbon / MCP status route
 ``lastDigest``    digest of the states the view was last painted with
 
-Standard library only; Python 3.4 syntax (IronPython 3.4 under Revit).
+Standard library only; Python 2.7 / 3 syntax (pyRevit's IronPython 2.7 under Revit).
 """
+from __future__ import unicode_literals
 
 #: ``AppDomain`` data key holding the shared dictionary.
 STATE_KEY = "DG.RevitConnector.State"
@@ -45,6 +46,7 @@ FIELDS = (
     "viewId",
     "message",
     "lastDigest",
+    "batchDeliveries",
 )
 
 #: Fields of one open mapping session: cleared by :meth:`ConnectorState.clear_session`.
@@ -56,6 +58,7 @@ SESSION_FIELDS = (
     "viewId",
     "message",
     "lastDigest",
+    "batchDeliveries",
 )
 
 #: Fields cleared by :meth:`ConnectorState.sign_out` (the DG URL stays).
@@ -63,7 +66,21 @@ SIGN_OUT_FIELDS = ("token", "user", "project") + SESSION_FIELDS
 
 
 def _text(value):
-    return "" if value is None else str(value)
+    """Preserve a Python-2 Unicode project/user value in AppDomain state."""
+    if value is None:
+        return u""
+    try:
+        if isinstance(value, unicode):
+            return value
+        if isinstance(value, str):
+            return value.decode("utf-8", "replace")
+    except NameError:
+        if isinstance(value, str):
+            return value
+    try:
+        return unicode(value)
+    except NameError:
+        return str(value)
 
 
 # --- backends -----------------------------------------------------------------

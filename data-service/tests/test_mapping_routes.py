@@ -86,14 +86,23 @@ class FakeStore:
         rows = [
             s
             for (p, _), s in self.sessions.items()
-            if p == project and s.get("platform") == platform and s.get("appliedAt")
+            if p == project and s.get("platform") == platform and (s.get("appliedAt") or s.get("lastCommittedAt"))
         ]
-        rows.sort(key=lambda s: (s["appliedAt"], s["sessionId"]), reverse=True)
+        rows.sort(key=lambda s: (s.get("lastCommittedAt") or s["appliedAt"], s["sessionId"]), reverse=True)
         return rows[0]["sessionId"] if rows else None
 
     def update_session_result(self, session, project, session_id, result, at):
         self.sessions[(project, session_id)]["result"] = result
         self.sessions[(project, session_id)]["updatedAt"] = at
+
+    def save_batches(self, session, project, session_id, batches):
+        self.sessions[(project, session_id)]["batches"] = mapping_store.unpack(mapping_store.pack(batches))
+        self.sessions[(project, session_id)]["lastCommittedAt"] = batches[-1]["committedAt"] if batches else None
+
+    def mark_decisions_committed(self, session, project, session_id, ids, actor, at):
+        for p, sid, d in self.decisions:
+            if p == project and sid == session_id and d.get("answerId") in ids and not d.get("undoneAt"):
+                d["committedAt"], d["committedBy"] = at, actor
 
     def record_apply(self, session, project, session_id, actor, at, count):
         self.applies.append((project, session_id, actor, count))
@@ -139,13 +148,19 @@ def fake_store(monkeypatch):
         "save_decision",
         "fetch_decisions",
         "mark_decisions_undone",
+        "mark_decisions_committed",
+        "save_batches",
     ):
         monkeypatch.setattr(mapping_store, name, getattr(store, name))
+
+    class _Session:
+        def execute_write(self, fn):
+            return fn(None)
 
     class _Driver:
         @contextmanager
         def session(self):
-            yield None
+            yield _Session()
 
     monkeypatch.setattr(app_module, "driver", _Driver())
     return store
@@ -161,7 +176,17 @@ def _decide(session_id, question_id, option_id, **extra):
     return client.post(f"/mapping/sessions/{session_id}/decisions", json=body, headers=CSRF)
 
 
-def _learn(store):
+def _commit(session_id, *, request_id=None, snapshot=None):
+    snapshot = snapshot or client.get(f"/mapping/sessions/{session_id}", params={"project": PROJECT}).json()
+    return client.post(f"/mapping/sessions/{session_id}/apply", json={
+        "project": PROJECT,
+        "requestId": request_id or f"batch-{len(snapshot.get('batches', [])) + 1}",
+        "revision": snapshot["revision"],
+        "answerIds": snapshot["pendingAnswerIds"],
+    }, headers=CSRF)
+
+
+def _learn(store, commit=True):
     r = _create(fx.facade_v1_descriptors())
     assert r.status_code == 200, r.text
     s = r.json()
@@ -171,6 +196,9 @@ def _learn(store):
     mod = next(q for q in r1.json()["session"]["questions"] if q["type"] == "mapping-or-design")
     r2 = _decide(s["sessionId"], mod["questionId"], "class:ex:GroundFloorUnit")
     assert r2.status_code == 200, r2.text
+    if commit:
+        applied = _commit(s["sessionId"])
+        assert applied.status_code == 200, applied.text
     return s["sessionId"], r2.json()
 
 
@@ -233,7 +261,9 @@ def test_sliders_measures_llm_and_bindings(fake_store, monkeypatch):
     assert {p["state"] for p in final["parameters"] if p["name"] != "КолВо ребер"} == {"confirmed"}
     assert final["measures"][0]["state"] == "confirmed"
     assert calls == [376], "the recorded proposal is reused, not asked again"
-    applied = client.post(f"/mapping/sessions/{sid}/apply", json={"project": PROJECT}, headers=CSRF).json()
+    response = _commit(sid)
+    assert response.status_code == 200, response.text
+    applied = response.json()["payload"]
     assert {p["name"] for p in applied["parameters"]} == {"Module Width F1", "Module Width F2", "Module Width F3"}
     assert {b["ruleId"] for b in applied["bindings"]} == {"R_GLASS_ASPECTRATIO_MIN_1.3_V", "R_GLASS_ASPECTRATIO_MAX_6_V"}
     # A later variant is fully learned: no open question, so no LLM call.
@@ -316,10 +346,11 @@ def test_new_session_on_v2_uses_profiles(fake_store):
 
 
 def test_apply_partition(fake_store):
-    sid, _ = _learn(fake_store)
-    r = client.post(f"/mapping/sessions/{sid}/apply", json={"project": PROJECT}, headers=CSRF)
+    sid, _ = _learn(fake_store, commit=False)
+    assert fake_store.profiles == {}
+    r = _commit(sid)
     assert r.status_code == 200, r.text
-    part = r.json()
+    part = r.json()["payload"]
     assert part["applied"] == 376
     assert {k: len(v) for k, v in part["byClass"].items()} == {
         "ex:BottomTriangularPanel": 125,
@@ -328,7 +359,9 @@ def test_apply_partition(fake_store):
         "ex:GroundFloorUnit": 25,
         "ex:HexagonalUnit": 100,
     }
-    assert fake_store.applies and fake_store.applies[0][3] == 376
+    assert r.json()["delivery"] == {"state": "queued"}
+    assert len(fake_store.profiles) == 5
+    assert not fake_store.applies, "server commit is not a CAD delivery receipt"
 
 
 def test_get_and_list_sessions(fake_store):
@@ -351,7 +384,10 @@ V1_POPULATIONS = {
 
 
 def _apply(fake_store, session_id):
-    r = client.post(f"/mapping/sessions/{session_id}/apply", json={"project": PROJECT}, headers=CSRF)
+    s = client.get(f"/mapping/sessions/{session_id}", params={"project": PROJECT}).json()
+    if s.get("batches") and not s["pendingAnswerIds"]:
+        return s["batches"][-1]
+    r = _commit(session_id, snapshot=s)
     assert r.status_code == 200, r.text
     return r.json()
 
@@ -367,7 +403,8 @@ def test_revit_session_takes_populations_from_the_latest_applied_gh_session(fake
     _create(fx.facade_v2_descriptors())
     first = _create(fx.revit_like_descriptors(), platform="revit", label="AdaptComponent_V18 · 10:00:00")
     assert first.status_code == 200, first.text
-    _apply(fake_store, first.json()["sessionId"])
+    # Historical Revit application must not replace the GH population reference.
+    fake_store.record_apply(None, PROJECT, first.json()["sessionId"], "test", "2026-10-19T10:00:00Z", 0)
 
     second = _create(fx.revit_like_descriptors("r2"), platform="revit", label="AdaptComponent_V18 · 10:05:00")
     assert second.status_code == 200, second.text
@@ -459,7 +496,7 @@ def test_answers_are_listed_and_undo_restores_the_question(fake_store):
     assert answer["questionId"] == batch["questionId"] and answer["type"] == "batch-assign" and answer["undoable"] is True
     assert sorted(i["name"] for i in answer["items"]) == sorted(i["name"] for i in batch["items"])
     assert all(i["state"] == "confirmed" and i["proposal"] for i in answer["items"])
-    assert s1["summary"]["openQuestions"] == 1 and len(fake_store.profiles) == 4
+    assert s1["summary"]["openQuestions"] == 1 and not fake_store.profiles
     listed = client.get("/mapping/sessions", params={"project": PROJECT}).json()["sessions"]
     assert listed[0]["document"] == "facade-copy"
     undone = client.post(f"/mapping/sessions/{sid}/undo", json={"project": PROJECT, "answerId": answer["answerId"]}, headers=CSRF)
@@ -467,25 +504,24 @@ def test_answers_are_listed_and_undo_restores_the_question(fake_store):
     s2 = undone.json()
     assert s2["answers"] == [] and s2["summary"]["openQuestions"] == 2
     assert any(q["type"] == "batch-assign" for q in s2["questions"]) and s2["summary"]["confirmed"] == 0
-    # The profiles the answer created are retired, not deleted; an undone answer cannot be undone twice.
-    assert {p["state"] for p in fake_store.profiles.values()} == {"retired"}
+    # Undoing a draft has no global profile effects.
+    assert not fake_store.profiles
     assert all(d.get("undoneAt") for _, _, d in fake_store.decisions)
     again = client.post(f"/mapping/sessions/{sid}/undo", json={"project": PROJECT, "answerId": answer["answerId"]}, headers=CSRF)
     assert again.status_code == 404 and again.json()["detail"]["code"] == "MAPPING_ANSWER_NOT_FOUND"
-    # The same answer again switches the retired profiles back on.
     s3 = _decide(sid, batch["questionId"], "accept-all").json()["session"]
-    assert len(s3["answers"]) == 1 and {p["state"] for p in fake_store.profiles.values()} == {"active"}
+    assert len(s3["answers"]) == 1 and not fake_store.profiles
 
 
 def test_undo_is_refused_once_the_session_is_applied(fake_store):
-    sid, out = _learn(fake_store)
+    sid, out = _learn(fake_store, commit=False)
     answers = out["session"]["answers"]
     assert len(answers) == 2 and all(a["undoable"] for a in answers)
-    assert client.post(f"/mapping/sessions/{sid}/apply", json={"project": PROJECT}, headers=CSRF).status_code == 200
+    assert _commit(sid).status_code == 200
     s = client.get(f"/mapping/sessions/{sid}", params={"project": PROJECT}).json()
     assert [a["undoable"] for a in s["answers"]] == [False, False]
     r = client.post(f"/mapping/sessions/{sid}/undo", json={"project": PROJECT, "answerId": answers[0]["answerId"]}, headers=CSRF)
-    assert r.status_code == 409 and r.json()["detail"]["code"] == "MAPPING_SESSION_APPLIED"
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "MAPPING_ANSWER_COMMITTED"
 
 
 def test_undo_reverses_a_rejection_on_another_profile(fake_store):
@@ -498,7 +534,7 @@ def test_undo_reverses_a_rejection_on_another_profile(fake_store):
     q = next(q for q in r.json()["questions"] if any(i["count"] == 25 for i in q["items"]))
     pent = next(i["itemId"] for i in q["items"] if i["count"] == 25)
     out = _decide(sid2, q["questionId"], "none", groupIds=[pent]).json()
-    assert fake_store.profiles[(PROJECT, gfu["profileId"])]["rejections"] == 2
+    assert fake_store.profiles[(PROJECT, gfu["profileId"])]["rejections"] == 1, "a draft rejection cannot train other sessions"
     aid = out["session"]["answers"][0]["answerId"]
     assert client.post(f"/mapping/sessions/{sid2}/undo", json={"project": PROJECT, "answerId": aid}, headers=CSRF).status_code == 200
     assert fake_store.profiles[(PROJECT, gfu["profileId"])]["rejections"] == 1

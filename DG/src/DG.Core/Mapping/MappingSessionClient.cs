@@ -43,9 +43,18 @@ public sealed class MappingSessionState
     /// <summary>LLM proposal status of the session (ok / empty / unavailable), when one was asked for.</summary>
     public string? LlmStatus { get; init; }
 
-    /// <summary>Changes whenever an answer in the Web UI changes something visible on the canvas.</summary>
+    /// <summary>Server revision of the draft (legacy sessions fall back to a display hash).</summary>
     public string Revision { get; init; } = string.Empty;
+
+    public string? AppliedAt { get; init; }
+
+    public IReadOnlyList<MappingBatch> Batches { get; init; } = Array.Empty<MappingBatch>();
 }
+
+/// <summary>An explicitly confirmed immutable selection; queued is not proof of CAD delivery.</summary>
+public sealed record MappingBatch(string BatchId, MappingApplyResult Payload, string DeliveryState);
+
+public sealed record MappingDeliveryReceipt(string State, int Written, int Skipped);
 
 /// <summary>A rule bound to a class, a property and the calculation output that carries it (D-37).</summary>
 public sealed record MappingRuleBinding(string RuleId, string ClassIri, string PropertyIri, string MeasureId, string Stream);
@@ -106,14 +115,19 @@ public sealed class MappingSessionClient
             ParseSession,
             cancellationToken);
 
-    public Task<MappingCallResult<MappingApplyResult>> ApplyAsync(
-        string dataServiceUrl, string? token, string project, string sessionId, CancellationToken cancellationToken = default) =>
+    public Task<MappingCallResult<MappingBatch>> AcknowledgeAsync(
+        string dataServiceUrl, string? token, string project, string sessionId, string batchId,
+        MappingDeliveryReceipt delivery, CancellationToken cancellationToken = default) =>
         SendAsync(
             HttpMethod.Post,
             $"{Normalize(dataServiceUrl)}/mapping/sessions/{Uri.EscapeDataString(sessionId)}/apply",
             token,
-            JsonSerializer.Serialize(new Dictionary<string, string> { ["project"] = project }),
-            ParseApply,
+            JsonSerializer.Serialize(new
+            {
+                project, batchId,
+                delivery = new { state = delivery.State, written = delivery.Written, skipped = delivery.Skipped },
+            }),
+            ParseBatch,
             cancellationToken);
 
     private async Task<MappingCallResult<T>> SendAsync<T>(
@@ -229,9 +243,17 @@ public sealed class MappingSessionClient
             revision.Append(t.ComponentId).Append('#').Append(t.Text).Append(';');
         }
 
+        var batches = new List<MappingBatch>();
+        if (root.TryGetProperty("batches", out var bs) && bs.ValueKind == JsonValueKind.Array)
+        {
+            batches.AddRange(bs.EnumerateArray().Select(ParseBatch));
+        }
+
         return new MappingSessionState
         {
             SessionId = Text(root, "sessionId") ?? string.Empty,
+            AppliedAt = Text(root, "appliedAt"),
+            Batches = batches,
             Document = Text(root, "document"),
             Tags = tags,
             Total = total,
@@ -241,7 +263,7 @@ public sealed class MappingSessionClient
             Parameters = parameters,
             Measures = measures,
             LlmStatus = llm,
-            Revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
+            Revision = Text(root, "revision") ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
         };
     }
 
@@ -314,6 +336,61 @@ public sealed class MappingSessionClient
         }
 
         return tags;
+    }
+
+    public static MappingBatch ParseBatch(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return ParseBatch(doc.RootElement);
+    }
+
+    private static MappingBatch ParseBatch(JsonElement root)
+    {
+        var id = Text(root, "batchId");
+        var state = root.TryGetProperty("delivery", out var delivery) ? Text(delivery, "state") : null;
+        if (string.IsNullOrWhiteSpace(id) || state is not ("queued" or "written" or "failed")
+            || !root.TryGetProperty("payload", out var payload) || payload.ValueKind != JsonValueKind.Object)
+        {
+            throw new FormatException("Invalid mapping batch");
+        }
+
+        foreach (var field in new[] { "elements", "parameters", "measures", "bindings" })
+        {
+            if (!payload.TryGetProperty(field, out var rows))
+            {
+                if (field == "elements") throw new FormatException("Missing mapping elements");
+                continue;
+            }
+            if (rows.ValueKind != JsonValueKind.Array) throw new FormatException("Invalid mapping rows");
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var row in rows.EnumerateArray())
+            {
+                if (row.ValueKind != JsonValueKind.Object) throw new FormatException("Invalid mapping row");
+                var key = field == "bindings"
+                    ? string.Join("|", new[] { "ruleId", "classIri", "propertyIri", "measureId", "stream" }.Select(k => Text(row, k)))
+                    : Text(row, "nativeId");
+                if (string.IsNullOrWhiteSpace(key) || !seen.Add(key)) throw new FormatException("Repeated or missing mapping identity");
+                if (field == "elements")
+                {
+                    if (!row.TryGetProperty("roles", out var rs) || rs.ValueKind != JsonValueKind.Array || rs.GetArrayLength() == 0
+                        || rs.EnumerateArray().Any(r => r.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(r.GetString()))
+                        || rs.EnumerateArray().Select(r => r.GetString()).Distinct(StringComparer.Ordinal).Count() != rs.GetArrayLength())
+                        throw new FormatException("Invalid committed roles");
+                }
+                if (field == "measures" && string.IsNullOrWhiteSpace(Text(row, "propertyIri")))
+                    throw new FormatException("Missing committed property");
+                if (field == "bindings" && new[] { "ruleId", "classIri", "propertyIri", "measureId", "stream" }
+                    .Any(k => string.IsNullOrWhiteSpace(Text(row, k)))) throw new FormatException("Invalid committed binding");
+            }
+        }
+        var parsed = ParseApply(payload.GetRawText());
+        if (!payload.TryGetProperty("applied", out var count) || count.ValueKind != JsonValueKind.Number || !count.TryGetInt32(out var n)
+            || n < 0 || n != parsed.RolesByElement.Count)
+        {
+            throw new FormatException("Invalid mapping batch count");
+        }
+
+        return new MappingBatch(id, parsed, state);
     }
 
     public static MappingApplyResult ParseApply(string json)

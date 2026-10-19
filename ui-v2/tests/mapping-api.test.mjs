@@ -28,6 +28,7 @@ import {
   mergeProfiles,
   optionKind,
   parseDescriptorUpload,
+  pendingAnswerIds,
   postDecision,
   progressSegments,
   proposalItems,
@@ -121,14 +122,24 @@ test('postDecision POSTs one decision; groupIds, roles and comment only when giv
   assert.deepEqual(body(2), { project, questionId: 'Q-2', optionId: 'both', roles: ['ex:A', 'ex:B'], comment: 'ok' });
 });
 
-test('applySession POSTs the project to the session apply route', async () => {
-  reply = [200, { applied: 3, byClass: {} }];
-  const res = await applySession(project, sid);
+test('applySession POSTs only the explicit accepted answer set and stable retry identity', async () => {
+  const intent = { requestId: 'batch-four', revision: 'a'.repeat(24), answerIds: ['A-1', 'A-2', 'A-3', 'A-4'] };
+  reply = [200, { batchId: 'batch-four', payload: { applied: 4 }, delivery: { state: 'queued' } }];
+  const res = await applySession(project, sid, intent);
+  await applySession(project, sid, intent);
   assert.equal(calls[0].url, `${sessionPath}/apply`);
   assert.equal(calls[0].init.method, 'POST');
   assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
-  assert.deepEqual(body(), { project });
-  assert.equal(res.applied, 3);
+  assert.deepEqual(body(), { project, ...intent });
+  assert.deepEqual(body(1), body(), 'a retry preserves request identity');
+  assert.equal(res.payload.applied, 4);
+  assert.equal(res.delivery.state, 'queued', 'server confirmation does not claim CAD success');
+});
+
+test('applySession refuses empty or implicit apply without sending a request', async () => {
+  await assert.rejects(() => applySession(project, sid), err => err.code === 'MAPPING_COMMIT_REQUIRED');
+  await assert.rejects(() => applySession(project, sid, { requestId: 'batch-one', revision: 'a'.repeat(24), answerIds: [] }));
+  assert.equal(calls.length, 0);
 });
 
 test('undoAnswer POSTs the project and the answer id to the session undo route with the CSRF marker (contract §7.2)', async () => {
@@ -172,10 +183,10 @@ test('mapping error codes reach describeError through ApiError', async () => {
   await assert.rejects(() => createSession(project, { platform: 'grasshopper', elements: [] }), err => err.code === 'MAPPING_TOO_MANY_ELEMENTS');
 });
 
-test('the five MAPPING_* codes have EN and RU texts and describeError maps them', async () => {
+test('mapping error codes have EN and RU texts and describeError maps them', async () => {
   const { EN, RU } = await import('../src/i18n/dict/index.js');
   const i18n = await import('../src/i18n/index.js');
-  const codes = ['MAPPING_SESSION_NOT_FOUND', 'MAPPING_QUESTION_NOT_FOUND', 'MAPPING_OPTION_INVALID', 'MAPPING_INPUT_INVALID', 'MAPPING_TOO_MANY_ELEMENTS'];
+  const codes = ['MAPPING_SESSION_NOT_FOUND', 'MAPPING_QUESTION_NOT_FOUND', 'MAPPING_OPTION_INVALID', 'MAPPING_INPUT_INVALID', 'MAPPING_TOO_MANY_ELEMENTS', 'MAPPING_COMMIT_REQUIRED', 'MAPPING_COMMIT_CONFLICT', 'MAPPING_ANSWER_COMMITTED'];
   for (const code of codes) {
     assert.equal(typeof EN[`error.${code}`], 'string', `EN ${code}`);
     assert.equal(typeof RU[`error.${code}`], 'string', `RU ${code}`);
@@ -313,10 +324,13 @@ test('proposal card helpers: title by language, one item view per component, car
   assert.equal(answerUndoable({ answerId: 'A-1', undoable: true }, { appliedAt: '2026-10-18T09:10:00Z' }), false, 'an applied session is never undoable');
   assert.equal(answerUndoable(null, {}), false);
 
-  assert.equal(awaitingApply({ summary: { openQuestions: 0 } }), true);
-  assert.equal(awaitingApply({ summary: { openQuestions: 2 } }), false);
-  assert.equal(awaitingApply({ summary: { openQuestions: 0 }, appliedAt: '2026-10-18T09:10:00Z' }), false);
-  assert.equal(awaitingApply({ summary: {} }), false, 'no count, no claim');
+  assert.equal(answerUndoable({ answerId: 'A-1', undoable: true, committedAt: 'now' }, {}), false);
+  assert.equal(awaitingApply({ summary: { openQuestions: 0 } }), false, 'answer completion never authorizes writes');
+  const partial = { revision: 'a'.repeat(24), pendingAnswerIds: ['A-1', 'A-2', 'A-3', 'A-4'], summary: { openQuestions: 6 } };
+  assert.equal(awaitingApply(partial), true, 'four accepted of ten may be committed');
+  assert.deepEqual(pendingAnswerIds(partial), ['A-1', 'A-2', 'A-3', 'A-4']);
+  assert.equal(awaitingApply({ ...partial, appliedAt: '2026-10-18T09:10:00Z' }), false);
+  assert.equal(awaitingApply({ ...partial, revision: null }), false);
   assert.equal(awaitingApply(null), false);
 });
 
@@ -381,7 +395,7 @@ function panelParts() {
   partsPromise ??= build({
     stdin: {
       contents: [
-        'export { ProposalCard, AnswerCard, ItemRow } from "./src/screens/MappingPanel.jsx";',
+        'export { ProposalCard, AnswerCard, ItemRow, ApplyResult } from "./src/screens/MappingPanel.jsx";',
         'export { renderToStaticMarkup } from "react-dom/server.browser";',
         'export { createElement } from "react";',
         'export { setLang } from "./src/i18n/index.js";'
@@ -532,7 +546,7 @@ test('AnswerCard has its own undo button, disabled with a hint once the session 
 
   const applied = await render('AnswerCard', answerProps({ undoable: false }));
   assert.match(buttonTag(applied, 'Undo decision'), /disabled=""/);
-  assert.match(applied, /The session is applied — undo is not available/);
+  assert.match(applied, /Committed decisions cannot be undone as drafts/);
 
   assert.ok(buttonTag(await render('AnswerCard', answerProps({ undoing: true })), 'Undoing…') !== undefined, 'running label');
   assert.match(buttonTag(await render('AnswerCard', answerProps({ busy: true })), 'Undo decision'), /disabled=""/, 'no undo while another request runs');
@@ -540,9 +554,23 @@ test('AnswerCard has its own undo button, disabled with a hint once the session 
 
   const ru = await render('AnswerCard', answerProps({ undoable: false }), 'ru');
   assert.match(buttonTag(ru, 'Отменить решение'), /disabled=""/);
-  assert.match(ru, /Сессия применена — отмена недоступна/);
+  assert.match(ru, /Записанные решения нельзя отменить как черновики/);
   assert.match(ru, /Panels B · 125 элементов: GlassPanel/);
   assert.ok(buttonTag(await render('AnswerCard', answerProps({ undoing: true }), 'ru'), 'Отмена…') !== undefined);
+});
+
+test('ApplyResult distinguishes server commit from successful or failed CAD delivery', async () => {
+  const result = { answerIds: ['A-1', 'A-2', 'A-3', 'A-4'], payload: { applied: 4, byClass: {} }, delivery: { state: 'queued' } };
+  const props = { result, labelOf: iri => iri };
+  const queued = await render('ApplyResult', props);
+  assert.match(queued, /Confirmed on server — waiting for CAD/);
+  assert.match(queued, /Accepted decisions: 4/);
+  assert.doesNotMatch(queued, /Written to CAD/);
+  const written = await render('ApplyResult', { ...props, result: { ...result, delivery: { state: 'written', written: 4, skipped: 0 } } });
+  assert.match(written, /Written to CAD/);
+  const failed = await render('ApplyResult', { ...props, result: { ...result, delivery: { state: 'failed', written: 0, skipped: 4 } } }, 'ru');
+  assert.match(failed, /Не удалось записать в CAD/);
+  assert.doesNotMatch(failed, /Записано в CAD/);
 });
 
 test('MappingPanel keys card state by questionId / answerId, undoes per answer and offers no start-mapping action', async () => {
@@ -563,7 +591,12 @@ test('MappingPanel keys card state by questionId / answerId, undoes per answer a
   assert.ok(count(source, /setSession\(merged\);/g) >= 2, 'decision and undo both replace the session');
   assert.match(source, /const busy = posting !== null \|\| undoing !== null \|\|/);
   assert.match(source, /\{waitingApply \? \(/);
-  assert.match(source, /t\("All questions are answered\. CONNECTOR applies the mapping in about 10 s; until then a decision can be undone\."\)/);
+  assert.doesNotMatch(source, /applies the mapping in about 10 s/);
+  assert.match(source, /t\("Confirm and write \(\{n\}\)"/);
+  assert.match(source, /disabled=\{busy \|\| !waitingApply\}/);
+  assert.match(source, /applySession\(project, sessionId, commitRef\.current\)/);
+  assert.match(source, /CAD delivery failed/);
+  assert.doesNotMatch(source, /setProfiles\(\(items\) => mergeProfiles\(items, res\.profiles\)\)/);
   assert.match(source, /t\("Decisions made"\)/);
   // owner 2026-10-18: the Web UI shows only existing sessions; the descriptor import stays for the Revit act
   for (const text of [source, api]) assert.doesNotMatch(text, /start_mapping|startMapping|start mapping|startSession/i);

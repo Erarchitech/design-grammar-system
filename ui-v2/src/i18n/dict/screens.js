@@ -219,15 +219,24 @@ export const ru = {
   Details: "Подробнее",
   "Undo decision": "Отменить решение",
   "Undoing…": "Отмена…",
-  "The session is applied — undo is not available": "Сессия применена — отмена недоступна",
+  "Committed decisions cannot be undone as drafts": "Записанные решения нельзя отменить как черновики",
+  "Confirm and write ({n})": "Подтвердить и записать ({n})",
+  "Confirming…": "Подтверждение…",
+  "Confirmed on server — waiting for CAD": "Подтверждено на сервере — ожидается запись в CAD",
+  "Written to CAD": "Записано в CAD",
+  "CAD delivery failed": "Не удалось записать в CAD",
+  "Accepted decisions: {n}": "Принятых решений: {n}",
+  "Accepted answers are drafts. Confirm once to write only these decisions; unanswered proposals remain available.":
+    "Принятые ответы — черновики. Подтвердите один раз, чтобы записать только эти решения; остальные предложения останутся доступны.",
   "Could not undo the decision.": "Не удалось отменить решение.",
   "Decision undone": "Решение отменено",
-  "All questions are answered. CONNECTOR applies the mapping in about 10 s; until then a decision can be undone.":
-    "Все вопросы отвечены. CONNECTOR применит меппинг примерно через 10 с; до этого решение можно отменить.",
   "{n} component": { one: "{n} компонент", few: "{n} компонента", many: "{n} компонентов", other: "{n} компонента" },
   "{n} el.": { one: "{n} эл.", few: "{n} эл.", many: "{n} эл.", other: "{n} эл." },
   "{n} val.": { one: "{n} знач.", few: "{n} знач.", many: "{n} знач.", other: "{n} знач." },
-  // The two undo error codes (contract §7.2) live with the mapping panel that shows them.
+  // Mapping commit and undo errors live with the panel that shows them.
+  "error.MAPPING_COMMIT_REQUIRED": "Перед подтверждением выберите принятые ответы-черновики.",
+  "error.MAPPING_COMMIT_CONFLICT": "Сессия изменилась. Обновите её и проверьте решения перед подтверждением.",
+  "error.MAPPING_ANSWER_COMMITTED": "Решение уже подтверждено; отменить его как черновик нельзя.",
   "error.MAPPING_SESSION_APPLIED": "Сессия уже применена; её решения больше нельзя отменить.",
   "error.MAPPING_ANSWER_NOT_FOUND": "Это решение уже отменено или не найдено. Обновите сессию.",
   "Accept proposed classes": "Принять предложенные классы",
@@ -287,11 +296,8 @@ export const ru = {
   "Confirmations / rejections": "Подтверждения / опровержения",
   Support: "Поддержка",
   Created: "Создан",
-  "Applying…": "Применение…",
-  "Apply mapping": "Применить меппинг",
   "Groups without an answer are skipped.": "Группы без ответа пропускаются.",
   "Could not apply the mapping.": "Не удалось применить меппинг.",
-  "Skipped: {n}": "Пропущено: {n}",
   "{n} element": { one: "{n} элемент", few: "{n} элемента", many: "{n} элементов" },
   "{n} element applied": { one: "Применён {n} элемент", few: "Применено {n} элемента", many: "Применено {n} элементов" },
   "{n} decision recorded": { one: "Записано {n} решение", few: "Записано {n} решения", many: "Записано {n} решений" },
@@ -303,6 +309,9 @@ export const ru = {
 };
 
 export const en = {
+  "error.MAPPING_COMMIT_REQUIRED": "Select accepted draft answers before confirming.",
+  "error.MAPPING_COMMIT_CONFLICT": "The session changed. Refresh it and review the decisions before confirming.",
+  "error.MAPPING_ANSWER_COMMITTED": "This decision is already committed and cannot be undone as a draft.",
   "error.MAPPING_SESSION_APPLIED": "This session is already applied; its decisions can no longer be undone.",
   "error.MAPPING_ANSWER_NOT_FOUND": "This decision was already undone or is unknown. Refresh the session.",
   "{n} component": { one: "{n} component", other: "{n} components" },

@@ -168,6 +168,9 @@ public sealed class ObjectStateComponent : GH_Component
         if (input is null)
             return null;
 
+        if (GhCastingHelpers.Unwrap<DG.Core.Mapping.MappingObjectReference>(input) is { } mapped)
+            return mapped.NativeId;
+
         // OntologyClass is a class, not a per-instance identity — no ObjectRef from it.
         if (GhCastingHelpers.Unwrap<DG.Core.Models.OntologyClass>(input) is not null)
             return null;

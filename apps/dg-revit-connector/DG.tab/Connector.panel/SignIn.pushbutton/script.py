@@ -32,7 +32,7 @@ def extension_dir():
     pushbutton = os.path.dirname(here)
     panel = os.path.dirname(pushbutton)
     tab = os.path.dirname(panel)
-    return os.path.dirname(tab)
+    return tab
 
 
 def ensure_lib():
@@ -103,9 +103,9 @@ def sign_in(window, store, client):
     store.set("token", result.get("token"))
     store.set("user", user)
     store.set("project", signed_in_project)
-    store.set("message", "Signed in to DG as {}".format(user or "the connector"))
-    forms.alert("Signed in to DG as {} (project {}).".format(
-        user or "the connector", signed_in_project), title="DG")
+    store.set("message", u"Signed in to DG as {}".format(user or u"the connector"))
+    forms.alert(u"Signed in to DG as {} (project {}).".format(
+        user or u"the connector", signed_in_project), title="DG")
     return True
 
 

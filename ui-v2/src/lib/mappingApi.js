@@ -60,9 +60,14 @@ export function undoAnswer(project, sessionId, answerId) {
   return apiFetch(mappingUrl(`${sessionPath(sessionId)}/undo`), { method: "POST", body: { project, answerId } });
 }
 
-// → MappingApplyResult { applied, byClass, elements, skipped }
-export function applySession(project, sessionId) {
-  return apiFetch(mappingUrl(`${sessionPath(sessionId)}/apply`), { method: "POST", body: { project } });
+// Explicit immutable batch, never an implicit whole-session apply. The caller retains requestId for retries.
+export function applySession(project, sessionId, { requestId, revision, answerIds } = {}) {
+  if (!requestId || !revision || !Array.isArray(answerIds) || answerIds.length === 0) {
+    return Promise.reject(Object.assign(new Error("MAPPING_COMMIT_REQUIRED"), { code: "MAPPING_COMMIT_REQUIRED" }));
+  }
+  return apiFetch(mappingUrl(`${sessionPath(sessionId)}/apply`), {
+    method: "POST", body: { project, requestId, revision, answerIds: [...answerIds] }
+  });
 }
 
 // → { profiles: [MappingProfile] }
@@ -299,14 +304,18 @@ export function sessionAnswers(session) {
   return (Array.isArray(session?.answers) ? session.answers : []).filter((answer) => answer && typeof answer.answerId === "string" && answer.answerId);
 }
 
-// `undoable` comes from the server (the session is not applied); an applied session is never undoable.
+// Committed answers and historical applied sessions are read-only.
 export function answerUndoable(answer, session) {
-  return Boolean(answer) && answer.undoable !== false && !session?.appliedAt;
+  return Boolean(answer) && answer.undoable !== false && !answer.committedAt && !session?.appliedAt;
 }
 
-// Every question answered and the session not applied yet: CONNECTOR applies it about 10 s after the last answer.
+export function pendingAnswerIds(session) {
+  if (session?.appliedAt || !session?.revision) return [];
+  return [...new Set((Array.isArray(session?.pendingAnswerIds) ? session.pendingAnswerIds : [])
+    .filter((id) => typeof id === "string" && id))];
+}
+
+// Accepted drafts await one explicit confirmation, independently of remaining questions.
 export function awaitingApply(session) {
-  const summary = session?.summary;
-  if (!session || !summary || typeof summary !== "object" || session.appliedAt) return false;
-  return Number(summary.openQuestions) === 0;
+  return pendingAnswerIds(session).length > 0;
 }

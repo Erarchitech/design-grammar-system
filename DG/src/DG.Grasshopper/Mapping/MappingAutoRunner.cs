@@ -29,8 +29,8 @@ internal sealed class MappingOutputs
 /// Automatic mapping owned by CONNECTOR (Phase 1303, owner amendment 2026-10-18): once the
 /// account is signed in, every settled change of the canvas is read (no mapping component,
 /// no wiring), sent to DG as a mapping session when its content changed, coloured in Rhino by
-/// mapping state, followed while the questions are answered in the DG Web UI, and applied
-/// when no question is left. Geometry is read on Rhino's UI thread; HTTP runs in the background.
+/// mapping state, followed while draft answers are reviewed, and delivered only after explicit
+/// batch confirmation. Geometry is read on Rhino's UI thread; HTTP runs in the background.
 /// The connector session goes only into the Authorization header.
 /// </summary>
 internal sealed class MappingAutoRunner : IDisposable
@@ -38,8 +38,8 @@ internal sealed class MappingAutoRunner : IDisposable
     private const int DebounceMs = 1500;
     private const int PollMs = 3000;
 
-    // Plan 1303-10: after the last answer CONNECTOR waits before apply, so that answer can still be undone.
-    private static readonly TimeSpan ApplyGrace = TimeSpan.FromSeconds(10);
+    // Process-lifetime delivery journal: a receipt retry or sign-in must never repeat canvas writes.
+    private static readonly Dictionary<(GH_Document Document, string Session, string Batch), MappingDeliveryReceipt?> Deliveries = new();
 
     private readonly GH_Component _owner;
     private readonly string _dataServiceUrl;
@@ -61,8 +61,8 @@ internal sealed class MappingAutoRunner : IDisposable
     private CanvasMappingRead? _read;
     private MappingSessionState? _session;
     private MappingApplyResult? _applied;
-    private bool _placed;
-    private DateTime? _allAnsweredAt;
+    private MappingBatchPlacer _placer = new();
+    private readonly HashSet<string> _deliveredBatchIds = new(StringComparer.Ordinal);
     private string? _placement;
     private string _status = "Mapping: sign in to map automatically";
     private volatile MappingOutputs _outputs = new() { Summary = "Mapping: sign in to map automatically" };
@@ -94,6 +94,7 @@ internal sealed class MappingAutoRunner : IDisposable
         }
 
         _postedFingerprint = null;
+        _session = null;
         ScheduleScan();
         return (true, "Mapping: reading the canvas");
     }
@@ -129,6 +130,10 @@ internal sealed class MappingAutoRunner : IDisposable
         if (changed)
         {
             _postedFingerprint = null;
+            _session = null;
+            _read = null;
+            _applied = null;
+            _tags.Clear();
             ScheduleScan();
         }
     }
@@ -165,7 +170,6 @@ internal sealed class MappingAutoRunner : IDisposable
         _read = null;
         _session = null;
         _applied = null;
-        _allAnsweredAt = null;
         _tags.Clear();
         _status = reason;
         _outputs = new MappingOutputs { Summary = reason };
@@ -213,7 +217,7 @@ internal sealed class MappingAutoRunner : IDisposable
         CanvasMappingRead read;
         try
         {
-            read = MappingCanvasReader.Read(doc);
+            read = MappingCanvasReader.Read(doc, _read);
         }
         catch (Exception ex)
         {
@@ -227,13 +231,14 @@ internal sealed class MappingAutoRunner : IDisposable
             return;
         }
 
-        var fingerprint = read.Snapshot.Fingerprint();
+        var fingerprint = read.SourceSignature;
         if (fingerprint == _postedFingerprint)
         {
             return;
         }
 
         _postedFingerprint = fingerprint;
+        _session = null; // Invalidate delivery from the previous source state while the new session is created.
         var token = _token;
         var project = _project;
         var json = read.Snapshot.ToRequestJson(project, $"{read.DocumentKey} · {DateTime.Now:HH:mm:ss}");
@@ -241,13 +246,15 @@ internal sealed class MappingAutoRunner : IDisposable
         _ = Task.Run(async () =>
         {
             var created = await _client.CreateAsync(_dataServiceUrl, token, json).ConfigureAwait(false);
-            RhinoApp.InvokeOnUiThread(new Action(() => OnCreated(read, fingerprint, created)));
+            RhinoApp.InvokeOnUiThread(new Action(() => OnCreated(doc, token, project, read, fingerprint, created)));
         });
     }
 
-    private void OnCreated(CanvasMappingRead read, string fingerprint, MappingCallResult<MappingSessionState> created)
+    private void OnCreated(GH_Document document, string token, string project, CanvasMappingRead read,
+        string fingerprint, MappingCallResult<MappingSessionState> created)
     {
-        if (!_enabled || fingerprint != _postedFingerprint)
+        if (!_enabled || _token != token || _project != project || !ReferenceEquals(_doc, document)
+            || fingerprint != _postedFingerprint)
         {
             return; // superseded by a newer canvas state or switched off
         }
@@ -259,19 +266,14 @@ internal sealed class MappingAutoRunner : IDisposable
         }
 
         _read = read;
+        _placer = new MappingBatchPlacer();
+        _deliveredBatchIds.Clear();
+        _placement = null;
         _session = created.Value;
         _applied = null;
-        _allAnsweredAt = null;
         UpdateConduit();
         BuildOutputs(expire: true);
-        if (_session!.OpenQuestions == 0)
-        {
-            _ = ApplyAsync(_session.SessionId);
-        }
-        else
-        {
-            StartPolling();
-        }
+        StartPolling(); // An empty question list is not permission to commit or write.
     }
 
     private void StartPolling()
@@ -307,43 +309,31 @@ internal sealed class MappingAutoRunner : IDisposable
                 return;
             }
 
-            var fresh = await _client.GetAsync(_dataServiceUrl, token, _project, current.SessionId).ConfigureAwait(false);
+            var project = _project;
+            var document = _doc;
+            var fresh = await _client.GetAsync(_dataServiceUrl, token, project, current.SessionId).ConfigureAwait(false);
             if (!fresh.Ok)
             {
                 return;
             }
 
             var state = fresh.Value!;
-            if (state.Revision != current.Revision || state.OpenQuestions != current.OpenQuestions)
+            RhinoApp.InvokeOnUiThread(new Action(() =>
             {
-                RhinoApp.InvokeOnUiThread(new Action(() =>
+                if (!_enabled || _token != token || _project != project || !ReferenceEquals(_doc, document)
+                    || _session?.SessionId != state.SessionId)
                 {
-                    if (_session?.SessionId != state.SessionId)
-                    {
-                        return;
-                    }
-
-                    _session = state;
-                    UpdateConduit();
-                    BuildOutputs(expire: false);
-                }));
-            }
-
-            if (state.OpenQuestions > 0)
-            {
-                _allAnsweredAt = null;
-            }
-            else
-            {
-                // Keep polling during the grace period: an undo brings questions back.
-                _allAnsweredAt ??= DateTime.UtcNow;
-                if (DateTime.UtcNow - _allAnsweredAt.Value >= ApplyGrace)
-                {
-                    StopPolling();
-                    _allAnsweredAt = null;
-                    await ApplyAsync(state.SessionId).ConfigureAwait(false);
+                    return;
                 }
-            }
+
+                _session = state;
+                UpdateConduit();
+                BuildOutputs(expire: false);
+                if (state.AppliedAt is null)
+                {
+                    DeliverNextBatch(state, token, project);
+                }
+            }));
         }
         catch
         {
@@ -355,58 +345,106 @@ internal sealed class MappingAutoRunner : IDisposable
         }
     }
 
-    private async Task ApplyAsync(string sessionId)
-    {
-        var token = _token;
-        if (string.IsNullOrEmpty(token))
-        {
-            return;
-        }
-
-        var applied = await _client.ApplyAsync(_dataServiceUrl, token, _project, sessionId).ConfigureAwait(false);
-        RhinoApp.InvokeOnUiThread(new Action(() =>
-        {
-            if (_session?.SessionId != sessionId || !applied.Ok)
-            {
-                return;
-            }
-
-            _applied = applied.Value;
-            _tags.Clear();
-            BuildOutputs(expire: true);
-            TryPlace();
-        }));
-    }
-
-    /// <summary>
-    /// D-38: on a definition without DG states, place and wire the DG components once the
-    /// mapping is agreed. Runs once per document; a definition that already has OBJECT STATE /
-    /// PROPERTY STATE / VALIDATOR is never changed.
-    /// </summary>
-    private void TryPlace()
+    /// <summary>Deliver only a committed batch. Every canvas mutation is on the pinned document's UI thread.</summary>
+    private void DeliverNextBatch(MappingSessionState state, string token, string project)
     {
         var doc = _doc;
         var read = _read;
-        var applied = _applied;
-        if (_placed || doc is null || read is null || applied is null || read.HasDgWiring || MappingPlacer.HasStates(doc))
+        var batch = state.Batches.FirstOrDefault(b => b.DeliveryState == "queued");
+        if (doc is null || read is null || batch is null)
         {
             return;
         }
 
-        _placed = true;
-        var plan = MappingPlacementPlan.From(applied);
+        var key = (doc, state.SessionId, batch.BatchId);
+        if (Deliveries.TryGetValue(key, out var receipt))
+        {
+            if (receipt is not null)
+            {
+                // Only HTTP is repeated; no placement or data writes on receipt failure.
+                _ = _client.AcknowledgeAsync(_dataServiceUrl, token, project, state.SessionId, batch.BatchId, receipt);
+            }
+            else
+            {
+                _placement = "batch delivery is uncertain; it will not be replayed automatically";
+            }
+
+            return;
+        }
+
+        if (state.Batches.TakeWhile(b => b.BatchId != batch.BatchId).Any(b => b.DeliveryState == "failed"
+            || !_deliveredBatchIds.Contains(b.BatchId)))
+        {
+            _placement = "earlier batch delivery is failed or unknown in this connector; automatic continuation disabled";
+            BuildOutputs(expire: false);
+            return;
+        }
+
+        Deliveries[key] = null; // Reserve before scheduling; sign-out/reload cannot replay the work.
+        var applied = batch.Payload;
+        MappingApplyResult cumulative;
+        try
+        {
+            cumulative = MappingSelection.Append(_applied ?? new MappingApplyResult(), applied);
+            _ = MappingSelection.Classes(applied, read.Snapshot);
+            if (!_placer.IsIntact(doc)) throw new InvalidOperationException("Owned mapping components changed");
+        }
+        catch (Exception ex)
+        {
+            _placement = $"batch not written: {ex.GetType().Name}; review the source and committed history";
+            Deliveries[key] = new MappingDeliveryReceipt("failed", 0, applied.RolesByElement.Count);
+            BuildOutputs(expire: false);
+            return;
+        }
+
         doc.ScheduleSolution(5, d =>
         {
+            if (!_enabled || _token != token || _project != project || !ReferenceEquals(_doc, d)
+                || _session?.SessionId != state.SessionId)
+            {
+                Deliveries[key] = new MappingDeliveryReceipt("failed", 0, applied.RolesByElement.Count);
+                return;
+            }
+
+            var mutationStarted = false;
             try
             {
-                _placement = MappingPlacer.Place(d, _owner, read, plan);
+                // Ignore our own added wiring when rereading the original sources.
+                var freshRead = MappingCanvasReader.Read(d, read);
+                if (freshRead.SourceSignature != read.SourceSignature)
+                    throw new InvalidOperationException("The source canvas changed");
+                mutationStarted = true;
+                _placement = _placer.Place(d, _owner, freshRead, applied, cumulative);
+                // Component insertion is not delivery success: wait for this solution's outputs.
+                GH_Document.SolutionEndEventHandler? completed = null;
+                var placer = _placer;
+                completed = (_, _) =>
+                {
+                    d.SolutionEnd -= completed;
+                    if (placer.VerifyLastDelivery())
+                    {
+                        if (_session?.SessionId == state.SessionId && ReferenceEquals(_doc, d))
+                        {
+                            _applied = cumulative;
+                            _deliveredBatchIds.Add(batch.BatchId);
+                        }
+                        Deliveries[key] = new MappingDeliveryReceipt("written", applied.RolesByElement.Count, 0);
+                    }
+                    else
+                    {
+                        _placement = "placed components did not produce the committed selection; delivery uncertain, replay disabled";
+                    }
+                    BuildOutputs(expire: true);
+                };
+                d.SolutionEnd += completed;
             }
             catch (Exception ex)
             {
-                _placement = $"placement failed: {ex.GetType().Name}: {ex.Message}";
+                // Once placement starts, cleanup is not proof of rollback. Never automatically replay it.
+                if (!mutationStarted) Deliveries[key] = new MappingDeliveryReceipt("failed", 0, applied.RolesByElement.Count);
+                _placement = $"placement unconfirmed: {ex.GetType().Name}; automatic replay disabled";
+                BuildOutputs(expire: false);
             }
-
-            _owner.ExpireSolution(false);
         });
     }
 
@@ -452,9 +490,11 @@ internal sealed class MappingAutoRunner : IDisposable
             .Where(k => s.Counts.TryGetValue(k, out var n) && n > 0)
             .Select(k => $"{k} {s.Counts[k]}");
         lines.Add($"Mapping {read.DocumentKey}: {s.Total} elements ({string.Join(", ", parts)}), {s.Measures.Count} calculation outputs, {s.Parameters.Count} sliders, {s.OpenQuestions} open question(s)" + (s.LlmStatus is null ? string.Empty : $", LLM {s.LlmStatus}"));
-        lines.Add(s.OpenQuestions > 0
-            ? $"Answer in DG Web UI → Projects → {_project} → Mapping, or in DeGram → Модели → Mapping (session {s.SessionId})"
-            : _applied is null ? $"Session {s.SessionId}: all answered, applying in about {ApplyGrace.TotalSeconds:0} s (an answer can still be undone)" : $"Session {s.SessionId}: applied");
+        lines.Add($"Review drafts and explicitly confirm in DG Web UI → Projects → {_project} → Mapping (session {s.SessionId}); answers alone never write the canvas");
+        foreach (var batch in s.Batches)
+        {
+            lines.Add($"Batch {batch.BatchId}: {batch.DeliveryState}");
+        }
         if (read.Streams.Count > 0)
         {
             lines.Add("Streams: " + string.Join(", ", read.Streams));

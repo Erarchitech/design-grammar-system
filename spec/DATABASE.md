@@ -589,14 +589,17 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 (:MappingSession {graph: "Computgraph", project: "1", sessionId: "ms-<12 hex>", platform: "grasshopper", label: "act1-cold-start", engineVersion: "dgmap-0.1", createdAt: "...", createdBy: "owner", updatedAt: "...", summaryJson: "{...}", contextJson: "{...}", descriptorsZ: "...", resultZ: "...", appliedAt?: "...", appliedBy?: "...", appliedCount?: 376})
 ```
 - Merge key: `(sessionId, project)`
-- `contextJson` — authored vocabulary (class synonyms, IFC hints) and populations used by the engine; `resultZ` — questions, groups, element roles and states, human decisions of this session
+- `contextJson` — authored vocabulary (class synonyms, IFC hints) and populations used by the engine; `resultZ` — questions, groups, element roles and states, human draft decisions of this session
+- Explicit confirmation (owner amendment 2026-10-19): optional `batchesJson` is the canonical JSON array of `{batchId, revision, answerIds, committedAt, payload, delivery}`. Selection/payload are immutable; delivery alone transitions from `queued` to `written` or `failed`. `written`/`skipped` receipt counts refer to `payload.applied` (element count), not the number of answers, measures or sliders. A server commit is not evidence of a physical CAD transaction.
+- `lastCommittedAt` selects the latest partially committed population reference; only immutable batch elements, not remaining draft/automatic results, supply that reference. Historical `appliedAt`/`appliedBy`/`appliedCount` retain whole-session semantics and are never replayed.
+- `commitLock` is an incrementing integer used to acquire Neo4j's session write lock within one `execute_write` transaction for answer/undo/commit/receipt/refinement. Public `revision` is computed, not an independently persisted authority; `pendingAnswerIds` is derived from accepted uncommitted answers. These fields add no graph labels or relationships.
 
 **MappingDecision** — one human answer to one question for one group.
 ```
 (:MappingDecision {graph: "Computgraph", project: "1", decisionId: "D-<12 hex>", sessionId: "ms-...", questionId: "Q-...", groupId: "G-...", optionId: "class:ex:GroundFloorUnit", rolesJson: "[...]", memberCount: 25, memberIdsJson|memberIdsZ, questionText: "...", evidenceJson|evidenceZ, consequencesJson|consequencesZ, decidedBy: "owner", decidedAt: "...", profileId: "P-...", answerId?: "A-<12 hex>", answerJson|answerZ?, undoneAt?: "...", undoneBy?: "..."})
 ```
-- Merge key: `(decisionId, project)`; never updated after creation, except `undoneAt` / `undoneBy` when the answer is taken back (plan 1303-10)
-- `answerId` groups the decisions of one answer (a batch answer covers several groups); `answerJson` holds the answer's title, rows (`items`) and its profile effects (`{profileId, created, confirmations, rejections, stateBefore}`), which an undo reverses. Decisions written before plan 1303-10 have neither and cannot be undone
+- Merge key: `(decisionId, project)`; draft undo adds `undoneAt` / `undoneBy`. Explicit confirmation adds `committedAt` / `committedBy`; committed answers cannot be undone through the draft endpoint.
+- `answerId` groups the decisions of one answer (a batch answer covers several groups); `answerJson` holds the title, rows (`items`) and `draftProfiles`. Draft answers do not activate learned profiles. Only selected accepted decisions promote their draft profiles at explicit commit. Legacy `effects` describe reversible pre-amendment profile effects; decisions without an answer snapshot cannot be undone.
 
 **MappingProfile** — a reusable selector learned from a decision (`source: "learned"`) or authored by hand (`source: "authored"`), mapping matching elements to one or more class roles.
 ```
@@ -604,7 +607,7 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 ```
 - Merge key: `(profileId, project)`; `profileId` is a deterministic hash of platform, normalised selector, roles and excluded roles
 - Confidence (computed, not stored) = `(confirmations + 4) / (confirmations + rejections + 5)`; a profile applies automatically at ≥ 0.8
-- `state`: `active` profiles map; `retired` ones stay in the graph and do not map (an undone answer retires the profiles it created; the same answer given again switches its profile back on). `GET /mapping/profiles` lists active profiles only
+- `state`: `active` profiles map; `retired` ones stay in the graph and do not map. Draft answers and batch confirmation never reactivate retired profiles, including the cold-start demo profiles. Legacy undo may retire profiles it created. `GET /mapping/profiles` lists active profiles only.
 
 ## Relationships
 

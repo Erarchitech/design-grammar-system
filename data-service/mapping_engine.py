@@ -2207,10 +2207,11 @@ def decide(
                 for c in g["candidates"]:
                     if local_name(c["classIri"]) == cls:
                         accepts = [x["ruleId"] for x in c["conflicts"]]
-        unknown = [r for r in chosen if local_name(r) not in iri_of]
+        known_iris = {c.iri for c in classes}
+        unknown = [r for r in chosen if r not in known_iris]
         if unknown:
             raise MappingInputError("MAPPING_INPUT_INVALID", f"unknown classes {unknown}")
-        chosen = sorted(iri_of[local_name(r)] for r in chosen)
+        chosen = sorted(set(chosen))
         member_feats = [rows[nid]["feats"] for nid in members]
         others = [(rows[nid]["feats"], _label_set(rows[nid]["el"], groups)) for nid in sorted(rows) if rows[nid]["el"]["groupId"] != gid]
         platform = member_feats[0].get("platform", platform_default)

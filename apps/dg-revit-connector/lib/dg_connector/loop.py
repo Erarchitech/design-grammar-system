@@ -8,9 +8,9 @@ Revit dependency, so the whole loop is testable offline.
 
 ``next_action(session, memo, now)`` returns::
 
-    {"action": "recolour" | "wait-grace" | "apply" | "done" | "idle",
+    {"action": "recolour" | "apply" | "done" | "idle",
      "digest": "<sha1 of the element states>",
-     "secondsLeft": <float, only for wait-grace>}
+     "batch": <explicit queued batch, only for apply>}
 
 Priority (highest first):
 
@@ -20,36 +20,29 @@ Priority (highest first):
     The digest of ``(nativeId, state, sorted role IRIs)`` differs from
     ``memo["lastDigest"]`` - element states changed, paint the view. The
     caller recolours and then stores ``digest`` in ``memo["lastDigest"]``.
-``wait-grace``
-    ``summary.openQuestions == 0``, the session is not applied, and less than
-    :data:`GRACE_SECONDS` have passed since the newest ``answers[].decidedAt``
-    (or since ``createdAt`` when there is no answer yet): the last answer can
-    still be undone, so apply waits. ``secondsLeft`` is what remains.
 ``apply``
-    No open question, not applied, grace elapsed: apply now.
+    An explicit batch has queued delivery, even if other questions remain.
 ``idle``
-    Anything else: open questions remain, or the session is not usable yet.
+    No committed batch awaits delivery. Answers and elapsed time never trigger
+    a write; draft answers can still be undone.
 
 ``states_by_uid`` and ``roles_by_uid`` give the Revit writer the two lookups it
 needs (``{nativeId: state}`` and ``{nativeId: [class label]}``); when a role
 carries no label the local name of its ``classIri`` is used.
 
-Standard library only; Python 3.4 syntax (IronPython 3.4 under Revit).
+Standard library only; Python 2.7 / 3 syntax (pyRevit's IronPython 2.7 under Revit).
 """
+from __future__ import unicode_literals
 
 import datetime
 import hashlib
 import re
 
-#: Seconds the connector waits after the newest answer before it applies, so
-#: the answer can still be undone (D-40 analogue).
-GRACE_SECONDS = 10
-
 #: Seconds between two polls of the open session.
 POLL_SECONDS = 3
 
 #: Actions :func:`next_action` can return.
-ACTIONS = ("recolour", "wait-grace", "apply", "done", "idle")
+ACTIONS = ("recolour", "apply", "done", "idle")
 
 _EPOCH_ORDINAL = (datetime.date(1970, 1, 1)).toordinal()
 
@@ -62,7 +55,21 @@ _ISO_RE = re.compile(
 # --- small helpers ------------------------------------------------------------
 
 def _text(value):
-    return "" if value is None else str(value)
+    """Keep IronPython 2 Unicode class labels intact for state digests."""
+    if value is None:
+        return u""
+    try:
+        if isinstance(value, unicode):
+            return value
+        if isinstance(value, str):
+            return value.decode("utf-8", "replace")
+    except NameError:
+        if isinstance(value, str):
+            return value
+    try:
+        return unicode(value)
+    except NameError:
+        return str(value)
 
 
 def _datetime_to_epoch(moment):
@@ -168,41 +175,13 @@ def session_digest(session):
     return digest.hexdigest()
 
 
-def _open_questions(session):
-    """``summary.openQuestions`` as an int, or None when it is not reported."""
-    if not isinstance(session, dict):
-        return None
-    summary = session.get("summary")
-    if not isinstance(summary, dict):
-        return None
-    count = summary.get("openQuestions")
-    if isinstance(count, bool) or not isinstance(count, int):
-        return None
-    return count
-
-
-def _grace_reference(session):
-    """Epoch seconds of the newest answer, else of the session creation, or None."""
-    newest = None
-    answers = session.get("answers")
-    for answer in answers if isinstance(answers, list) else []:
-        if not isinstance(answer, dict):
-            continue
-        moment = to_epoch(answer.get("decidedAt"))
-        if moment is not None and (newest is None or moment > newest):
-            newest = moment
-    if newest is not None:
-        return newest
-    return to_epoch(session.get("createdAt"))
-
-
 def next_action(session, memo, now=None):
     """What the Revit apply loop does next with ``session`` (see module docstring).
 
     ``memo`` is the caller's dict kept between polls; ``memo["lastDigest"]`` is
     the digest of the states the view was last painted with. On ``recolour``
-    the caller stores the returned ``digest`` there. ``now`` is a datetime
-    (naive means UTC) or an epoch number; it defaults to the current UTC time.
+    the caller stores the returned ``digest`` there. ``now`` is retained for
+    compatibility with callers; time does not authorize delivery.
     """
     digest = session_digest(session)
     result = {"action": "idle", "digest": digest}
@@ -219,23 +198,12 @@ def next_action(session, memo, now=None):
         result["action"] = "recolour"
         return result
 
-    if _open_questions(session) != 0:
-        return result  # answers are still missing (or the summary is unusable)
-
-    reference = _grace_reference(session)
-    moment = to_epoch(now) if now is not None else _datetime_to_epoch(datetime.datetime.utcnow())
-    if reference is not None and moment is not None:
-        elapsed = moment - reference
-        if elapsed < GRACE_SECONDS:
-            seconds_left = GRACE_SECONDS - elapsed
-            if seconds_left > GRACE_SECONDS:  # decidedAt in the future: clock skew
-                seconds_left = float(GRACE_SECONDS)
-            if seconds_left < 0:
-                seconds_left = 0.0
-            result["action"] = "wait-grace"
-            result["secondsLeft"] = round(seconds_left, 3)
-            return result
-    result["action"] = "apply"
+    # Even a fully answered session is a draft until the owner's explicit commit.
+    for batch in session.get("batches") or []:
+        if isinstance(batch, dict) and (batch.get("delivery") or {}).get("state") == "queued":
+            result["action"] = "apply"
+            result["batch"] = batch
+            break
     return result
 
 

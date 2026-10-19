@@ -3,7 +3,7 @@
 
 The connector behaves like CONNECTOR in Grasshopper: it signs in, creates one
 mapping session on command, polls it, paints element states into the session
-view, and applies the session ten seconds after the newest answer.
+view, and delivers only explicitly committed, immutable batches.
 
 The hard rule of this module is *where* Revit is written:
 
@@ -42,10 +42,12 @@ Commands (the bodies of the four Routes and the four ribbon buttons):
 ``clear(uiapp)``
     Remove the connector's graphic overrides from the session view.
 
-Python 3.4 syntax (IronPython 3.4 under Revit).
+Python 2.7 / 3 syntax (pyRevit's IronPython 2.7 under Revit).
 """
+from __future__ import unicode_literals
 
 import hashlib
+import json
 import logging
 import os
 import threading
@@ -117,7 +119,21 @@ def _store():
 
 
 def _text(value):
-    return "" if value is None else str(value)
+    """Keep Cyrillic document/project labels Unicode in IronPython 2."""
+    if value is None:
+        return u""
+    try:
+        if isinstance(value, unicode):
+            return value
+        if isinstance(value, str):
+            return value.decode("utf-8", "replace")
+    except NameError:
+        if isinstance(value, str):
+            return value
+    try:
+        return unicode(value)
+    except NameError:
+        return str(value)
 
 
 def _plural(count, word):
@@ -219,8 +235,8 @@ def _raise_event():
     if not _EXTERNAL_EVENT:
         return False
     try:
-        _EXTERNAL_EVENT[0].Raise()
-        return True
+        status = _EXTERNAL_EVENT[0].Raise()
+        return status is None or _text(status) in ("Accepted", "Pending")
     except Exception as error:
         logger.warning("DG: raising the connector ExternalEvent failed: %s", _text(error))
         return False
@@ -234,6 +250,7 @@ def _session_identity(store):
         "creationGuid": _text(store.get("creationGuid")),
         "pathName": _text(store.get("documentPath")),
         "viewId": _text(store.get("viewId")),
+        "authority": _token_key(store.get("token")),
     }
 
 
@@ -243,7 +260,7 @@ def _queue_colour_job(store, session, reason):
     if not states:
         return 0
     job = _session_identity(store)
-    job.update({"kind": "colours", "reason": reason, "states": states})
+    job.update({"kind": "colours", "reason": reason, "states": states, "draftPreview": True})
     _queue_job(job)
     return 1
 
@@ -281,7 +298,7 @@ def poll_step(store=None, client=None, now=None):
     and ``now`` (a datetime, naive = UTC, or epoch seconds).
 
     Outcome ``{"action", "queued", ...}``; action is ``recolour``, ``apply``,
-    ``done``, ``wait-grace``, ``idle`` (see :func:`dg_connector.loop.next_action`),
+    ``acknowledge``, ``done``, ``idle`` (see :func:`dg_connector.loop.next_action`),
     ``stop`` (DG rejected the token: polling waits for a new sign-in) or
     ``error`` (a DG call failed; the next poll tries again).
     """
@@ -343,26 +360,71 @@ def _poll_failure(store, error, token):
     return {"action": "error", "queued": 0, "message": message}
 
 
+def _delivery_slot(store):
+    # Process lifetime, not sign-in lifetime: re-authentication must not replay a CAD write.
+    return "DG.RevitConnector.Deliveries." + _text(store.get("sessionId"))
+
+
+def _deliveries(store):
+    raw = _read_slot(_delivery_slot(store)) or store.get("batchDeliveries") or "{}"
+    deliveries = json.loads(raw)
+    if not isinstance(deliveries, dict):
+        raise ValueError("invalid local batch journal; delivery cannot be replayed safely")
+    return deliveries
+
+
+def _remember_delivery(store, batch_id, delivery):
+    with _LOCK:
+        deliveries = _deliveries(store)
+        deliveries[batch_id] = delivery
+        raw = json.dumps(deliveries, separators=(",", ":"))
+        _write_slot(_delivery_slot(store), raw)
+        store.set("batchDeliveries", raw)
+
+
 def _apply(store, client, session, session_id, url, project, token):
-    """POST apply, read the session again, queue colours + parameters, stop polling."""
-    try:
-        applied = client.apply_session(url, token, project, session_id)
-    except Exception as error:
-        return _poll_failure(store, error, token)
-    try:
-        refreshed = client.get_session(url, token, project, session_id)
-    except Exception:
-        refreshed = session  # the states are the same; only appliedAt is missing
-    count = _applied_count(applied, refreshed)
-    _mark_done(session_id)
-    message = "DG applied {}".format(_plural(count, "element"))
+    """Deliver only an explicit immutable batch; never POST an automatic commit."""
+    batch = next((b for b in session.get("batches") or []
+                  if (b.get("delivery") or {}).get("state") == "queued"), None)
+    if batch is None:
+        return {"action": "idle", "queued": 0}
+    batch_id = batch.get("batchId")
+    previous = _deliveries(store).get(batch_id)
+    if previous is not None:
+        if previous.get("state") == "executing":
+            message = "DG: batch {} is awaiting its Revit result; it will not be replayed automatically".format(batch_id)
+            store.set("message", message)
+            return {"action": "idle", "queued": 0, "message": message}
+        try:
+            client.acknowledge_batch(url, token, project, session_id, batch_id, previous)
+            return {"action": "acknowledge", "queued": 0}
+        except Exception as error:
+            return _poll_failure(store, error, token)  # retry receipt, not the CAD transaction
+    payload = batch.get("payload") or {}
+    rows = payload.get("elements") or []
+    if (not batch_id or payload.get("applied") != len(rows)
+            or any(not r.get("nativeId") or not r.get("roles") for r in rows)
+            or len(set(r["nativeId"] for r in rows)) != len(rows)):
+        return _poll_failure(store, ValueError("invalid committed batch"), token)
+    # Preserve the full IRIs in the immutable payload; local names are only display labels.
+    subset = {"elements": [{"nativeId": r["nativeId"], "state": "confirmed",
+                            "roles": [{"classIri": iri} for iri in r["roles"]]} for r in rows]}
+    _remember_delivery(store, batch_id, {"state": "executing"})
+    job = _session_identity(store)
+    job.update({"kind": "parameters", "batchId": batch_id, "applied": len(rows),
+                "roles": loop.roles_by_uid(subset), "states": loop.states_by_uid(subset)})
+    _queue_job(job)
+    if not _raise_event():
+        with _LOCK:
+            if job in _JOBS:
+                _JOBS.remove(job)
+                _remember_delivery(store, batch_id, {
+                    "state": "failed", "written": 0, "skipped": len(rows),
+                })
+        return _poll_failure(store, RuntimeError("Revit did not accept the batch event"), token)
+    message = "DG confirmed {}; waiting for the Revit transaction".format(_plural(len(rows), "element"))
     store.set("message", message)
-    queued = _queue_colour_job(store, refreshed, "apply")
-    queued += _queue_parameters_job(store, refreshed, count)
-    store.set("lastDigest", loop.session_digest(refreshed))
-    if queued:
-        _raise_event()
-    return {"action": "apply", "queued": queued, "applied": count, "message": message}
+    return {"action": "apply", "queued": 1, "applied": len(rows), "message": message}
 
 
 def _applied_count(applied, session):
@@ -474,11 +536,11 @@ def _session_document(uiapp, job):
     """The job's document, or None after stopping the loop with a message."""
     document = _find_document(uiapp, job.get("creationGuid"), job.get("pathName"))
     if document is None:
-        _mark_done(_text(job.get("sessionId")))
+        if not job.get("batchId") and not job.get("draftPreview"):
+            _mark_done(_text(job.get("sessionId")))
         _store().set("message", (
             "DG: the document {} of the mapping session is not open; nothing was "
-            "written and the connector stopped polling the session").format(
-                _text(job.get("documentKey")) or "(unknown)"))
+            "written").format(_text(job.get("documentKey")) or "(unknown)"))
     return document
 
 
@@ -497,23 +559,38 @@ def _run_colour_job(uiapp, job):
     return coloured
 
 
+def _job_receipt(job, written):
+    if not job.get("batchId"):
+        return
+    store = _store()
+    if _text(store.get("sessionId")) != job.get("sessionId"):
+        return
+    total = int(job.get("applied") or 0)
+    _remember_delivery(store, job["batchId"], {"state": "written" if written == total else "failed",
+                                              "written": written, "skipped": total - written})
+
+
 def _run_parameters_job(uiapp, job):
     document = _session_document(uiapp, job)
     if document is None:
+        _job_receipt(job, 0)
         return 0
     shared_file = _shared_parameter_file()
     if not shared_file:
         _store().set("message", "DG: the shared-parameter file is unknown (connector not "
                                 "installed); DG_Class / DG_MappingState were not written")
+        _job_receipt(job, 0)
         return 0
+    kwargs = {"atomic": True} if job.get("batchId") else {}
     result = revit_io.write_parameters(document, uiapp.Application, shared_file,
-                                       job.get("roles") or {}, job.get("states") or {})
+                                       job.get("roles") or {}, job.get("states") or {}, **kwargs)
     written = result.get("written", 0) if isinstance(result, dict) else 0
     skipped = result.get("skipped", 0) if isinstance(result, dict) else 0
     message = "DG applied {}; DG_Class / DG_MappingState written on {}".format(
         _plural(int(job.get("applied") or 0), "element"), _plural(written, "element"))
     if skipped:
         message += " ({} skipped)".format(skipped)
+    _job_receipt(job, written)
     _store().set("message", message)
     return written
 
@@ -521,10 +598,22 @@ def _run_parameters_job(uiapp, job):
 def _run_job(uiapp, job):
     """Execute one queued job; a failure is reported, never raised."""
     try:
+        if job.get("authority"):
+            store = _store()
+            token = _text(store.get("token")).strip()
+            if (not token or _token_key(token) != job["authority"]
+                    or _text(store.get("sessionId")) != job.get("sessionId")
+                    or not owns_polling()):
+                _job_receipt(job, 0)
+                return 0
         if job.get("kind") == "parameters":
             return _run_parameters_job(uiapp, job)
         return _run_colour_job(uiapp, job)
+    except revit_io.TransactionPendingError:
+        _store().set("message", "DG: Revit transaction is pending; delivery is unconfirmed and will not be replayed")
+        return 0
     except Exception as error:
+        _job_receipt(job, 0)
         message = "DG: the {} job failed ({})".format(_text(job.get("kind")), _text(error))
         logger.warning(message)
         _store().set("message", message)

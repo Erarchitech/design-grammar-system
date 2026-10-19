@@ -6,6 +6,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+try:
+    _UNICODE_TYPE = unicode
+    _TEXT_TYPES = (basestring,)
+    _BINARY_TYPES = (str, bytearray)
+except NameError:
+    _UNICODE_TYPE = str
+    _TEXT_TYPES = (str,)
+    _BINARY_TYPES = (bytes, bytearray)
+
 
 def parse_request_data(data):
     """Return a request body as a dict, or None when it is not a JSON object.
@@ -16,12 +25,15 @@ def parse_request_data(data):
     unparsed, as bytes (1301 UAT G-12); str and an already parsed dict are
     accepted too.
     """
-    if isinstance(data, (bytes, bytearray)):
+    # Routes hands us a raw HTTP request body. IronPython 2 treats its CLR
+    # strings as both ``str`` and ``unicode`` in isinstance checks, so decode at
+    # this transport boundary before json.loads rather than trusting its type.
+    if not isinstance(data, dict):
         try:
-            data = bytes(data).decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-    if isinstance(data, str):
+            data = data.decode("utf-8")
+        except (AttributeError, TypeError, UnicodeError):
+            pass
+    if isinstance(data, _TEXT_TYPES):
         try:
             data = json.loads(data)
         except ValueError:

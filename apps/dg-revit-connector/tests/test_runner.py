@@ -96,6 +96,19 @@ class FakeClient(object):
         self.get_calls = []
         self.apply_calls = []
         self.create_calls = []
+        self.receipts = []
+        self.receipt_error = None
+
+    def acknowledge_batch(self, url, token, project, session_id, batch_id, delivery):
+        self.receipts.append((batch_id, delivery))
+        if self.receipt_error:
+            raise self.receipt_error
+        for s in self.sessions:
+            if isinstance(s, dict):
+                for batch in s.get("batches") or []:
+                    if batch["batchId"] == batch_id:
+                        batch["delivery"] = delivery
+        return {"batchId": batch_id, "delivery": delivery}
 
     def get_session(self, url, token, project, session_id):
         self.get_calls.append((url, token, project, session_id))
@@ -263,73 +276,195 @@ def test_poll_idles_without_a_signed_in_session(runner, store):
 
 # --- poll: apply --------------------------------------------------------------------
 
-def test_poll_applies_then_queues_colours_and_parameters(runner, store, loop_module):
+def committed(session, batch_id="batch-one"):
+    session.setdefault("batches", []).append({
+        "batchId": batch_id, "delivery": {"state": "queued"},
+        "payload": {"applied": 1, "elements": [{"nativeId": "u1", "roles": ["ex:GlassPanel"]}]},
+    })
+    return session
+
+
+def test_poll_queues_only_committed_subset(runner, store, loop_module):
     signed_in(store)
-    store.set("documentKey", "tower")
+    runner._EXTERNAL_EVENT.append(FakeEvent())
     store.set("creationGuid", "guid-1")
-    store.set("documentPath", "C:\\p\\tower.rvt")
-    store.set("viewId", "900")
-    session = mapping_session([element("u1", "confirmed", ("GlassPanel",))], open_questions=0)
-    applied = mapping_session([element("u1", "confirmed", ("GlassPanel",))], open_questions=0,
-                              applied_at="2026-10-18T09:29:50Z")
-    store.set("lastDigest", loop_module.session_digest(session))  # nothing left to paint
-    client = FakeClient([session, applied], apply_result={"applied": 1})
-
-    outcome = runner.poll_step(store, client, NOW)
-    assert outcome["action"] == "apply"
-    assert client.apply_calls == [("http://localhost:8000", "dgk_session-token",
-                                   "v12-hexagonal-facade-01", "ms-0123456789ab")]
-    kinds = [job["kind"] for job in runner.queued_jobs()]
-    assert kinds == ["colours", "parameters"]
-    colour_job, parameter_job = runner.queued_jobs()
-    assert colour_job["states"] == {"u1": "confirmed"}
-    assert colour_job["viewId"] == "900"
-    assert colour_job["creationGuid"] == "guid-1"
-    assert parameter_job["roles"] == {"u1": ["GlassPanel"]}
-    assert parameter_job["states"] == {"u1": "confirmed"}
-    assert parameter_job["applied"] == 1
-    assert outcome["message"] == "DG applied 1 element"
-    assert store.get("message") == outcome["message"]
-
-    # applied: the loop stops on this session and reads nothing more
-    assert len(client.get_calls) == 2
-    assert runner.poll_step(store, client, NOW)["action"] == "done"
-    assert len(client.get_calls) == 2
-
-
-def test_poll_apply_falls_back_to_the_session_when_the_refresh_fails(runner, store, loop_module):
-    signed_in(store)
-    session = mapping_session([element("u1", "confirmed"), element("u2", "auto")],
-                              open_questions=0)
+    session = committed(mapping_session([element("u1", "confirmed"), element("u2", "auto")], open_questions=3))
     store.set("lastDigest", loop_module.session_digest(session))
-    client = FakeClient([session],
-                        apply_result={"applied": 2})
-    client.sessions = [session, RuntimeError("refresh failed")]
-
+    client = FakeClient([session])
     outcome = runner.poll_step(store, client, NOW)
-    assert outcome["action"] == "apply"
-    assert outcome["message"] == "DG applied 2 elements"
-    assert [job["kind"] for job in runner.queued_jobs()] == ["colours", "parameters"]
+    assert outcome["action"] == "apply" and outcome["queued"] == 1
+    [job] = runner.queued_jobs()
+    assert job["kind"] == "parameters" and job["batchId"] == "batch-one"
+    assert job["roles"] == {"u1": ["GlassPanel"]} and job["states"] == {"u1": "confirmed"}
+    assert job["creationGuid"] == "guid-1"
+    assert not client.apply_calls and not client.receipts
+    assert "waiting for the Revit transaction" in outcome["message"]
+    assert runner.poll_step(store, client, NOW)["action"] == "idle"
+    assert len(runner.queued_jobs()) == 1
 
 
-def test_poll_apply_failure_keeps_the_loop_running(runner, store, dg_client, loop_module):
+def test_poll_never_auto_commits_even_when_all_answered(runner, store, loop_module):
     signed_in(store)
-    session = mapping_session([element("u1", "confirmed")], open_questions=0)
+    session = mapping_session([element("u1", "confirmed"), element("u2", "auto")], open_questions=0)
     store.set("lastDigest", loop_module.session_digest(session))
-    client = FakeClient([session],
-                        apply_result=dg_client.DgClientError("UNREACHABLE", "DG is down"))
-    outcome = runner.poll_step(store, client, NOW)
-    assert outcome["action"] == "error"
-    assert startswith_dg(outcome["message"])
-    assert runner.queued_jobs() == []
-    # the session is not marked done: the next poll tries again
+    client = FakeClient([session])
+    assert runner.poll_step(store, client, NOW)["action"] == "idle"
+    assert not runner.queued_jobs() and not client.apply_calls
+
+
+def test_poll_retries_receipt_not_cad_write(runner, store, dg_client, loop_module):
+    signed_in(store)
+    session = committed(mapping_session([element("u1", "confirmed")]))
+    store.set("lastDigest", loop_module.session_digest(session))
+    client = FakeClient([session])
+    runner._remember_delivery(store, "batch-one", {"state": "written", "written": 1, "skipped": 0})
+    client.receipt_error = dg_client.DgClientError("UNREACHABLE", "DG is down")
     assert runner.poll_step(store, client, NOW)["action"] == "error"
-    assert len(client.get_calls) == 2
-    assert len(client.apply_calls) == 2
+    client.receipt_error = None
+    assert runner.poll_step(store, client, NOW)["action"] == "acknowledge"
+    assert len(client.receipts) == 2 and not runner.queued_jobs() and not client.apply_calls
 
 
 def startswith_dg(message):
     return isinstance(message, str) and message.startswith("DG: ")
+
+
+def queue_committed_batch(runner, store, loop_module):
+    signed_in(store)
+    document = FakeDocument()
+    with_session_document(store, document)
+    runner._EXTERNAL_EVENT.append(FakeEvent())
+    runner._EXTENSION_DIR[:] = [APP_ROOT]
+    session = committed(mapping_session([element("u1", "confirmed"), element("u2", "auto")],
+                                        open_questions=6))
+    store.set("lastDigest", loop_module.session_digest(session))
+    client = FakeClient([session])
+    assert runner.poll_step(store, client, NOW)["action"] == "apply"
+    return document, session, client
+
+
+def test_handler_receipt_follows_atomic_write_and_allows_a_later_batch(
+        runner, store, loop_module, revit_io, monkeypatch):
+    document, session, client = queue_committed_batch(runner, store, loop_module)
+    writes = []
+
+    def write(doc, app, shared_file, roles, states, atomic=False):
+        assert doc is document and atomic
+        assert not client.receipts
+        assert json.loads(store.get("batchDeliveries"))["batch-one"]["state"] == "executing"
+        writes.append((roles, states))
+        return {"written": len(states), "skipped": 0}
+
+    monkeypatch.setattr(revit_io, "write_parameters", write)
+    runner.run_jobs(fake_uiapp(document))
+    assert writes == [({"u1": ["GlassPanel"]}, {"u1": "confirmed"})]
+    assert not client.receipts  # the handler never sends HTTP
+    assert runner.poll_step(store, client, NOW)["action"] == "acknowledge"
+    assert client.receipts == [("batch-one", {"state": "written", "written": 1, "skipped": 0})]
+    assert runner.poll_step(store, client, NOW)["action"] == "idle"
+
+    committed(session, "batch-two")
+    session["batches"][-1]["payload"]["elements"][0]["nativeId"] = "u2"
+    assert runner.poll_step(store, client, NOW)["action"] == "apply"
+    [job] = runner.queued_jobs()
+    assert job["batchId"] == "batch-two" and set(job["roles"]) == {"u2"}
+
+
+@pytest.mark.parametrize("failure", ["document", "shared-file", "transaction"])
+def test_failed_batch_is_acknowledged_without_replaying(
+        runner, store, loop_module, revit_io, monkeypatch, failure):
+    document, session, client = queue_committed_batch(runner, store, loop_module)
+    writes = []
+
+    def write(*args, **kwargs):
+        writes.append(1)
+        raise RuntimeError("transaction rolled back")
+
+    monkeypatch.setattr(revit_io, "write_parameters", write)
+    if failure == "shared-file":
+        runner._EXTENSION_DIR[:] = []
+    runner.run_jobs(fake_uiapp(None if failure == "document" else document))
+    assert writes == ([1] if failure == "transaction" else [])
+    assert runner.poll_step(store, client, NOW)["action"] == "acknowledge"
+    assert client.receipts == [("batch-one", {"state": "failed", "written": 0, "skipped": 1})]
+    assert runner.poll_step(store, client, NOW)["action"] == "idle"
+    assert not runner.queued_jobs()
+
+
+@pytest.mark.parametrize("change", ["sign-out", "session", "token", "reload"])
+def test_obsolete_queued_batch_never_writes(
+        runner, store, loop_module, revit_io, monkeypatch, change):
+    document, session, client = queue_committed_batch(runner, store, loop_module)
+    writes = []
+    monkeypatch.setattr(revit_io, "write_parameters", lambda *a, **kw: writes.append(1))
+    if change == "sign-out":
+        store.sign_out()
+    elif change == "session":
+        store.set("sessionId", "ms-another-session")
+    elif change == "token":
+        store.set("token", "dgk_new-session")
+    else:
+        runner._OWNER[:] = ["old-engine"]
+        runner._write_slot(runner.POLL_OWNER_KEY, "new-engine")
+    runner.run_jobs(fake_uiapp(document))
+    assert not writes and not client.receipts
+
+
+def test_uncertain_delivery_after_reload_is_visible_and_never_replayed(
+        runner, store, loop_module):
+    document, session, client = queue_committed_batch(runner, store, loop_module)
+    runner.take_jobs()  # new engine has no copy of the old engine's pending queue
+    outcome = runner.poll_step(store, client, NOW)
+    assert outcome["action"] == "idle" and "not be replayed" in outcome["message"]
+    assert not runner.queued_jobs() and not client.receipts
+
+
+def test_reauthentication_does_not_replay_an_uncertain_cad_write(
+        runner, store, loop_module):
+    document, session, client = queue_committed_batch(runner, store, loop_module)
+    runner.take_jobs()
+    store.sign_out()
+    signed_in(store)
+    store.set("lastDigest", loop_module.session_digest(session))
+    assert store.get("batchDeliveries") is None
+    assert runner.poll_step(store, client, NOW)["action"] == "idle"
+    assert not runner.queued_jobs() and not client.receipts
+
+
+def test_pending_revit_transaction_never_claims_a_terminal_delivery(
+        runner, store, loop_module, revit_io, monkeypatch):
+    document, session, client = queue_committed_batch(runner, store, loop_module)
+
+    def pending(*args, **kwargs):
+        raise revit_io.TransactionPendingError("Pending")
+
+    monkeypatch.setattr(revit_io, "write_parameters", pending)
+    runner.run_jobs(fake_uiapp(document))
+    assert json.loads(store.get("batchDeliveries"))["batch-one"] == {"state": "executing"}
+    assert "unconfirmed" in store.get("message")
+    assert runner.poll_step(store, client, NOW)["action"] == "idle"
+    assert not client.receipts and not runner.queued_jobs()
+
+
+@pytest.mark.parametrize("event_status", ["Denied", "TimedOut", "exception"])
+def test_rejected_external_event_reports_failure_without_leaving_a_write_job(
+        runner, store, loop_module, event_status):
+    signed_in(store)
+    session = committed(mapping_session([element("u1", "confirmed")]))
+    store.set("lastDigest", loop_module.session_digest(session))
+
+    class RejectedEvent(object):
+        def Raise(self):
+            if event_status == "exception":
+                raise RuntimeError("event unavailable")
+            return event_status
+
+    runner._EXTERNAL_EVENT.append(RejectedEvent())
+    client = FakeClient([session])
+    assert runner.poll_step(store, client, NOW)["action"] == "error"
+    assert not runner.queued_jobs()
+    assert runner.poll_step(store, client, NOW)["action"] == "acknowledge"
+    assert client.receipts == [("batch-one", {"state": "failed", "written": 0, "skipped": 1})]
 
 
 # --- poll: failures -------------------------------------------------------------------
@@ -367,7 +502,8 @@ def test_a_new_sign_in_resumes_polling_after_a_rejection(runner, store, dg_clien
 def test_a_stale_install_does_not_apply(runner, store, loop_module):
     """After a pyRevit reload only the newest install's thread applies."""
     signed_in(store)
-    session = mapping_session([element("u1", "confirmed")], open_questions=0)
+    runner._EXTERNAL_EVENT.append(FakeEvent())
+    session = committed(mapping_session([element("u1", "confirmed")], open_questions=0))
     store.set("lastDigest", loop_module.session_digest(session))
     client = FakeClient([session], apply_result={"applied": 1})
     runner._OWNER[:] = ["old-engine"]
@@ -379,7 +515,7 @@ def test_a_stale_install_does_not_apply(runner, store, loop_module):
 
     runner._write_slot(runner.POLL_OWNER_KEY, "old-engine")
     assert runner.poll_step(store, client, NOW)["action"] == "apply"
-    assert len(client.apply_calls) == 1
+    assert not client.apply_calls and len(runner.queued_jobs()) == 1
 
 
 def test_the_poll_loop_stops_when_a_newer_install_owns_polling(runner, monkeypatch):
@@ -412,14 +548,14 @@ def test_poll_other_errors_keep_polling(runner, store, dg_client):
     assert len(client.get_calls) == 2
 
 
-def test_poll_waits_during_the_undo_grace(runner, store, loop_module):
+def test_poll_keeps_a_recent_answer_as_a_draft(runner, store, loop_module):
     signed_in(store)
     session = mapping_session([element("u1", "confirmed")], open_questions=0,
                               created_at="2026-10-18T09:29:55Z")
     store.set("lastDigest", loop_module.session_digest(session))
     client = FakeClient([session])
     outcome = runner.poll_step(store, client, NOW)  # 5 s after creation
-    assert outcome["action"] == "wait-grace"
+    assert outcome["action"] == "idle"
     assert outcome["queued"] == 0
     assert runner.queued_jobs() == []
 
@@ -977,6 +1113,7 @@ def test_read_rows_skips_unreadable_elements(runner, revit_io):
 
 class FakeTransactionStatus(object):
     Started = "started"
+    Committed = "Committed"
 
 
 class FakeTransaction(object):
@@ -994,8 +1131,9 @@ class FakeTransaction(object):
         self.status = FakeTransactionStatus.Started
 
     def Commit(self):
-        self.status = "committed"
+        self.status = FakeTransactionStatus.Committed
         self.committed = True
+        return self.status
 
     def RollBack(self):
         self.status = "rolledback"
@@ -1354,6 +1492,56 @@ def test_write_parameters_skips_elements_without_the_parameters(runner, revit_io
         document, FakeApplication(), "C:\\ext\\DG_SharedParameters.txt",
         {"uid-b": ["Panel"]}, {"uid-a": "confirmed", "uid-b": "auto"})
     assert result == {"written": 1, "skipped": 1, "categories": 1}
+
+
+def test_atomic_write_requires_a_terminal_committed_transaction(runner, revit_io, monkeypatch):
+    FakeTransaction.instances = []
+    monkeypatch.setattr(revit_io, "DB", FakeDB())
+    first, second = writable_elements()
+    result = revit_io.write_parameters(
+        FakeWritableDocument([first, second]), FakeApplication(), "C:\\ext\\DG_SharedParameters.txt",
+        {"uid-a": ["Panel"]}, {"uid-a": "confirmed"}, atomic=True)
+    assert result["written"] == 1 and result["skipped"] == 0
+    assert FakeTransaction.instances[-1].committed
+    assert second.parameters["DG_Class"].value is None
+
+
+@pytest.mark.parametrize("missing", ["element", "parameter"])
+def test_atomic_write_rolls_back_instead_of_partially_committing(
+        runner, revit_io, monkeypatch, missing):
+    FakeTransaction.instances = []
+    monkeypatch.setattr(revit_io, "DB", FakeDB())
+    first, second = writable_elements()
+    if missing == "parameter":
+        second.parameters = {}
+    document = FakeWritableDocument([first] if missing == "element" else [first, second])
+    with pytest.raises(RuntimeError, match="could not be written in full"):
+        revit_io.write_parameters(document, FakeApplication(), "C:\\ext\\DG_SharedParameters.txt",
+                                  {}, {"uid-a": "confirmed", "uid-b": "confirmed"}, atomic=True)
+    transaction = FakeTransaction.instances[-1]
+    assert transaction.rolled_back and not transaction.committed
+    # These stubs verify transaction calls, not Revit's in-memory rollback implementation.
+
+
+@pytest.mark.parametrize("status", ["RolledBack", "Pending"])
+def test_atomic_write_does_not_report_noncommitted_status_as_success(
+        runner, revit_io, monkeypatch, status):
+    class NonCommittedTransaction(FakeTransaction):
+        def Commit(self):
+            self.status = status
+            return status
+
+    FakeTransaction.instances = []
+    db = FakeDB()
+    db.Transaction = NonCommittedTransaction
+    monkeypatch.setattr(revit_io, "DB", db)
+    first, _second = writable_elements()
+    error = revit_io.TransactionPendingError if status == "Pending" else RuntimeError
+    with pytest.raises(error):
+        revit_io.write_parameters(FakeWritableDocument([first]), FakeApplication(),
+                                  "C:\\ext\\DG_SharedParameters.txt", {},
+                                  {"uid-a": "confirmed"}, atomic=True)
+    assert FakeTransaction.instances[-1].rolled_back is (status != "Pending")
 
 
 def test_write_parameters_restores_the_file_when_a_definition_is_missing(

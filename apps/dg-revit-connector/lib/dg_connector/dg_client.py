@@ -27,16 +27,47 @@ Safety rules that no caller can switch off:
   value other than the token field, or a log line. Server-supplied text is
   scrubbed of both before it reaches an exception.
 
-Standard library only; Python 3.4 syntax (IronPython 3.4 under Revit).
+Standard library only; Python 2.7 / 3 syntax (pyRevit's IronPython 2.7 under Revit).
 """
 
-import http.client
-import ipaddress
 import json
 import socket
-import urllib.error
-import urllib.parse
-import urllib.request
+
+try:  # CPython 3 and IronPython 3
+    import http.client as _http_client
+    import urllib.error as _url_error
+    import urllib.parse as _url_parse
+    import urllib.request as _url_request
+    _url_quote = _url_parse.quote
+except ImportError:  # pyRevit Revit 2024: IronPython 2.7
+    import httplib as _http_client
+    import urllib2 as _url_request
+    import urllib2 as _url_error
+    import urlparse as _url_parse
+    import urllib as _url_legacy
+    _url_quote = _url_legacy.quote
+
+try:
+    import ipaddress as _ipaddress
+except ImportError:  # IronPython 2.7 standard library does not ship ipaddress
+    _ipaddress = None
+
+try:
+    _UNICODE_TYPE = unicode
+    _TEXT_TYPES = (basestring,)
+    # In IronPython 2 ``bytes`` may be a CLR type instead of ``str``.
+    _BINARY_TYPES = (str, bytearray)
+except NameError:
+    _UNICODE_TYPE = str
+    _TEXT_TYPES = (str,)
+    _BINARY_TYPES = (bytes, bytearray)
+
+try:
+    _TIMEOUT_ERRORS = (socket.timeout, TimeoutError)
+except NameError:
+    _TIMEOUT_ERRORS = (socket.timeout,)
+
+_IO_ERRORS = (IOError, OSError, ValueError, _http_client.HTTPException)
 
 #: DG data service of the local Docker stack (CONNECTOR ``DataServiceUrl``).
 DEFAULT_BASE_URL = "http://localhost:8000"
@@ -106,7 +137,20 @@ class DgClientError(Exception):
 # --- small helpers ------------------------------------------------------------
 
 def _text(value):
-    return "" if value is None else str(value)
+    """Text for JSON, URL and diagnostics without losing Python-2 Unicode."""
+    if value is None:
+        return u""
+    if isinstance(value, _UNICODE_TYPE):
+        return value
+    if isinstance(value, _BINARY_TYPES):
+        try:
+            return value.decode("utf-8", "replace")
+        except Exception:
+            pass
+    try:
+        return _UNICODE_TYPE(value)
+    except Exception:
+        return _UNICODE_TYPE(str(value), "utf-8", "replace")
 
 
 def _scrub(text, secrets):
@@ -125,6 +169,13 @@ def _error(code, message, status=None, secrets=(), server_code=None):
 # --- transport hygiene --------------------------------------------------------
 
 def _host_is_loopback(host):
+    """True only for a literal local address or localhost.
+
+    ``ipaddress`` is present on CPython 3 but absent from pyRevit's
+    IronPython 2.7 standard library. The compact fallback deliberately accepts
+    only the loopback forms needed by this connector; it never DNS-resolves a
+    host, so a deceptive public name cannot be turned into a local address.
+    """
     text = _text(host).strip().strip("[]").lower()
     if not text:
         return False
@@ -132,10 +183,21 @@ def _host_is_loopback(host):
         return True
     if text.startswith("::ffff:"):  # IPv4-mapped IPv6
         text = text[len("::ffff:"):]
-    try:
-        return ipaddress.ip_address(text).is_loopback
-    except ValueError:
+    if _ipaddress is not None:
+        try:
+            return _ipaddress.ip_address(text).is_loopback
+        except ValueError:
+            return False
+    if text == "::1":
+        return True
+    parts = text.split(".")
+    if len(parts) != 4:
         return False
+    try:
+        octets = [int(part) for part in parts]
+    except (TypeError, ValueError):
+        return False
+    return all(0 <= octet <= 255 for octet in octets) and octets[0] == 127
 
 
 def normalize_base_url(base_url):
@@ -153,7 +215,7 @@ def _checked_base_url(base_url):
     the token on the wire unencrypted, so it is refused here (D-47 / pitfall 7).
     """
     url = normalize_base_url(base_url)
-    parts = urllib.parse.urlsplit(url)
+    parts = _url_parse.urlsplit(url)
     scheme = _text(parts.scheme).lower()
     # Checked before any message echoes the URL, so an embedded password can
     # never reach one.
@@ -171,7 +233,7 @@ def _checked_base_url(base_url):
     return url
 
 
-class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
+class _RefuseRedirect(_url_request.HTTPRedirectHandler):
     """A redirect could carry the credentials elsewhere: never follow one."""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -180,7 +242,7 @@ class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
 
 def _default_open(request, timeout):
     """Default opener: no proxy, no redirects, one blocking request."""
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _RefuseRedirect())
+    opener = _url_request.build_opener(_url_request.ProxyHandler({}), _RefuseRedirect())
     return opener.open(request, timeout=timeout)
 
 
@@ -223,7 +285,7 @@ def _header_values(response, header_name):
             if isinstance(item, (list, tuple)) and len(item) >= 2:
                 if _text(item[0]).strip().lower() == wanted:
                     values.append(item[1])
-            elif isinstance(item, str) and ":" in item:
+            elif isinstance(item, _TEXT_TYPES) and ":" in item:
                 name, value = item.split(":", 1)
                 if name.strip().lower() == wanted:
                     values.append(value.strip())
@@ -269,9 +331,9 @@ def _read_text(response, url):
     """Decoded body of a response; closes it. A read failure is UNREACHABLE."""
     try:
         raw = response.read()
-    except (socket.timeout, TimeoutError):
+    except _TIMEOUT_ERRORS:
         raise _error("UNREACHABLE", "DG did not answer {} in time".format(url))
-    except (OSError, ValueError, http.client.HTTPException) as exc:
+    except _IO_ERRORS as exc:
         raise _error("UNREACHABLE", "reading the DG answer from {} failed ({})".format(url, _text(exc)))
     finally:
         close = getattr(response, "close", None)
@@ -280,9 +342,14 @@ def _read_text(response, url):
                 close()
             except Exception:
                 pass
-    if isinstance(raw, (bytes, bytearray)):
-        return bytes(raw).decode("utf-8", "replace")
-    return _text(raw)
+    # HTTPResponse.read() is a byte stream. IronPython 2 exposes both CLR
+    # strings and Python unicode as ``str`` / ``unicode`` in isinstance checks,
+    # so type-based branching would mistake UTF-8 bytes for decoded text and
+    # turn Cyrillic JSON into mojibake. Decode the response boundary first.
+    try:
+        return raw.decode("utf-8", "replace")
+    except (AttributeError, TypeError, UnicodeError):
+        return _text(raw)
 
 
 def _parse_json(text):
@@ -311,32 +378,48 @@ def _send(method, url, payload=None, headers=None, timeout=DEFAULT_TIMEOUT_SECON
         except (TypeError, ValueError):
             raise _error("UNREACHABLE", "the DG request body cannot be encoded as JSON")
     try:
-        request = urllib.request.Request(url, data=data, headers=request_headers, method=method)
+        request = _build_request(url, data, request_headers, method)
     except (TypeError, ValueError) as exc:
         raise _error("UNREACHABLE", "cannot build the DG request ({})".format(_text(exc)))
     open_request = opener if opener is not None else _default_open
     try:
         response = open_request(request, timeout)
-    except urllib.error.HTTPError as exc:  # error status, or a refused redirect
+    except _url_error.HTTPError as exc:  # error status, or a refused redirect
         try:
             text = _read_text(exc, url)
         except DgClientError:
             text = ""
         return _Response(exc.code, text, _response_headers(exc))
-    except urllib.error.URLError as exc:
-        if isinstance(getattr(exc, "reason", None), (socket.timeout, TimeoutError)):
+    except _url_error.URLError as exc:
+        if isinstance(getattr(exc, "reason", None), _TIMEOUT_ERRORS):
             raise _error("UNREACHABLE", "DG did not answer {} in {:g} s".format(url, _seconds(timeout)))
         raise _error("UNREACHABLE", "cannot reach the DG data service at {} ({})".format(
             url, _text(getattr(exc, "reason", exc))))
-    except (socket.timeout, TimeoutError):
+    except _TIMEOUT_ERRORS:
         raise _error("UNREACHABLE", "DG did not answer {} in {:g} s".format(url, _seconds(timeout)))
-    except (OSError, ValueError, http.client.HTTPException) as exc:
+    except _IO_ERRORS as exc:
         raise _error("UNREACHABLE", "cannot reach the DG data service at {} ({})".format(url, _text(exc)))
     status = _status_of(response)
     text = _read_text(response, url)
     if status is None:
         raise _error("UNREACHABLE", "the DG answer from {} carried no HTTP status".format(url))
     return _Response(status, text, _response_headers(response))
+
+
+def _build_request(url, data, headers, method):
+    """Create a request with the requested verb on Python 2 and 3.
+
+    Python 2's ``urllib2.Request`` has no ``method=`` keyword. Its
+    ``get_method`` hook is the supported compatibility seam and preserves the
+    DELETE call used for connector-session sign-out.
+    """
+    try:
+        return _url_request.Request(url, data=data, headers=headers, method=method)
+    except TypeError:
+        request = _url_request.Request(url, data=data, headers=headers)
+        if method != "POST" or data is None:
+            request.get_method = lambda: method
+        return request
 
 
 def _seconds(timeout):
@@ -429,7 +512,7 @@ def sign_in(base_url, username, password, project, connector_id="revit", opener=
 def _signed_in_result(body, secrets):
     """``{token, project, expiresAt}`` of a mint response; only these three keys."""
     token = body.get("token")
-    if not isinstance(token, str) or not token.strip().startswith(TOKEN_PREFIX):
+    if not isinstance(token, _TEXT_TYPES) or not token.strip().startswith(TOKEN_PREFIX):
         raise _error("UNREACHABLE",
                      "DG connector session returned no {} token".format(TOKEN_PREFIX), 200, secrets)
     project = body.get("project")
@@ -438,8 +521,8 @@ def _signed_in_result(body, secrets):
     # database password, and this connector never talks to Neo4j directly.
     return {
         "token": token.strip(),
-        "project": project if isinstance(project, str) else None,
-        "expiresAt": expires_at if isinstance(expires_at, str) else None,
+        "project": project if isinstance(project, _TEXT_TYPES) else None,
+        "expiresAt": expires_at if isinstance(expires_at, _TEXT_TYPES) else None,
     }
 
 
@@ -470,11 +553,19 @@ def _session_token(token):
     return session_token
 
 
+def _quote(text, safe=""):
+    """Percent-encode URL text as UTF-8 on both urllib implementations."""
+    value = _text(text)
+    if isinstance(value, _UNICODE_TYPE):
+        value = value.encode("utf-8")
+    return _url_quote(value, safe=safe)
+
+
 def _session_id(session_id):
     text = _text(session_id).strip()
     if not text:
         raise _error("UNREACHABLE", "a mapping session id is required")
-    return urllib.parse.quote(text, safe="")
+    return _quote(text, safe="")
 
 
 def _authorized(method, url, token, payload, what, opener=None):
@@ -500,9 +591,19 @@ def get_session(base_url, token, project, session_id, opener=None):
     url = _checked_base_url(base_url)
     session_token = _session_token(token)
     target = "{}/mapping/sessions/{}?project={}".format(
-        url, _session_id(session_id), urllib.parse.quote(_text(project), safe=""))
+        url, _session_id(session_id), _quote(_text(project), safe=""))
     return _authorized("GET", target, session_token, None,
                        "reading the DG mapping session", opener)
+
+
+def acknowledge_batch(base_url, token, project, session_id, batch_id, delivery, opener=None):
+    """Report a completed CAD transaction, never select or commit mappings."""
+    url = _checked_base_url(base_url)
+    session_token = _session_token(token)
+    target = "{}/mapping/sessions/{}/apply".format(url, _session_id(session_id))
+    return _authorized("POST", target, session_token,
+                       {"project": _text(project), "batchId": batch_id, "delivery": delivery},
+                       "acknowledging the DG mapping batch", opener)
 
 
 def apply_session(base_url, token, project, session_id, opener=None):

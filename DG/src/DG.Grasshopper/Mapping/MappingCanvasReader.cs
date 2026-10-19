@@ -19,8 +19,12 @@ internal sealed class CanvasMappingRead
 
     public Dictionary<string, Rhino.Geometry.GeometryBase> Previews { get; } = new(StringComparer.Ordinal);
 
+    public Dictionary<string, MappingSourceAddress> Addresses { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Stream id (param instance guid "N") → the output parameter, for placement.</summary>
     public Dictionary<string, IGH_Param> StreamParams { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, List<string>> StreamHints { get; } = new(StringComparer.Ordinal);
 
     /// <summary>Measure param guid "N" → the numeric output parameter, for placement.</summary>
     public Dictionary<string, IGH_Param> MeasureParams { get; } = new(StringComparer.Ordinal);
@@ -34,6 +38,8 @@ internal sealed class CanvasMappingRead
     public List<string> Notes { get; } = new();
 
     public string DocumentKey { get; set; } = string.Empty;
+
+    public string SourceSignature { get; set; } = string.Empty;
 
     /// <summary>True when the definition already wires geometry into DG components (OBJECT STATE …).</summary>
     public bool HasDgWiring { get; set; }
@@ -54,7 +60,7 @@ internal static class MappingCanvasReader
     public const int MaxMeasures = 80;
     private const int AncestorDepth = 6;
 
-    public static CanvasMappingRead Read(GH_Document doc)
+    public static CanvasMappingRead Read(GH_Document doc, CanvasMappingRead? pinned = null)
     {
         var read = new CanvasMappingRead { DocumentKey = DocumentKey(doc) };
         var rhino = RhinoDoc.ActiveDoc;
@@ -83,7 +89,7 @@ internal static class MappingCanvasReader
         // 1. Streams.
         var streams = new List<(IGH_Param Param, List<string> Hints)>();
         var seen = new Dictionary<Guid, int>();
-        foreach (var dg in doc.Objects.OfType<IGH_Component>().Where(IsDg))
+        foreach (var dg in doc.Objects.OfType<IGH_Component>().Where(o => IsDg(o) && pinned is null))
         {
             var classHint = dg is ObjectStateComponent ? ObjectStateClass(dg) : null;
             foreach (var input in dg.Params.Input)
@@ -112,8 +118,22 @@ internal static class MappingCanvasReader
             }
         }
 
-        read.HasDgWiring = streams.Count > 0;
-        if (!read.HasDgWiring)
+        read.HasDgWiring = pinned?.HasDgWiring ?? streams.Count > 0;
+        if (pinned is not null)
+        {
+            var outputs = AllOutputParams(doc).ToDictionary(p => p.InstanceGuid);
+            foreach (var source in pinned.StreamParams.Values)
+            {
+                if (!outputs.TryGetValue(source.InstanceGuid, out var current) || !ReferenceEquals(source, current))
+                {
+                    throw new InvalidOperationException("A pinned mapping source was removed or replaced");
+                }
+
+                streams.Add((current, pinned.StreamHints.TryGetValue(source.InstanceGuid.ToString("N"), out var hints)
+                    ? new List<string>(hints) : new List<string>()));
+            }
+        }
+        else if (!read.HasDgWiring)
         {
             foreach (var param in CandidateStreams(doc))
             {
@@ -181,6 +201,7 @@ internal static class MappingCanvasReader
                     });
                     byKey[MappingMeasureMatcher.Key(path.ToString(), index)] = described.Properties;
                     read.Order.Add(nativeId);
+                    read.Addresses[nativeId] = new MappingSourceAddress(path.ToString(), index, perBranch);
                     if (described.Preview is not null)
                     {
                         read.Previews[nativeId] = described.Preview;
@@ -198,6 +219,7 @@ internal static class MappingCanvasReader
             {
                 streamCounts[streamId] = (source, count);
                 read.StreamParams[streamId] = param;
+                read.StreamHints[streamId] = new List<string>(hints);
                 keyed[streamId] = byKey;
                 geometryKeys.Add((streamId, source, shapes));
             }
@@ -213,6 +235,7 @@ internal static class MappingCanvasReader
             foreach (var id in gone)
             {
                 read.Previews.Remove(id);
+                read.Addresses.Remove(id);
             }
 
             foreach (var (stream, reason) in dropped)
@@ -235,7 +258,7 @@ internal static class MappingCanvasReader
         var measures = new List<MappingMeasure>();
         foreach (var component in doc.Objects.OfType<IGH_Component>())
         {
-            if (!IsCalculation(component))
+            if (pinned is null ? !IsCalculation(component) : !component.Params.Output.Any(o => pinned.MeasureParams.ContainsKey(o.InstanceGuid.ToString("N"))))
             {
                 continue;
             }
@@ -247,7 +270,8 @@ internal static class MappingCanvasReader
                     break;
                 }
 
-                if (output.Recipients.Count > 0 && !read.HasDgWiring)
+                if (pinned is not null ? !pinned.MeasureParams.ContainsKey(output.InstanceGuid.ToString("N"))
+                    : output.Recipients.Count > 0 && !read.HasDgWiring)
                 {
                     continue; // an intermediate value, not a result
                 }
@@ -347,8 +371,43 @@ internal static class MappingCanvasReader
         }
 
         read.Snapshot = new MappingSnapshot { Elements = elements, Parameters = parameters, Measures = measures };
+        // Descriptor features alone cannot detect a moved/edited shape with the same dimensions.
+        read.SourceSignature = SourceSignature(read);
         return read;
     }
+
+    private static string SourceSignature(CanvasMappingRead read)
+    {
+        var parts = new List<string> { read.Snapshot.Fingerprint() };
+        foreach (var (id, param) in read.StreamParams.Concat(read.MeasureParams).OrderBy(kv => kv.Key, StringComparer.Ordinal))
+        {
+            parts.Add(id);
+            parts.Add(DataSignature(param.VolatileData));
+        }
+
+        return HashParts(parts);
+    }
+
+    internal static string DataSignature(global::Grasshopper.Kernel.Data.IGH_Structure data)
+    {
+        var parts = new List<string>();
+        for (var b = 0; b < data.PathCount; b++)
+        {
+            parts.Add(data.get_Path(b).ToString());
+            foreach (var item in data.get_Branch(b).Cast<object>())
+            {
+                var raw = MappingGeometry.Unwrap(item);
+                parts.Add(raw is Rhino.Geometry.GeometryBase geometry
+                    ? geometry.DataCRC(0).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : Convert.ToString(raw, System.Globalization.CultureInfo.InvariantCulture) ?? "null");
+            }
+        }
+        return HashParts(parts);
+    }
+
+    private static string HashParts(List<string> parts) => Convert.ToHexString(
+        System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+            System.Text.Json.JsonSerializer.Serialize(parts))));
 
     public static bool IsDg(IGH_DocumentObject? obj) =>
         obj?.GetType().Namespace?.StartsWith("DG.Grasshopper", StringComparison.Ordinal) == true;

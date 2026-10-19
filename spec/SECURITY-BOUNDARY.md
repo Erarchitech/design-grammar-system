@@ -169,6 +169,12 @@ The Speckle read token is one credential for the whole Speckle server. It never 
   - The connector talks to data-service on loopback or https only (plain http to a remote host is refused, as in Section 3.2).
 - **DG principal.** The connector signs in like the Grasshopper CONNECTOR (Section 3.2) with `connector_id = "revit"`. It holds the `dgk_` session only in Revit's process memory and never stores the password. As the connector principal it uses exactly the existing connector rows of the mapping routes (`POST|GET /mapping/sessions`, `GET /mapping/sessions/{session_id}`, `POST /mapping/sessions/{session_id}/apply`, `GET /mapping/profiles`) for its bound project. No route, principal or policy row is added: the machine-checked blocks of Section 4 are unchanged. DeGram answers and undoes answers with its delegated token as before (Section 3.5, plan 1303-10).
 
+### 3.9 Explicit mapping batch confirmation (owner-authorized amendment)
+
+`POST /mapping/sessions/{session_id}/apply` also accepts a project-bound delegated principal with the user's live stored role of editor or higher. It commits only explicit `{project, requestId, revision, answerIds}` intent; answering a proposal does not authorize a write. The existing project, membership, company, token expiry and revocation checks remain in force. The renderer cannot override its delegated credential's project. A refused credential never falls back to cookies or a connector credential.
+
+Delivery receipts (`batchId` + `delivery`) remain connector-only in the handler. A delegated or member principal cannot report a physical CAD write; a connector cannot submit commit intent. A queued batch is server confirmation, not a CAD write receipt. This amendment changes only the existing mapping apply row, not authored-profile permissions or other routes.
+
 ## 4. Machine-Checked Blocks
 
 Each block is enclosed by an HTML-comment marker pair. The drift test compares it to the code or compose file named in the heading.
@@ -268,7 +274,7 @@ POST|/mapping/profiles|member|body|editor
 GET|/mapping/sessions|connector+delegated+member|query|viewer
 POST|/mapping/sessions|connector+member|body|editor
 GET|/mapping/sessions/{session_id}|connector+delegated+member|query|viewer
-POST|/mapping/sessions/{session_id}/apply|connector+member|body|editor
+POST|/mapping/sessions/{session_id}/apply|connector+delegated+member|body|editor
 POST|/mapping/sessions/{session_id}/decisions|delegated+member|body|editor
 POST|/mapping/sessions/{session_id}/undo|delegated+member|body|editor
 POST|/mcp|service|-|-
