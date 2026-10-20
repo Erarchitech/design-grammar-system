@@ -85,8 +85,11 @@ else:
     elif not uids:
         Report = ["No boxes to colour: the calculator returned none (see its Report)"]
     else:
-        with DB.Transaction(doc, "DG: check openings" if Run else "DG: clear opening colours") as t:
-            t.Start()
+        # No "with": inside Rhino.Inside.Revit pythonnet does not expose Transaction as a context manager
+        # ("__enter__", live 2026-10-20). Explicit Start/Commit, RollBack on any error.
+        t = DB.Transaction(doc, "DG: check openings" if Run else "DG: clear opening colours")
+        t.Start()
+        try:
             if Clear:
                 for e in elements:
                     if e is not None:
@@ -120,3 +123,7 @@ else:
                         Violations.append("%s [%d]: %s" % (e.Name, e.Id.IntegerValue, ", ".join(broken)))
                 Report.insert(0, "view %s: %d boxes, %d with violations, %d pass" % (view.Name, len(elements), failed, len(elements) - failed))
             t.Commit()
+        except Exception:
+            if t.HasStarted() and not t.HasEnded():
+                t.RollBack()
+            raise

@@ -760,6 +760,23 @@ public sealed class CanvasListenerComponent : GH_Component
             var members = PropertyCheckMembers(doc, project)
                 ?? throw new InvalidOperationException("No DG property check on this canvas: generate it first.");
             var components = members.OfType<IGH_Component>().ToList();
+            // The chain reuses the canvas CONNECTOR and METAGRAPH (not group members); their state decides whether
+            // VALIDATOR gets rules and a publish token, so it is reported too. CONNECTOR keeps sign-in details off
+            // its runtime messages by design, so only its message line and remarks/warnings/errors are read.
+            var upstream = doc.Objects.OfType<IGH_Component>()
+                .Where(c => c.ComponentGuid == PropertyScriptPlacement.DgComponentTypes["CONNECTOR"]
+                            || c.ComponentGuid == PropertyScriptPlacement.DgComponentTypes["METAGRAPH"])
+                .Where(c => !components.Contains(c))
+                .ToList();
+            var upstreamState = upstream.Select(c => new
+            {
+                component = c.NickName,
+                message = c.Message,
+                errors = c.RuntimeMessages(GH_RuntimeMessageLevel.Error).ToArray(),
+                warnings = c.RuntimeMessages(GH_RuntimeMessageLevel.Warning).ToArray(),
+                remarks = c.RuntimeMessages(GH_RuntimeMessageLevel.Remark).ToArray(),
+            }).ToList();
+            components.AddRange(upstream);
 
             static string[] Output(IGH_Component? c, string name) =>
                 c?.Params.Output.FirstOrDefault(p => p.Name == name)?.VolatileData.AllData(true)
@@ -798,6 +815,8 @@ public sealed class CanvasListenerComponent : GH_Component
                 highlighterReport = Output(highlighter, "Report"),
                 highlighterOut = Output(highlighter, "out"),
                 violations = Output(highlighter, "Violations"),
+                rulesLoaded = Output(upstream.FirstOrDefault(c => c.NickName == "METAGRAPH"), "Count").FirstOrDefault(),
+                upstream = upstreamState,
                 messages,
             };
         });
