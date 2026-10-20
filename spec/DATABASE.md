@@ -609,6 +609,13 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 - Confidence (computed, not stored) = `(confirmations + 4) / (confirmations + rejections + 5)`; a profile applies automatically at ≥ 0.8
 - `state`: `active` profiles map; `retired` ones stay in the graph and do not map. Draft answers and batch confirmation never reactivate retired profiles, including the cold-start demo profiles. Legacy undo may retire profiles it created. `GET /mapping/profiles` lists active profiles only.
 
+**PropertyCalculator** (experimental, Phase 1303-15) — the stored script that computes one rule DataProperty of a project from the live Revit model (Rhino.Inside.Revit), reused by every later generation so a rule update or a new Design State re-runs the same script.
+```
+(:PropertyCalculator {graph: "Computgraph", project: "str-openings-01", dataPropertyIri: "...#hasMinOpeningClearanceMm", calculator: "revit_min_opening_clearance_mm" | "generated:<10 hex>", origin: "catalogue|generated", paramsJson: "{...}", function: "calc_gen_<10 hex>" (generated only), source: "def calc_gen_...(ctx, box, params): ..." (generated only), sha256, provider, model, createdBy, createdAt, status: "active|rejected"})
+```
+- Merge key: `(project, dataPropertyIri)`; written only by `property_calculator_store.save` when the check is placed or run
+- `origin: catalogue` binds a vetted template of `data-service/property_calculators/catalogue.json`; `origin: generated` holds a function the LLM wrote, accepted only after `property_calculator_llm.validate_function` (one function, no imports, transactions, Revit write calls or dunders)
+
 ## Relationships
 
 | Relationship | From | To | Properties | Description |
@@ -637,6 +644,7 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 | `HAS_DECISION` | MappingSession | MappingDecision | — | Experimental (Phase 1303 MVP slice): the answers given in a mapping session; written only by `mapping_store.save_decision` |
 | `CREATED_PROFILE` | MappingDecision | MappingProfile | — | Experimental (Phase 1303 MVP slice): the decision that created or re-confirmed the profile; written only by `mapping_store.save_profile` |
 | `ASSIGNS_ROLE` | MappingProfile | Class | — | Experimental (Phase 1303 MVP slice): the class roles a profile assigns to matching elements (Computgraph → OntoGraph cross-layer, Class matched by `iri`); written only by `mapping_store.save_profile` |
+| `COMPUTED_BY` | DatatypeProperty | PropertyCalculator | — | Experimental (Phase 1303-15): the stored script that computes the property for the project (OntoGraph → Computgraph, DatatypeProperty matched by `iri`+`project`); written only by `property_calculator_store.save` |
 
 ## Rule ID Format
 

@@ -373,6 +373,8 @@ The relationship to `DesignState` (represented in Cypher as `(:Run)-[:VALIDATES]
 | `HAS_DECISION` relationship (`MappingSession` → `MappingDecision`) | — (candidate `prov:wasInformedBy`, inverse) | Provenance only. |
 | `CREATED_PROFILE` relationship (`MappingDecision` → `MappingProfile`) | — (candidate `prov:wasGeneratedBy`, inverse) | Provenance only. |
 | `ASSIGNS_ROLE` relationship (`MappingProfile` → `Class`) | — | Points at an OntoGraph `owl:Class`; asserts nothing about individuals. A future export would need an explicit mapping-assertion vocabulary (cf. v14 NMOD-02 BindingProfile) rather than `rdf:type`. |
+| `PropertyCalculator` node (Phase 1303-15, experimental) | — (candidate `prov:Plan`) | Stored script that computes a DataProperty from the model. Not exported. |
+| `COMPUTED_BY` relationship (`DatatypeProperty` → `PropertyCalculator`) | — | Tooling link from an `owl:DatatypeProperty` to how its values are computed; asserts nothing about individuals. Not exported. |
 
 ### UNA Interaction
 
