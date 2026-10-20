@@ -2093,13 +2093,25 @@ def _generate_property_scripts(payload: PropertyScriptRequest, *, store: bool = 
             f"PROPERTY_SCRIPT_{exc.code}", 422)
 
 
+# The placement plan (components and wires) last put on the canvas per project. A run re-places the chain when the
+# calculator OR the plan changed (live 2026-10-21: the GRAPH DECONSTRUCT wiring fix never reached the canvas because
+# only the calculator hash was compared). Process memory: after a restart the first run re-places once.
+_PLACED_PLAN_SHA: dict[str, str] = {}
+
+
+def _plan_sha(generated: dict) -> str:
+    return hashlib.sha256(json.dumps(generated["placement"], sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def _place_property_scripts(project: str, generated: dict) -> dict:
+    _PLACED_PLAN_SHA.pop(project, None)
     placed = gh_bridge.place_property_script({
         "project": project,
         "calculator": generated["calculator"],
         "highlighter": generated["highlighter"],
         "placement": generated["placement"],
     })
+    _PLACED_PLAN_SHA[project] = _plan_sha(generated)
     return {
         "project": project,
         "resolved": [{k: v for k, v in r.items() if k != "source"} for r in generated["resolved"]],
@@ -2155,7 +2167,8 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
             canvas_sha = gh_bridge.get_property_check_status(payload.project).get("calculatorSha256")
         except HTTPException:
             canvas_sha = None
-        if canvas_sha != generated["calculator"]["sha256"]:
+        if (canvas_sha != generated["calculator"]["sha256"]
+                or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
     result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
