@@ -115,7 +115,10 @@ def _validate_params(catalogue: dict, calculator_id: str, params: dict) -> dict:
 
 def resolve_property(data_property: dict, catalogue: dict, chooser: Chooser | None = None) -> dict | None:
     """Catalogue binding for one DataProperty: alias first, then an optional validated chooser."""
-    name = local_name(data_property.get("label") or data_property.get("iri") or "").lower()
+    # Match on the IRI's local name: a DatatypeProperty's SWRL_label can be a description
+    # ("minimum clear distance to a door or window opening ...") rather than its name.
+    raw_name = local_name(data_property.get("iri") or data_property.get("label") or "")
+    name = raw_name.lower()
     for alias in catalogue["aliases"]:
         if re.match(alias["pattern"], name):
             return {
@@ -128,8 +131,7 @@ def resolve_property(data_property: dict, catalogue: dict, chooser: Chooser | No
     import class_duplicates
 
     for entry in catalogue.get("vocabulary", []):
-        if class_duplicates.property_reason(local_name(data_property.get("label") or data_property.get("iri") or ""),
-                                            entry["property"]):
+        if class_duplicates.property_reason(raw_name, entry["property"]):
             known = entry["property"].lower()
             for alias in catalogue["aliases"]:
                 if re.match(alias["pattern"], known):

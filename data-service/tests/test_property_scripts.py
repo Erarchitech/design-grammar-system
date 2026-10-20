@@ -316,3 +316,10 @@ def test_wording_variant_binds_to_the_vetted_calculator_and_replaces_a_generated
     assert entry["calculator"] == "revit_min_opening_clearance_mm"
     assert entry["resolvedBy"] == "vocabulary-near-match" and entry["nearMatch"] == "hasMinOpeningClearanceMm"
     assert session.saved and session.saved[0]["origin"] == "catalogue"
+
+
+def test_alias_and_near_match_use_the_iri_name_when_the_label_is_a_description(catalogue):
+    dp = {"iri": DG + "hasMinHostOpeningClearanceMm", "label": "minimum clear distance to a door or window (mm)"}
+    assert ps.resolve_property(dp, catalogue)["calculator"] == "revit_min_opening_clearance_mm"
+    dp = {"iri": DG + "hasBeamIntersectionCount", "label": "number of beams the box crosses"}
+    assert ps.resolve_property(dp, catalogue)["resolvedBy"] == "alias"

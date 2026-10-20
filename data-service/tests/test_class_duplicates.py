@@ -67,3 +67,9 @@ def test_ingest_question_only_concerns_new_entities_and_puts_the_new_one_first()
     found = cd.find(_Session(rows), "p", new_iris=["ex:Opening"])
     assert [(c["a"]["label"], c["b"]["label"], c["existing"]) for c in found] == [("Opening", "WallOpening", True)]
     assert cd.find(_Session(rows), "p", new_iris=["ex:Beam"]) == []
+
+
+def test_properties_are_compared_by_iri_name_not_by_a_descriptive_label():
+    props = [{"iri": "ex:hasMinHostOpeningClearanceMm", "label": "minimum clear distance to a door or window (mm)"},
+             {"iri": "ex:hasMinOpeningClearanceMm", "label": "hasMinOpeningClearanceMm"}]
+    assert len(cd.candidates([], props)) == 1

@@ -106,7 +106,7 @@ def candidates(classes: Iterable[dict], properties: Iterable[dict],
         for (ia, la), (ib, lb) in combinations(items, 2):
             if frozenset((ia, ib)) in settled:
                 continue
-            reason = reason_of(la, lb)
+            reason = reason_of(local(ia) or la, local(ib) or lb)  # names, not descriptive labels
             if reason:
                 out.append({"kind": kind, "a": {"iri": ia, "label": la}, "b": {"iri": ib, "label": lb},
                             "reason": reason})
