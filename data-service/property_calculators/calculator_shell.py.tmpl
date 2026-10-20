@@ -33,13 +33,6 @@ def _bic(name):
     return getattr(DB.BuiltInCategory, name)
 
 
-def _category_filter(names):
-    cats = List[DB.BuiltInCategory]()
-    for name in names:
-        cats.Add(_bic(name))
-    return DB.ElementMulticategoryFilter(cats)
-
-
 _OPTIONS = DB.Options()
 _OPTIONS.ComputeReferences = False
 _OPTIONS.DetailLevel = DB.ViewDetailLevel.Fine
@@ -82,6 +75,7 @@ class Context(object):
         self.boxes = boxes
         self._solids = {}
         self._hits = {}
+        self._candidates = {}
         self._walls = {}
         self._openings = {}
 
@@ -91,33 +85,64 @@ class Context(object):
             self._solids[key] = element_solids(box)
         return self._solids[key]
 
+    def candidates(self, categories):
+        """(element, (min, max)) of every instance of these categories, read once per run. OfCategory per category
+        and plain Python bounding boxes: no ElementFilter objects, which Rhino.Inside.Revit's pythonnet passed to
+        WherePasses as null (live 2026-10-20: every intersection failed)."""
+        key = tuple(sorted(categories))
+        if key not in self._candidates:
+            rows = []
+            seen = set()
+            for name in key:
+                for e in (DB.FilteredElementCollector(self.doc).OfCategory(_bic(name))
+                          .WhereElementIsNotElementType()):
+                    eid = e.Id.IntegerValue
+                    if eid in seen:
+                        continue
+                    seen.add(eid)
+                    bb = e.get_BoundingBox(None)
+                    if bb is not None:
+                        rows.append((e, (bb.Min.X, bb.Min.Y, bb.Min.Z), (bb.Max.X, bb.Max.Y, bb.Max.Z)))
+            self._candidates[key] = rows
+        return self._candidates[key]
+
+    def _solids_intersect(self, solids_a, element):
+        for b in self.solids_of(element):
+            for a in solids_a:
+                try:
+                    common = DB.BooleanOperationsUtils.ExecuteBooleanOperation(a, b, DB.BooleanOperationsType.Intersect)
+                except Exception:  # Revit cannot intersect some solids: fall back to the boxes overlapping
+                    return True
+                if common is not None and common.Volume > 1e-6:
+                    return True
+        return False
+
+    def solids_of(self, element):
+        key = element.Id.IntegerValue
+        if key not in self._solids:
+            self._solids[key] = element_solids(element)
+        return self._solids[key]
+
     def intersecting(self, box, categories):
         key = (box.Id.IntegerValue, tuple(categories))
         if key in self._hits:
             return self._hits[key]
-        found = {}
+        bb = box.get_BoundingBox(None)
+        if bb is None:
+            self._hits[key] = []
+            return []
+        lo = (bb.Min.X, bb.Min.Y, bb.Min.Z)
+        hi = (bb.Max.X, bb.Max.Y, bb.Max.Z)
         solids = self.solids(box)
-        if solids:
-            for solid in solids:
-                collector = (DB.FilteredElementCollector(self.doc)
-                             .WherePasses(_category_filter(categories))
-                             .WhereElementIsNotElementType()
-                             .WherePasses(DB.ElementIntersectsSolidFilter(solid)))
-                for e in collector:
-                    if e.Id != box.Id:
-                        found[e.Id.IntegerValue] = e
-        else:
-            bb = box.get_BoundingBox(None)
-            if bb is not None:
-                outline = DB.Outline(bb.Min, bb.Max)
-                collector = (DB.FilteredElementCollector(self.doc)
-                             .WherePasses(_category_filter(categories))
-                             .WhereElementIsNotElementType()
-                             .WherePasses(DB.BoundingBoxIntersectsFilter(outline, -TOL_FT)))
-                for e in collector:
-                    if e.Id != box.Id:
-                        found[e.Id.IntegerValue] = e
-        hits = [found[k] for k in sorted(found)]
+        hits = []
+        for e, emin, emax in self.candidates(categories):
+            if e.Id == box.Id:
+                continue
+            if any(min(hi[i], emax[i]) - max(lo[i], emin[i]) < TOL_FT for i in range(3)):
+                continue
+            if not solids or not self.solids_of(e) or self._solids_intersect(solids, e):
+                hits.append(e)
+        hits.sort(key=lambda e: e.Id.IntegerValue)
         self._hits[key] = hits
         return hits
 
