@@ -4,6 +4,8 @@
 
 **Статус:** ACTIVE — owner scope revision 2026-10-04. Phase 1300 incomplete / scope revision; независимый read-only client slice 1301 в `ui-v2` — in progress, не готов к выпуску. Все 51 ID и ownership 1300–1307 сохранены; ни одна фаза не объявлена завершённой.
 
+**Приоритет владельца 2026-10-20:** демо 19.10 прошло; ближайший приоритет — кейс «задание на отверстия ИОС → КР» (план 1303-15, DGOPN-01…04): DG генерирует и размещает скрипт расчёта свойств боксов, VALIDATOR проверяет R1–R4, боксы с нарушениями подсвечиваются в Revit.
+
 **Приоритет владельца 2026-10-17 (ветка `feature/mapping-mvp`):** до демо 2026-10-19 приоритет — MVP-срез автоматизированного меппинга GH/Revit → DG в Phase 1303 (раздел «MVP-срез 1303» ниже, DGMAP-01…06 вне 51 MVP ID, `phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`). Отложены до после демо: 1302 (включая gate 1302-08), оставшиеся работы 1300/1301 (в т.ч. live UAT плана 1301-16), 1304–1307, активация v14 и Phase 35. Phase 1309 не откладывается: она продолжается в параллельной сессии на ветке `feature/hosting-dg-pilot`; срез ведётся в отдельном worktree `C:\Users\Admin\source\repos\dg-mapping` и сливается после демо и точки фиксации 1309. Нумерация 1300–1307 и ownership сохраняются; новых фаз нет.
 
 **Отдельный будущий milestone:** согласованная владельцем интеграция строительных норм записана как изолированный [v14.0 roadmap](milestones/v14.0-ROADMAP.md) и [v14.0 requirements](milestones/v14.0-REQUIREMENTS.md) (1400–1408). Это не новая фаза v13, не передача DGKN/DGBN/DGST/DGHN/DGRL/WEBUI/HOST ownership и не активация v14: действующие `.planning/phases/`, STATE.md и Current Milestone сохраняются. Полный нормативный pipeline и Jev не считаются доставленными фазой 1302 или любым другим v13 ID.
@@ -336,7 +338,7 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 4. Автор запускает существующее распознавание, просматривает предложения, частично принимает/отклоняет их; unrecognized остаются видимыми, отдельное подтверждение публикации показывает target project, revision и реально записанный результат. [DGBN-05]
 5. Пользователь открывает согласованные reference `.gh` с прежними компонентами/GUIDs и получает эквивалентные успешные tagging/publish результаты без новых missing-component placeholders; заранее известные исключения, включая CONNECTOR post-825, перечислены явно. [DGBN-06]
 
-**Plans**: MVP-срез — `phases/1303-pravilo-gh-obekt/` (см. «MVP-срез 1303» ниже), планы 1303-01…14 (11–14 — Revit-срез: форк revit-mcp DG как Revit-коннектор, сервер, DeGram, живой акт 3); полный объём DGBN — TBD после демо
+**Plans**: MVP-срез — `phases/1303-pravilo-gh-obekt/` (см. «MVP-срез 1303» ниже), планы 1303-01…15 (11–14 — Revit-срез: форк revit-mcp DG как Revit-коннектор, сервер, DeGram, живой акт 3; 15 — проверка боксов отверстий ИОС → КР через Rhino.Inside.Revit + VALIDATOR, DGOPN-01…04, приоритет владельца 2026-10-20); полный объём DGBN — TBD после демо
 **UI hint**: yes
 
 **Entry gate**: Выход 1302 даёт pin/revision и typed risk/confirm contract; профиль identity/mapping/security согласован. Выбраны реальные reference definitions и зафиксирован recognition baseline с открытым качественным долгом, а не предполагаемым PASS.
