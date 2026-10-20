@@ -4083,12 +4083,28 @@ def _rule_delete_preview(project: str, rule_id: str) -> dict[str, Any] | None:
         {"ruleId": rule_id, "project": project},
     )
 
+    # Owner decision 2026-10-20 (Phase 1303-15): the ontology nodes the rule's atoms refer to are deleted with
+    # the rule when nothing else is left connected to them (another rule's atom, a Computgraph Object, a mapping
+    # profile, a stored calculator, a subclass edge, ...). Project-scoped; shared nodes always stay.
+    ontology = read_many(
+        _RULE_DELETE_SCOPE
+        + "WITH r, collect(DISTINCT a) AS atoms "
+        "UNWIND atoms AS a0 MATCH (a0)-[:REFERS_TO]->(t) WHERE t.project = $project "
+        "AND (t:Class OR t:DatatypeProperty OR t:ObjectProperty OR t:Builtin) "
+        "WITH DISTINCT t, atoms "
+        "RETURN labels(t)[0] AS label, coalesce(t.label, t.SWRL_label, t.iri) AS value, "
+        "COUNT { (t)--(o) WHERE NOT o IN atoms } AS ontologyRefs ORDER BY label, value",
+        {"ruleId": rule_id, "project": project},
+    )
+
     return {
         "project": project,
         "ruleId": rule_id,
         "atoms": [a for a in atoms if a.get("atomId") is not None],
         "orphaned": [a for a in args if (a.get("otherRefs") or 0) == 0],
         "shared": [a for a in args if (a.get("otherRefs") or 0) > 0],
+        "orphanedOntology": [o for o in ontology if (o.get("ontologyRefs") or 0) == 0],
+        "sharedOntology": [o for o in ontology if (o.get("ontologyRefs") or 0) > 0],
     }
 
 
@@ -4111,7 +4127,7 @@ def preview_rule_deletion(project: str, rule_id: str):
 
 @router.delete("/rules/{project}/{rule_id}")
 def delete_rule(project: str, rule_id: str):
-    """Delete a Rule, its Atoms, and any Literal/Var left orphaned by that.
+    """Delete a Rule, its Atoms, and any Literal/Var or project ontology node left orphaned by that.
 
     Destructive and not undoable -- callers confirm with the user first
     (the preview endpoint above exists for that).
@@ -4128,17 +4144,23 @@ def delete_rule(project: str, rule_id: str):
     # Orphan check runs inside the same statement as the delete: computing it
     # here from the preview would race another ingest writing a rule that
     # starts referencing one of these args between the two calls.
+    # The ontology referents are collected before the delete and removed after it, in the same statement, only
+    # when the delete left them with no relationship at all (same race argument as the args).
     write_query(
         _RULE_DELETE_SCOPE
-        + "WITH r, collect(DISTINCT a) AS atoms, collect(DISTINCT x) AS args "
+        + "OPTIONAL MATCH (a)-[:REFERS_TO]->(t) WHERE t.project = $project "
+        "AND (t:Class OR t:DatatypeProperty OR t:ObjectProperty OR t:Builtin) "
+        "WITH r, collect(DISTINCT a) AS atoms, collect(DISTINCT x) AS args, collect(DISTINCT t) AS refs "
         "UNWIND (CASE WHEN args = [] THEN [null] ELSE args END) AS arg "
-        "WITH r, atoms, arg WHERE arg IS NULL OR NOT EXISTS { "
+        "WITH r, atoms, refs, arg WHERE arg IS NULL OR NOT EXISTS { "
         "    MATCH (other:Rule)-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:ARG]->(arg) "
         "    WHERE other <> r } "
-        "WITH r, atoms, collect(arg) AS orphans "
+        "WITH r, atoms, refs, collect(arg) AS orphans "
         "FOREACH (n IN atoms | DETACH DELETE n) "
         "FOREACH (n IN orphans | DETACH DELETE n) "
-        "DETACH DELETE r",
+        "DETACH DELETE r "
+        "WITH refs UNWIND refs AS t WITH t WHERE NOT (t)--() "
+        "DELETE t",
         {"ruleId": rule_id, "project": project},
     )
 
@@ -4149,6 +4171,8 @@ def delete_rule(project: str, rule_id: str):
         "deletedAtoms": len(preview["atoms"]),
         "deletedArgs": len(preview["orphaned"]),
         "keptSharedArgs": len(preview["shared"]),
+        "deletedOntology": len(preview["orphanedOntology"]),
+        "keptSharedOntology": len(preview["sharedOntology"]),
     }
 
 

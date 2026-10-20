@@ -40,6 +40,12 @@ _ARGS = [
     {"label": "Var", "value": "?b", "otherRefs": 6},
     {"label": "Var", "value": "?h", "otherRefs": 4},
 ]
+# The rule's own property and builtin are orphans; the class is still used by another rule.
+_ONTOLOGY = [
+    {"label": "Builtin", "value": "lessThan", "ontologyRefs": 0},
+    {"label": "Class", "value": "Building", "ontologyRefs": 3},
+    {"label": "DatatypeProperty", "value": "hasHeight", "ontologyRefs": 0},
+]
 _ATOMS = [{"atomId": f"{RULE}_A{i}", "swrlLabel": f"atom{i}"} for i in range(1, 5)]
 
 
@@ -50,7 +56,9 @@ def _wire(monkeypatch, *, rule_exists=True, captured=None):
         return {"ruleId": RULE} if rule_exists else None
 
     def fake_read_many(query, params=None):
-        # The args query is the one that computes otherRefs.
+        # The args query computes otherRefs, the ontology query ontologyRefs.
+        if "ontologyRefs" in query:
+            return list(_ONTOLOGY)
         return list(_ARGS) if "otherRefs" in query else list(_ATOMS)
 
     def fake_write_query(query, params=None):
@@ -107,6 +115,8 @@ class TestRuleDelete:
         assert body["deletedAtoms"] == 4
         assert body["deletedArgs"] == 1  # only the orphan
         assert body["keptSharedArgs"] == 3
+        assert body["deletedOntology"] == 2
+        assert body["keptSharedOntology"] == 1
 
     def test_delete_404s_for_unknown_rule_without_writing(self, monkeypatch):
         """A missing rule must not reach the write step."""
@@ -145,17 +155,29 @@ class TestRuleDelete:
         assert "NOT EXISTS" in query
         assert "other <> r" in query
 
-    def test_delete_never_touches_ontology_labels(self, monkeypatch):
-        """Class/DatatypeProperty/Builtin are shared ontology entities and must
-        survive: the statement only ever matches Rule/Atom and ARG targets."""
+    def test_delete_removes_only_project_ontology_left_without_any_relationship(self, monkeypatch):
+        """Owner decision 2026-10-20 (supersedes "never touches ontology labels"): the Class/DatatypeProperty/
+        ObjectProperty/Builtin nodes the rule's atoms referred to go with the rule, but only inside the project and
+        only when the delete left them with no relationship at all; a shared node always survives."""
         writes: list = []
         _wire(monkeypatch, captured=writes)
 
         client.delete(f"/rules/{PROJECT}/{RULE}")
 
+        assert len(writes) == 1
         query, _ = writes[0]
-        for ontology_label in (":Class", ":DatatypeProperty", ":ObjectProperty", ":Builtin"):
-            assert ontology_label not in query
+        assert "t.project = $project" in query
+        assert "WHERE NOT (t)--()" in query
+        assert "DETACH DELETE t" not in query  # a plain DELETE cannot take a remaining edge with it
+        assert query.index("DETACH DELETE r") < query.index("DELETE t")
+
+    def test_preview_lists_orphaned_and_shared_ontology(self, monkeypatch):
+        _wire(monkeypatch)
+
+        body = client.get(f"/rules/{PROJECT}/{RULE}/delete-preview").json()
+
+        assert [o["value"] for o in body["orphanedOntology"]] == ["lessThan", "hasHeight"]
+        assert [o["value"] for o in body["sharedOntology"]] == ["Building"]
 
 
 class TestSelectionParsing:
