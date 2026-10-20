@@ -94,6 +94,46 @@ SWRL_CONVENTIONS: dict[str, Any] = {
 }
 
 
+# Phase 1303-15 (owner 2026-10-20): a rule must be computable by VALIDATOR, which evaluates class, data-property
+# and builtin atoms but refuses ObjectPropertyAtoms (spec/SWRL-SUBSET.md). "Openings are not allowed in beams"
+# came back as Beam(?beam) ^ Opening(?o) ^ hasOpening(?beam, ?o) -- unevaluable, and with the beam as subject.
+SWRL_CONVENTIONS["computable_form"] = {
+    "statement": (
+        "Every rule tests ONE subject element class: the element the rule constrains (in 'X is not allowed in Y' "
+        "and 'X must be at least D from Y' the subject is X, never Y). The body is exactly: one ClassAtom for the "
+        "subject, one DataPropertyAtom giving a NUMERIC property of that same subject variable, and one swrlb "
+        "comparison builtin on that value. NEVER relate two elements with an ObjectProperty atom (no "
+        "hasOpening(?beam, ?o), no intersects(?a, ?b)) and never add a second ClassAtom for the other element: "
+        "express the relation as a numeric property of the subject instead -- a count of the related elements "
+        "(has<Related>IntersectionCount, has<Related>BelowCount) or a distance with its unit "
+        "(hasMin<Related>ClearanceMm). A prohibition is count > 0; a minimum distance D is value < D."
+    ),
+    "example": {
+        "rule": "Openings are not allowed in beams",
+        "swrl": "OpeningBox(?b) ^ hasBeamIntersectionCount(?b, ?n) ^ swrlb:greaterThan(?n, \"0\"^^xsd:integer) "
+                "-> hasOpeningBoxViolation(?b, true)",
+    },
+    "subject_naming": "Name the subject class as the user names it (PascalCase, singular, English); reuse an "
+                      "existing class of the project when one matches.",
+    "computable_properties_statement": "DG can compute these properties from the model; reuse the exact name "
+                                        "whenever one fits the rule instead of inventing a new one.",
+}
+
+
+def _computable_vocabulary() -> list[dict[str, str]]:
+    import json
+
+    try:
+        catalogue = json.loads((Path(__file__).resolve().parent / "property_calculators" / "catalogue.json")
+                               .read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    return [dict(v) for v in catalogue.get("vocabulary", [])]
+
+
+SWRL_CONVENTIONS["computable_form"]["computable_properties"] = _computable_vocabulary()
+
+
 def swrl_conventions() -> dict[str, Any]:
     """Typed accessor -- shared entry point for the assembler and tests."""
     return SWRL_CONVENTIONS

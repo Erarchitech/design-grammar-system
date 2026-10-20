@@ -159,5 +159,37 @@
     "OST_Roofs": "Roof",
     "OST_GenericModel": "GenericModel"
   },
-  "categoryClassesDescription": "The DG class each Revit category a calculator reads stands for. DG creates these classes in the project OntoGraph (with revitCategories) and links them to the calculator with READS_CLASS."
+  "categoryClassesDescription": "The DG class each Revit category a calculator reads stands for. DG creates these classes in the project OntoGraph (with revitCategories) and links them to the calculator with READS_CLASS.",
+  "vocabulary": [
+    {
+      "property": "hasBeamIntersectionCount",
+      "meaning": "number of beams (structural framing) the element intersects",
+      "unit": "count"
+    },
+    {
+      "property": "hasColumnIntersectionCount",
+      "meaning": "number of columns the element intersects",
+      "unit": "count"
+    },
+    {
+      "property": "hasWallIntersectionCount",
+      "meaning": "number of walls the element intersects",
+      "unit": "count"
+    },
+    {
+      "property": "hasFloorIntersectionCount",
+      "meaning": "number of floors/slabs the element intersects",
+      "unit": "count"
+    },
+    {
+      "property": "hasOpeningsBelowCount",
+      "meaning": "number of door/window openings directly below the element in its host wall",
+      "unit": "count"
+    },
+    {
+      "property": "hasMinOpeningClearanceMm",
+      "meaning": "smallest clear distance from the element to a door/window opening in its host wall",
+      "unit": "mm"
+    }
+  ]
 }

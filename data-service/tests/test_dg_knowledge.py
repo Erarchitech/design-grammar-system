@@ -264,3 +264,14 @@ class TestIngestFolderHiddenPaths:
             ).status_code
             == 401
         )
+
+
+def test_computable_form_convention_steers_rules_to_one_numeric_subject_property():
+    """Phase 1303-15: VALIDATOR refuses ObjectPropertyAtoms, so the ingest prompt asks for one subject class and one
+    numeric property of it, and lists the properties DG has calculators for."""
+    conv = dg_knowledge.swrl_conventions()["computable_form"]
+    assert "NEVER relate two elements with an ObjectProperty atom" in conv["statement"]
+    assert "hasBeamIntersectionCount(?b, ?n)" in conv["example"]["swrl"]
+    names = [v["property"] for v in conv["computable_properties"]]
+    assert {"hasBeamIntersectionCount", "hasColumnIntersectionCount", "hasOpeningsBelowCount",
+            "hasMinOpeningClearanceMm"} <= set(names)
