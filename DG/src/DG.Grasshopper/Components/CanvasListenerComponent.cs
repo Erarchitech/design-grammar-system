@@ -614,13 +614,24 @@ public sealed class CanvasListenerComponent : GH_Component
                     continue;
                 }
 
-                if (target.Sources.Contains(source))
+                if (target.Sources.Contains(source) && target.Sources.Count == 1)
                 {
                     continue;
                 }
 
                 record.AddAction(new GH_WireAction(target));
-                target.AddSource(source);
+                // An input of a reused canvas component (METAGRAPH) gets exactly the plan's source: a stale wire from
+                // an earlier plan (CONNECTOR.Database straight into METAGRAPH, live 2026-10-20) is removed.
+                if (reused.Contains(wire.To.Key))
+                {
+                    target.RemoveAllSources();
+                }
+
+                if (!target.Sources.Contains(source))
+                {
+                    target.AddSource(source);
+                }
+
                 wired++;
             }
 
@@ -818,6 +829,9 @@ public sealed class CanvasListenerComponent : GH_Component
                 highlighterOut = Output(highlighter, "out"),
                 violations = Output(highlighter, "Violations"),
                 rulesLoaded = Output(upstream.FirstOrDefault(c => c.NickName == "METAGRAPH"), "Count").FirstOrDefault(),
+#if NETFRAMEWORK
+                assemblyResolver = NetFrameworkAssemblyResolver.Diagnostics(),
+#endif
                 upstream = upstreamState,
                 messages,
             };

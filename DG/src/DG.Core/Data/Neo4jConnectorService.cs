@@ -68,8 +68,27 @@ public sealed class Neo4jConnectorService : INeo4jConnectorService
                 Database = connection.Database,
                 Project = connection.Project,
                 IsConnected = false,
-                StatusMessage = ex.Message,
+                StatusMessage = Describe(ex),
             };
         }
+    }
+
+    /// <summary>Phase 1303-15: type, message and first frames of the innermost exception, so a load or binding
+    /// failure inside a host (Rhino.Inside.Revit) can be diagnosed from the canvas bridge. Never credentials: the
+    /// driver's messages carry none and the connection values are not included.</summary>
+    internal static string Describe(Exception ex)
+    {
+        var inner = ex;
+        while (inner.InnerException is not null)
+        {
+            inner = inner.InnerException;
+        }
+
+        var frames = (inner.StackTrace ?? string.Empty)
+            .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Take(4)
+            .Select(f => f.Trim());
+        var head = ReferenceEquals(inner, ex) ? string.Empty : $"{ex.GetType().Name} <- ";
+        return $"{head}{inner.GetType().FullName}: {inner.Message} | {string.Join(" | ", frames)}";
     }
 }

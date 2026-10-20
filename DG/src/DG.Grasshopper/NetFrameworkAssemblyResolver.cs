@@ -74,6 +74,7 @@ public sealed class NetFrameworkAssemblyResolver : GH_AssemblyPriority
         if (field is null || field.FieldType != typeof(ResolveEventHandler))
         {
             AppDomain.CurrentDomain.AssemblyResolve += Resolve;
+            _registration = "appended (AppDomain field not found)";
             return;
         }
 
@@ -81,6 +82,34 @@ public sealed class NetFrameworkAssemblyResolver : GH_AssemblyPriority
         {
             var current = field.GetValue(AppDomain.CurrentDomain) as ResolveEventHandler;
             field.SetValue(AppDomain.CurrentDomain, (ResolveEventHandler)Delegate.Combine(new ResolveEventHandler(Resolve), current));
+            _registration = $"first of {current?.GetInvocationList().Length + 1 ?? 1} handlers";
+        }
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentQueue<string> Log = new();
+
+    /// <summary>Diagnostics for the canvas bridge: how the resolver was registered, its last answers, and every
+    /// loaded copy of an assembly the DG folder ships (name, version, location).</summary>
+    internal static object Diagnostics()
+    {
+        var shipped = string.IsNullOrEmpty(Folder) || !Directory.Exists(Folder)
+            ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(Directory.EnumerateFiles(Folder, "*.dll").Select(Path.GetFileNameWithoutExtension)!, StringComparer.OrdinalIgnoreCase);
+        var copies = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => shipped.Contains(a.GetName().Name ?? string.Empty))
+            .Select(a => $"{a.GetName().Name} {a.GetName().Version} @ {SafeLocation(a)}")
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return new { folder = Folder, registration = _registration, log = Log.ToArray(), loadedCopies = copies };
+    }
+
+    private static string _registration = "not registered";
+
+    private static void Note(string line)
+    {
+        Log.Enqueue(line);
+        while (Log.Count > 60 && Log.TryDequeue(out _))
+        {
         }
     }
 
@@ -102,7 +131,9 @@ public sealed class NetFrameworkAssemblyResolver : GH_AssemblyPriority
         var loaded = AppDomain.CurrentDomain.GetAssemblies()
             .FirstOrDefault(a => string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(SafeLocation(a), full, StringComparison.OrdinalIgnoreCase));
-        return loaded ?? Assembly.LoadFrom(full);
+        var answer = loaded ?? Assembly.LoadFrom(full);
+        Note($"{args.Name} for {args.RequestingAssembly?.GetName().Name ?? "?"} -> {(loaded is null ? "loaded " : "reused ")}{answer.GetName().Version}");
+        return answer;
     }
 
     private static string SafeLocation(Assembly assembly)

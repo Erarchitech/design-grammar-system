@@ -354,6 +354,9 @@ def placement_plan(project: str, property_count: int) -> dict:
     col = [0, 260, 520, 780, 1040, 1300]
     components: list[dict] = [
         {"key": "connector", "kind": "dg", "type": "CONNECTOR", "reuse": True, "required": True},
+        # METAGRAPH reads a MetagraphHandle, which GRAPH DECONSTRUCT splits out of CONNECTOR.Database (live
+        # 2026-10-20: "Could not unwrap MetagraphHandle" when Database was wired straight in).
+        {"key": "graphdecon", "kind": "dg", "type": "GRAPH DECONSTRUCT", "reuse": True, "x": col[0] - 220, "y": -260},
         {"key": "metagraph", "kind": "dg", "type": "METAGRAPH", "reuse": True, "x": col[0], "y": -260},
         {"key": "run", "kind": "toggle", "nickname": "Run", "value": False, "x": col[0] - 200, "y": 0},
         {"key": "filter", "kind": "panel", "nickname": "BoxFamilyFilter", "text": "", "x": col[0] - 200, "y": 60},
@@ -368,7 +371,8 @@ def placement_plan(project: str, property_count: int) -> dict:
         {"key": "highlighter", "kind": "script", "script": "highlighter", "x": col[5], "y": 0},
     ]
     wires = [
-        ["connector.Database", "metagraph.Metagraph"],
+        ["connector.Database", "graphdecon.Database"],
+        ["graphdecon.Metagraph", "metagraph.Metagraph"],
         ["run.", "calculator.Run"],
         ["filter.", "calculator.BoxFamilyFilter"],
         ["calculator.Objects", "objstate.Object"],
