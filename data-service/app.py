@@ -2161,6 +2161,18 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
     if isinstance(result, dict):
         result["refreshed"] = refreshed
         result["summary"] = property_check_summary(result)
+        if not result["summary"]["ok"]:
+            # Owner 2026-10-20: DeGram twice reported "no violations" for a chain whose VALIDATOR had no rules.
+            # A failed check is an error response, so no caller can present it as a clean model.
+            problems = result["summary"]["problems"]
+            raise HTTPException(status_code=422, detail={
+                "code": "PROPERTY_CHECK_FAILED",
+                "error": "The check did not run correctly; no verdict: " + "; ".join(problems)[:260],
+                "hint": "Fix the reported components (sign in on CONNECTOR, rules in METAGRAPH) and run again.",
+                "problems": problems,
+                "summary": result["summary"],
+                "upstream": (result.get("status") or {}).get("upstream"),
+            })
     return result
 
 
