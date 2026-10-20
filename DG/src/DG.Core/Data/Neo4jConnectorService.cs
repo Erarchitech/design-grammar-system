@@ -11,13 +11,17 @@ public sealed class Neo4jConnectorService : INeo4jConnectorService
     {
         try
         {
-            await using var driver = GraphDatabase.Driver(
+            // Synchronous Dispose, never IAsyncDisposable: inside Rhino.Inside.Revit several hosts load their own
+            // Microsoft.Bcl.AsyncInterfaces (Carbon Insights 6.0, Rhino 7.0, Speckle 5.0), Neo4j.Driver binds one of them and
+            // DG.Core another, and DisposeAsync through the other IAsyncDisposable throws EntryPointNotFoundException
+            // (live 2026-10-21). Dispose() needs no cross-assembly interface.
+            using var driver = GraphDatabase.Driver(
                 connection.Uri,
                 AuthTokens.Basic(connection.User, connection.Password),
                 builder => builder.WithConnectionTimeout(ConnectionTimeout));
 
             await driver.VerifyConnectivityAsync().WaitAsync(ConnectionTimeout, cancellationToken);
-            await using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
+            using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
             var cursor = await session.RunAsync("RETURN 1 AS ok").WaitAsync(ConnectionTimeout, cancellationToken);
             await cursor.SingleAsync().WaitAsync(ConnectionTimeout, cancellationToken);
 

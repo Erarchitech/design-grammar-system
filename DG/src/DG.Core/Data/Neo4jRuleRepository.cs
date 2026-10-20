@@ -72,8 +72,8 @@ public sealed class Neo4jRuleRepository : IRuleRepository
 
     public async Task<IReadOnlyList<Rule>> GetRulesAsync(ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
+        using var driver = GraphDatabase.Driver(connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
+        using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
 
         var rules = await LoadRulesAsync(session, connection.Project, cancellationToken);
         if (rules.Count == 0)
@@ -89,9 +89,9 @@ public sealed class Neo4jRuleRepository : IRuleRepository
     public async Task<IReadOnlyList<OntologyClass>> GetObjectsAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(
+        using var session = driver.AsyncSession(
             options => options.WithDatabase(connection.Database));
 
         var cursor = await session

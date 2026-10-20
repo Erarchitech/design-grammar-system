@@ -28,9 +28,9 @@ public sealed class Neo4jOntoGraphRepository : IOntoGraphRepository
     public async Task<IReadOnlyList<OntologyClass>> GetClassesAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(
+        using var session = driver.AsyncSession(
             options => options.WithDatabase(connection.Database));
 
         var cursor = await session
@@ -55,9 +55,9 @@ public sealed class Neo4jOntoGraphRepository : IOntoGraphRepository
     public async Task<IReadOnlyList<OntologyProperty>> GetObjPropertiesAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(
+        using var session = driver.AsyncSession(
             options => options.WithDatabase(connection.Database));
 
         var cursor = await session
@@ -82,9 +82,9 @@ public sealed class Neo4jOntoGraphRepository : IOntoGraphRepository
     public async Task<IReadOnlyList<OntologyProperty>> GetDataPropertiesAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(
+        using var session = driver.AsyncSession(
             options => options.WithDatabase(connection.Database));
 
         var cursor = await session

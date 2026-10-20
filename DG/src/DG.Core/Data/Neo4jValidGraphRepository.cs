@@ -51,9 +51,9 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
     public async Task<ValidGraphQueryResult> GetRunsAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(
+        using var session = driver.AsyncSession(
             options => options.WithDatabase(connection.Database));
 
         var cursor = await session
@@ -185,9 +185,9 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
             throw new ArgumentException("Run id must not be null or whitespace.", nameof(runId));
         }
 
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(
+        using var session = driver.AsyncSession(
             options => options.WithDatabase(connection.Database));
 
         string? evidenceEnvelopeJson = null;

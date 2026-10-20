@@ -53,8 +53,8 @@ public sealed class Neo4jPredicateKindResolver : IPredicateKindResolver
     public static async Task<Neo4jPredicateKindResolver> LoadAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
+        using var driver = GraphDatabase.Driver(connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
+        using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
 
         var cursor = await session
             .RunAsync(PredicateKindQuery, new { project = connection.Project })

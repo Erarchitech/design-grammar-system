@@ -40,10 +40,10 @@ public sealed class ValidationRunsQueryService
         string? stateId = null,
         CancellationToken cancellationToken = default)
     {
-        await using var driver = GraphDatabase.Driver(
+        using var driver = GraphDatabase.Driver(
             connection.Uri,
             AuthTokens.Basic(connection.User, connection.Password));
-        await using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
+        using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
 
         var rawResults = await LoadRunsAsync(session, connection.Project, ruleId, cancellationToken);
 
