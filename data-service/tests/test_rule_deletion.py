@@ -46,6 +46,11 @@ _ONTOLOGY = [
     {"label": "Class", "value": "Building", "ontologyRefs": 3},
     {"label": "DatatypeProperty", "value": "hasHeight", "ontologyRefs": 0},
 ]
+# Ingest history: one session created only this rule, one created it with another rule that still exists.
+_SESSIONS = [
+    {"sessionId": "drs-only", "result": f"Rule ingested. MERGE (r:Rule {{Rule_Id: '{RULE}', project: $project}})"},
+    {"sessionId": "drs-two", "result": f"MERGE (r:Rule {{Rule_Id: '{RULE}'}}) MERGE (q:Rule {{Rule_Id: 'R_OTHER_V'}})"},
+]
 _ATOMS = [{"atomId": f"{RULE}_A{i}", "swrlLabel": f"atom{i}"} for i in range(1, 5)]
 
 
@@ -53,12 +58,16 @@ def _wire(monkeypatch, *, rule_exists=True, captured=None):
     """Point app's Neo4j helpers at in-memory fixtures."""
 
     def fake_read_single(query, params=None):
+        if "count(r) AS n" in query:
+            return {"n": len(set(params["ids"]) - {RULE})}  # the deleted rule is gone, others stay
         return {"ruleId": RULE} if rule_exists else None
 
     def fake_read_many(query, params=None):
         # The args query computes otherRefs, the ontology query ontologyRefs.
         if "ontologyRefs" in query:
             return list(_ONTOLOGY)
+        if "DesignRuleSession" in query:
+            return list(_SESSIONS)
         return list(_ARGS) if "otherRefs" in query else list(_ATOMS)
 
     def fake_write_query(query, params=None):
@@ -136,7 +145,7 @@ class TestRuleDelete:
 
         client.delete(f"/rules/{PROJECT}/{RULE}")
 
-        assert len(writes) == 1
+        assert len(writes) == 2  # the rule delete, then its orphaned ingest history
         query, params = writes[0]
         assert params == {"ruleId": RULE, "project": PROJECT}
         assert "$ruleId" in query and "$project" in query
@@ -164,7 +173,6 @@ class TestRuleDelete:
 
         client.delete(f"/rules/{PROJECT}/{RULE}")
 
-        assert len(writes) == 1
         query, _ = writes[0]
         assert "t.project = $project" in query
         assert "WHERE NOT (t)--()" in query
@@ -178,6 +186,19 @@ class TestRuleDelete:
 
         assert [o["value"] for o in body["orphanedOntology"]] == ["lessThan", "hasHeight"]
         assert [o["value"] for o in body["sharedOntology"]] == ["Building"]
+
+
+class TestIngestHistoryCleanup:
+    def test_ingest_session_goes_with_the_last_rule_it_created(self, monkeypatch):
+        writes: list = []
+        _wire(monkeypatch, captured=writes)
+
+        body = client.delete(f"/rules/{PROJECT}/{RULE}").json()
+
+        assert body["deletedIngestSessions"] == 1
+        query, params = writes[1]
+        assert "DesignRuleSession" in query and "mode: 'ingest'" in query
+        assert params == {"project": PROJECT, "ids": ["drs-only"]}  # drs-two still has a live rule
 
 
 class TestSelectionParsing:

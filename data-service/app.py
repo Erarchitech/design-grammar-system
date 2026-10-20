@@ -4164,16 +4164,51 @@ def delete_rule(project: str, rule_id: str):
         {"ruleId": rule_id, "project": project},
     )
 
+    deleted_sessions = _delete_orphaned_ingest_sessions(project, rule_id)
+
     return {
         "status": "deleted",
         "project": project,
         "ruleId": rule_id,
+        "deletedIngestSessions": deleted_sessions,
         "deletedAtoms": len(preview["atoms"]),
         "deletedArgs": len(preview["orphaned"]),
         "keptSharedArgs": len(preview["shared"]),
         "deletedOntology": len(preview["orphanedOntology"]),
         "keptSharedOntology": len(preview["sharedOntology"]),
     }
+
+
+_INGEST_RULE_ID = re.compile(r"Rule_Id:\s*'([^']+)'")
+
+
+def _delete_orphaned_ingest_sessions(project: str, rule_id: str) -> int:
+    """Owner 2026-10-20: an ingest DesignRuleSession (prompt-console history) records the rules it created only in
+    its result text (the generated Cypher). It is deleted with the last of those rules, so deleting every rule of a
+    project leaves no ingest history behind; a session that still has a live rule stays."""
+    sessions = read_many(
+        "MATCH (s:DesignRuleSession {project: $project, mode: 'ingest'}) WHERE s.result CONTAINS $ruleId "
+        "RETURN s.sessionId AS sessionId, s.result AS result",
+        {"project": project, "ruleId": rule_id},
+    )
+    doomed = []
+    for row in sessions:
+        ids = set(_INGEST_RULE_ID.findall(row.get("result") or ""))
+        if rule_id not in ids:
+            continue
+        alive = read_single(
+            "MATCH (r:Rule {project: $project}) WHERE r.Rule_Id IN $ids RETURN count(r) AS n",
+            {"project": project, "ids": sorted(ids)},
+        )
+        if not alive or not alive.get("n"):
+            doomed.append(row["sessionId"])
+    if doomed:
+        write_query(
+            "MATCH (s:DesignRuleSession {project: $project, mode: 'ingest'}) WHERE s.sessionId IN $ids "
+            "DETACH DELETE s",
+            {"project": project, "ids": doomed},
+        )
+    return len(doomed)
 
 
 class RuleDeleteResolvePayload(BaseModel):
