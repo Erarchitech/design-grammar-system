@@ -36,6 +36,12 @@ public sealed class ConnectorComponent : GH_Component
         StatusMessage = "Idle",
     };
 
+    /// <summary>Phase 1303-15: why the graph connection failed (the Neo4j driver's message; never credentials),
+    /// read by the canvas bridge's property-check status so "Connect failed" can be diagnosed remotely.</summary>
+    internal string ConnectionStatus => _latestConnection.StatusMessage;
+
+    internal bool IsGraphConnected => _latestConnection.IsConnected;
+
     // Phase 1303 (owner amendment 2026-10-18): after sign-in CONNECTOR proposes the mapping
     // of this definition to DG automatically — no mapping component and no wiring.
     private MappingAutoRunner? _mapping;

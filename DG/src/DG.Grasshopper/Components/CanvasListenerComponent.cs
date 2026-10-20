@@ -775,6 +775,8 @@ public sealed class CanvasListenerComponent : GH_Component
                 errors = c.RuntimeMessages(GH_RuntimeMessageLevel.Error).ToArray(),
                 warnings = c.RuntimeMessages(GH_RuntimeMessageLevel.Warning).ToArray(),
                 remarks = c.RuntimeMessages(GH_RuntimeMessageLevel.Remark).ToArray(),
+                graphConnected = (c as ConnectorComponent)?.IsGraphConnected,
+                connectionStatus = (c as ConnectorComponent)?.ConnectionStatus,
             }).ToList();
             components.AddRange(upstream);
 

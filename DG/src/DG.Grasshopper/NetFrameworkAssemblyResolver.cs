@@ -34,9 +34,14 @@ public sealed class NetFrameworkAssemblyResolver : GH_AssemblyPriority
             return null;
         }
 
+        // An assembly of that name already in the process wins, wherever it came from: Rhino 8 loads its own
+        // Microsoft.Bcl.AsyncInterfaces / System.Text.Json 7.0 and Revit its System.Memory / Unsafe. Loading the DG
+        // copy beside them gives two incompatible copies of the same types (live 2026-10-20: CONNECTOR "Connect
+        // failed" inside Rhino.Inside.Revit). The highest loaded version is used; the DG folder only fills a gap.
         var loaded = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(Path.GetDirectoryName(SafeLocation(a)), Folder, StringComparison.OrdinalIgnoreCase));
+            .Where(a => !a.IsDynamic && string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(a => a.GetName().Version)
+            .FirstOrDefault();
         if (loaded is not null)
         {
             return loaded;
