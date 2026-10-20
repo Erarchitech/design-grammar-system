@@ -3734,7 +3734,39 @@ def store_execution_result(result: ExecutionResult):
     if result.message is not None:
         entry["message"] = result.message
     EXECUTION_RESULTS[result.executionId] = entry
+    owner = EXECUTION_OWNERS.get(result.executionId) or {}
+    if result.status == "completed" and owner.get("workflow") == "rules-ingest" and owner.get("project"):
+        # Phase 1303-15 (owner 2026-10-20): the classes a new rule implies are created with the rule.
+        threading.Thread(target=_ensure_rule_classes_after_ingest,
+                         args=(owner["project"], owner.get("username")), daemon=True).start()
     return {"status": "ok"}
+
+
+def _llm_calculator(dp, rules, box):
+    return property_calculator_llm.generate_calculator(dp, rules, box)
+
+
+def _ensure_rule_classes_after_ingest(project: str, actor: str | None) -> None:
+    log = logging.getLogger(__name__)
+    try:
+        with driver.session() as session:
+            out = property_scripts.ensure_rule_classes(session, project, actor=actor, generator=_llm_calculator)
+        log.info("rule classes for %s: %d linked, %d unsupported", project, len(out["linked"]), len(out["unsupported"]))
+    except Exception:  # noqa: BLE001 - never fails the ingest; placing or running the check links them again
+        log.exception("rule classes for %s failed", project)
+
+
+class RuleClassesRequest(BaseModel):
+    project: str
+
+
+@router.post("/scripts/rule-classes")
+def post_rule_classes(payload: RuleClassesRequest, request: Request):
+    """Create the classes the project's rules imply, with their calculators, now. The rules ingest does this
+    automatically after each ingest; this route serves rules ingested earlier. Idempotent."""
+    with driver.session() as session:
+        return property_scripts.ensure_rule_classes(session, payload.project, actor=_mapping_actor(request),
+                                                    generator=_llm_calculator)
 
 
 @router.get("/execution-result/{execution_id}")

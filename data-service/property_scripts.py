@@ -375,6 +375,43 @@ def placement_plan(project: str, property_count: int) -> dict:
     return {"group": f"DG · Проверка свойств ({project})", "components": components, "wires": wires}
 
 
+def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = None,
+                        generator: Generator | None = None, actor: str | None = None) -> dict:
+    """Owner 2026-10-20: DG creates every class a rule takes part in when the rule is created. The rule ingest
+    writes the classes its atoms name (OpeningBox); a class the rule only implies through its property
+    ("no openings in columns" -> hasColumnIntersectionCount -> Column) is created here, together with the
+    property's calculator. Runs per element class, so a project whose rules test several classes is fine.
+    Never raises for rules it cannot resolve; returns what it created and what stayed unsupported."""
+    import property_calculator_store
+
+    catalogue = catalogue or load_catalogue()
+    rules = load_rules(session, project, None)
+    stored = property_calculator_store.load_active(session, project)
+    by_class: dict[tuple, list[dict]] = {}
+    for rule in rules:
+        if len(rule["classes"]) == 1 and rule["dataProperties"]:
+            by_class.setdefault((rule["classes"][0]["iri"], rule["classes"][0]["label"]), []).append(rule)
+    created: list[dict] = []
+    unsupported: list[dict] = []
+    for (class_iri, _label), group in sorted(by_class.items()):
+        resolution = resolve(group, catalogue, None, stored=stored, generator=generator)
+        prefix = iri_prefix_of(class_iri)
+        done = set()
+        for entry in resolution["resolved"]:
+            if entry["dataPropertyIri"] in done:
+                continue
+            done.add(entry["dataPropertyIri"])
+            classes = context_classes(entry, catalogue, prefix)
+            if entry.get("new"):
+                property_calculator_store.save(session, project, entry, actor)
+                stored[entry["dataPropertyIri"]] = entry
+            property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"], classes)
+            created.append({"ruleId": entry["ruleId"], "dataPropertyIri": entry["dataPropertyIri"],
+                            "classes": [c["label"] for c in classes]})
+        unsupported.extend(resolution["unsupported"])
+    return {"project": project, "linked": created, "unsupported": unsupported}
+
+
 def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Chooser | None = None,
              catalogue: dict | None = None, generator: Generator | None = None, store: bool = False,
              actor: str | None = None) -> dict:

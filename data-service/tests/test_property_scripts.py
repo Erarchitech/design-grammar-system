@@ -276,3 +276,22 @@ def test_failed_generation_is_reported_unsupported(catalogue):
                       generator=lambda dp, rules, box: {"status": "invalid", "error": "forbidden model call: Delete"})
     assert [r["ruleId"] for r in out["resolved"]] == ["R_A_V"]
     assert out["unsupported"][0]["reason"].startswith("generation invalid: forbidden model call")
+
+
+def test_rule_classes_are_created_with_the_rule_for_every_element_class(catalogue):
+    # Owner 2026-10-20: "no openings in columns" must create OpeningBox (ingest) and Column (here).
+    rows = _rows({"R_COL_V": "hasColumnIntersectionCount"}) + _rows({"R_FAC_V": "hasAspectRatio"}, box="GlassPanel")
+    session = _Session(rows)
+    calls = []
+
+    def generator(dp, rules, box):
+        calls.append((dp["label"], box))
+        return {"status": "invalid", "error": "not a Revit property"}
+
+    out = ps.ensure_rule_classes(session, PROJECT, catalogue=catalogue, generator=generator, actor="owner")
+    assert out["linked"] == [{"ruleId": "R_COL_V", "dataPropertyIri": DG + "hasColumnIntersectionCount",
+                              "classes": ["Column"]}]
+    assert [u["ruleId"] for u in out["unsupported"]] == ["R_FAC_V"]  # another element class does not block it
+    assert calls == [("hasAspectRatio", "GlassPanel")]
+    column = [c for q, c in session.calls if "MERGE (k:Class" in q]
+    assert [c["label"] for c in column] == ["Column"] and column[0]["iri"] == DG + "Column"

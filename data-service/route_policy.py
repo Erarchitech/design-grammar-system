@@ -228,6 +228,7 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # ── property-calculator scripts (Phase 1303-15, DGOPN-02) ──
     # generate is read-only; place writes to the user's own live GH canvas via the loopback bridge.
     ("POST", "/scripts/property-calculator"): _p(_MEM, _DEL, source="body", role="viewer"),
+    ("POST", "/scripts/rule-classes"): _p(_MEM, _DEL, source="body", role="editor"),
     ("POST", "/scripts/property-calculator/place"): _p(_MEM, _DEL, source="body", role="editor"),
     ("GET", "/scripts/property-calculators"): _p(_MEM, _DEL, source="query", role="viewer"),
     # run re-places the chain when the rules changed and writes Revit colours through the canvas: editor.
