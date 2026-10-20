@@ -83,7 +83,7 @@ def test_chooser_answer_outside_catalogue_is_rejected(catalogue):
     assert ps.resolve(rules, catalogue, bad_params)["resolved"] == []
     chosen = ps.resolve(rules, catalogue, good)["resolved"][0]
     assert chosen["resolvedBy"] == "chooser"
-    assert chosen["params"] == {"opening_categories": ["OST_Doors", "OST_Windows", "OST_SWallRectOpening"],
+    assert chosen["params"] == {"opening_categories": ["OST_Doors", "OST_Windows"],
                                 "sentinel_mm": 5000}
 
 
@@ -160,11 +160,15 @@ class _Session:
     def run(self, query, **params):
         self.calls.append((query, params))
         if "READS_CLASS" in query:
-            self.classes = getattr(self, "classes", []) + [params]
+            if "MERGE (k:Class" in query:
+                self.classes = getattr(self, "classes", []) + [params]
             return _Result([])
         if "PropertyCalculator" in query and query.lstrip().startswith("MERGE"):
             self.saved.append(params)
             return _Result([])
+        if ("DISTINCT_FROM" in query or "AS kind, n.iri" in query or "source:'property_scripts'" in query
+                or "coalesce(k.label, k.iri) AS label" in query):
+            return _Result([])  # duplicate scan and context-class pruning see an empty ontology here
         if "PropertyCalculator" in query:
             return _Result(self.stored)
         return _Result(self.rows)
@@ -240,13 +244,14 @@ def test_classes_behind_the_read_categories_are_created_and_linked(catalogue):
     by_rule = {r["ruleId"]: [c["label"] for c in r["contextClasses"]] for r in out["resolved"]}
     assert by_rule["R_STR_OPENING_BEAM_V"] == ["Beam"]
     assert by_rule["R_STR_OPENING_COLUMN_V"] == ["Column"]
-    assert by_rule["R_STR_OPENING_ABOVE_V"] == ["Door", "Wall", "WallOpening", "Window"]
-    assert by_rule["R_STR_OPENING_CLEARANCE_300_V"] == ["Door", "Wall", "WallOpening", "Window"]
+    assert by_rule["R_STR_OPENING_ABOVE_V"] == ["Door", "Wall", "Window"]  # wall rect openings are not proyomy
+    assert by_rule["R_STR_OPENING_CLEARANCE_300_V"] == ["Door", "Wall", "Window"]
     column = next(c for r in out["resolved"] for c in r["contextClasses"] if c["label"] == "Column")
     assert column == {"label": "Column", "iri": DG + "Column", "revitCategories": ["OST_Columns", "OST_StructuralColumns"]}
     written = {(c["dataPropertyIri"].split("#")[-1], c["label"]) for c in session.classes}
-    assert ("hasBeamIntersectionCount", "Beam") in written and ("hasOpeningsBelowCount", "WallOpening") in written
-    assert len(session.classes) == 1 + 1 + 4 + 4
+    assert ("hasBeamIntersectionCount", "Beam") in written and ("hasOpeningsBelowCount", "Window") in written
+    assert ("hasOpeningsBelowCount", "WallOpening") not in written
+    assert len(session.classes) == 1 + 1 + 3 + 3
 
 
 def test_preview_creates_no_classes(catalogue):
@@ -295,3 +300,19 @@ def test_rule_classes_are_created_with_the_rule_for_every_element_class(catalogu
     assert calls == [("hasAspectRatio", "GlassPanel")]
     column = [c for q, c in session.calls if "MERGE (k:Class" in q]
     assert [c["label"] for c in column] == ["Column"] and column[0]["iri"] == DG + "Column"
+
+
+def test_wording_variant_binds_to_the_vetted_calculator_and_replaces_a_generated_one(catalogue):
+    """hasMinHostOpeningClearanceMm (LLM wording) is hasMinOpeningClearanceMm: the catalogue calculator is used and
+    supersedes the generated calculator stored for it earlier; the LLM is not asked again."""
+    rows = _rows({"R4": "hasMinHostOpeningClearanceMm"})
+    stored = [{"dataPropertyIri": DG + "hasMinHostOpeningClearanceMm", "calculator": "generated:3e8b69da92",
+               "origin": "generated", "paramsJson": "{}", "function": "calc_gen_x", "source": "def calc_gen_x(): pass",
+               "sha256": "x", "provider": "openai", "model": "m", "createdAt": None, "createdBy": None}]
+    session = _Session(rows, stored)
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue, store=True,
+                      generator=lambda *a: pytest.fail("the LLM must not be asked"))
+    entry = out["resolved"][0]
+    assert entry["calculator"] == "revit_min_opening_clearance_mm"
+    assert entry["resolvedBy"] == "vocabulary-near-match" and entry["nearMatch"] == "hasMinOpeningClearanceMm"
+    assert session.saved and session.saved[0]["origin"] == "catalogue"

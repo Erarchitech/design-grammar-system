@@ -278,6 +278,8 @@ POST|/mapping/sessions/{session_id}/apply|connector+delegated+member|body|editor
 POST|/mapping/sessions/{session_id}/decisions|delegated+member|body|editor
 POST|/mapping/sessions/{session_id}/undo|delegated+member|body|editor
 POST|/mcp|service|-|-
+GET|/ontology/duplicates|delegated+member|query|viewer
+POST|/ontology/duplicates/resolve|member|body|editor
 GET|/projects|session|filtered|-
 POST|/projects|session|-|-
 PUT|/projects/{project}/company|admin|-|-

@@ -60,6 +60,14 @@ WHERE r.project = $project
 RETURN r.Rule_Id AS rule_id, type(e) AS rel, e.`order` AS ord, a.Atom_Id AS atom_id
 """
 
+# Phase 1303-15: an operator's "different concepts" answer for two similar classes (data-service
+# class_duplicates) is exported as owl:disjointWith, so HermiT flags an individual typed with both.
+DISJOINT_QUERY = """
+MATCH (a:Class)-[:DISTINCT_FROM]->(b:Class)
+WHERE a.project = $project AND b.project = $project
+RETURN a.iri AS a, b.iri AS b
+"""
+
 REFERS_QUERY = """
 MATCH (a:Atom)-[:REFERS_TO]->(t)
 WHERE a.project = $project
@@ -257,6 +265,11 @@ def build_graph(session, project: str) -> Graph:
             graph.add((iri, RDF.type, OWL.ObjectProperty))
             if props.get("label"):
                 graph.add((iri, RDFS.label, RDFLiteral(props["label"])))
+
+    for record in session.run(DISJOINT_QUERY, project=project):
+        a, b = expand_iri(record["a"]), expand_iri(record["b"])
+        if a is not None and b is not None:
+            graph.add((a, OWL.disjointWith, b))
 
     # --- Metagraph: collect Rule/Atom nodes (label-scoped, Pitfall 1 defense) ---
     rules: dict[str, dict] = {}

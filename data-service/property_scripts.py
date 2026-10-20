@@ -123,6 +123,22 @@ def resolve_property(data_property: dict, catalogue: dict, chooser: Chooser | No
                 "params": _validate_params(catalogue, alias["calculator"], alias["params"]),
                 "resolvedBy": "alias",
             }
+    # A wording variant of a vocabulary property (hasMinHostOpeningClearanceMm for hasMinOpeningClearanceMm) is
+    # the same measure: bind it to the vetted calculator instead of asking the LLM for a new one.
+    import class_duplicates
+
+    for entry in catalogue.get("vocabulary", []):
+        if class_duplicates.property_reason(local_name(data_property.get("label") or data_property.get("iri") or ""),
+                                            entry["property"]):
+            known = entry["property"].lower()
+            for alias in catalogue["aliases"]:
+                if re.match(alias["pattern"], known):
+                    return {
+                        "calculator": alias["calculator"],
+                        "params": _validate_params(catalogue, alias["calculator"], alias["params"]),
+                        "resolvedBy": "vocabulary-near-match",
+                        "nearMatch": entry["property"],
+                    }
     if chooser is None:
         return None
     menu = {cid: {"summary": c["summary"], "params": c["params"], "unit": c["unit"]}
@@ -212,13 +228,20 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
     fresh: dict[str, dict] = {}
     for rule in rules:
         for dp in sorted(rule["dataProperties"], key=lambda d: d["iri"]):
+            # The vetted catalogue wins whenever it covers the property, so a catalogue fix (or a wording variant
+            # now matched to the vocabulary) replaces an earlier stored binding, generated ones included. A stored
+            # calculator is reused as is only for properties the catalogue does not cover.
             binding = fresh.get(dp["iri"])
-            if binding is None and dp["iri"] in stored:
-                binding = _from_stored(stored[dp["iri"]], catalogue)
             if binding is None:
                 binding = resolve_property(dp, catalogue, chooser)
                 if binding is not None:
-                    binding = {**binding, "origin": "catalogue", "new": True}
+                    previous = stored.get(dp["iri"])
+                    same = (previous is not None and previous.get("origin") == "catalogue"
+                            and previous.get("calculator") == binding["calculator"]
+                            and (previous.get("params") or {}) == binding["params"])
+                    binding = {**binding, "origin": "catalogue", "new": not same}
+            if binding is None and dp["iri"] in stored:
+                binding = _from_stored(stored[dp["iri"]], catalogue)
             if binding is None and generator is not None:
                 answer = generator(dp, rules_by_dp[dp["iri"]], box_label)
                 if answer.get("status") == "ok":
@@ -409,7 +432,11 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
             created.append({"ruleId": entry["ruleId"], "dataPropertyIri": entry["dataPropertyIri"],
                             "classes": [c["label"] for c in classes]})
         unsupported.extend(resolution["unsupported"])
-    return {"project": project, "linked": created, "unsupported": unsupported}
+    pruned = property_calculator_store.prune_context_classes(session, project)
+    import class_duplicates
+
+    return {"project": project, "linked": created, "unsupported": unsupported, "prunedClasses": pruned,
+            "duplicateCandidates": class_duplicates.find(session, project)}
 
 
 def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Chooser | None = None,
@@ -438,6 +465,7 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
             property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
                                                            entry["contextClasses"])
             saved.add(entry["dataPropertyIri"])
+        property_calculator_store.prune_context_classes(session, project)
     for entry in resolution["resolved"]:
         entry.pop("new", None)
     scripts = assemble(project, resolution, catalogue)

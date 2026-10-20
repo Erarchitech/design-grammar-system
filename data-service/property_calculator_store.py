@@ -46,10 +46,42 @@ CONTEXT_CLASS_QUERY = (
 )
 
 
+UNLINK_QUERY = (
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri})-[r:READS_CLASS]->(k:Class) "
+    "WHERE NOT k.label IN $keep DELETE r"
+)
+# A context class DG created that nothing uses any more (no rule atom, calculator, object, profile...) goes away.
+PRUNE_QUERY = (
+    "MATCH (k:Class {project:$project, source:'property_scripts'}) WHERE NOT (k)--() "
+    "WITH k, k.label AS label DELETE k RETURN label ORDER BY label"
+)
+
+
 def save_context_classes(session: Any, project: str, data_property_iri: str, classes: list[dict]) -> None:
+    """Link the calculator to exactly ``classes``: stale READS_CLASS edges (a catalogue fix dropped a category)
+    are removed first, then the current classes are matched or created and linked."""
+    import class_duplicates
+
+    # A class of the same concept that the project already has (Slab for Floor, Hole for Opening) is used instead
+    # of a new one: DG never adds a duplicate itself.
+    existing = [r["label"] for r in session.run(
+        "MATCH (k:Class {project:$project}) RETURN coalesce(k.label, k.iri) AS label ORDER BY label",
+        project=project).data()]
+    reused = []
+    for c in classes:
+        same = next((e for e in existing if e != c["label"]
+                     and (class_duplicates.class_reason(c["label"], e) or "").startswith("same concept")), None)
+        reused.append({**c, "label": same} if same else c)
+    classes = reused
+    session.run(UNLINK_QUERY, project=project, dataPropertyIri=data_property_iri,
+                keep=[c["label"] for c in classes]).consume()
     for c in classes:
         session.run(CONTEXT_CLASS_QUERY, project=project, label=c["label"], iri=c["iri"],
                     categories=list(c["revitCategories"]), dataPropertyIri=data_property_iri).consume()
+
+
+def prune_context_classes(session: Any, project: str) -> list[str]:
+    return [r["label"] for r in session.run(PRUNE_QUERY, project=project).data()]
 
 
 def utc_now() -> str:

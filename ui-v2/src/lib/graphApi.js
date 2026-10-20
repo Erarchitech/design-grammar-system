@@ -68,6 +68,19 @@ export function deleteRule(project, ruleId) {
   return apiFetch(`${dataServiceBase()}/rules/${enc(project)}/${enc(ruleId)}`, { method: "DELETE" });
 }
 
+// Near-duplicate classes/properties (Phase 1303-15). GET → { candidates: [{kind, a, b, reason}] }.
+export function fetchOntologyDuplicates(project) {
+  return apiFetch(`${dataServiceBase()}/ontology/duplicates?project=${enc(project)}`);
+}
+
+// decision: "use_existing" merges a (new) into b (existing); "keep_new" records that they are different concepts.
+export function resolveOntologyDuplicate(project, a, b, decision) {
+  return apiFetch(`${dataServiceBase()}/ontology/duplicates/resolve`, {
+    method: "POST",
+    body: { project, a, b, decision }
+  });
+}
+
 // POST /rules/resolve-deletion → { matches[], reason, hallucinated[] }
 // Resolves a natural-language deletion request ("all height rules above 50 m")
 // to concrete rules, each with its own delete preview. Selection only —

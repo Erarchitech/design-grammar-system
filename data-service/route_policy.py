@@ -220,6 +220,9 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("GET", "/reasoner/settings"): _p(_SES),
     ("PUT", "/reasoner/settings"): _p(_ADM),
     ("POST", "/reasoner/consistency"): _p(_MEM, source="body", role="viewer"),
+    # near-duplicate classes/properties (Phase 1303-15)
+    ("GET", "/ontology/duplicates"): _p(_MEM, _DEL, source="query", role="viewer"),
+    ("POST", "/ontology/duplicates/resolve"): _p(_MEM, source="body", role="editor"),
     # ── computgraph ──
     ("POST", "/computgraph/context/pull"): _p(_MEM, source="body", role="editor"),
     ("POST", "/computgraph/recognize"): _p(_MEM, source="body", role="viewer"),

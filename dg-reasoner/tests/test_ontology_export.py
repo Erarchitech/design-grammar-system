@@ -102,6 +102,12 @@ class FixtureSession:
                 })
             return _FakeResult(rows)
 
+        if query is oe.DISJOINT_QUERY:
+            return _FakeResult([
+                {"a": self._props(e["from"]).get("iri"), "b": self._props(e["to"]).get("iri")}
+                for e in self._edges_of_type("DISTINCT_FROM", project)
+            ])
+
         if query is oe.REFERS_QUERY:
             rows = []
             for edge in self._edges_of_type("REFERS_TO", project):

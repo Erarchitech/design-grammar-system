@@ -2,7 +2,7 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings, { orbitFallbackName } from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules, fetchRuleDeletePreview, deleteRule, resolveRuleDeletion, bulkDeleteRules, checkRuleConflict, supersedeRule, acceptRuleOverlap } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules, fetchRuleDeletePreview, deleteRule, resolveRuleDeletion, bulkDeleteRules, checkRuleConflict, supersedeRule, acceptRuleOverlap, resolveOntologyDuplicate } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
@@ -677,6 +677,11 @@ export default function GraphScreen({ active, onBack, project }) {
         metaInfo = { type: turnMode === 2 ? "rewritten" : "committed", secs };
         await tagProjectNodes(project); // legacy-parity post-ingest project claim
         await loadGraph(); // the datascape reflects the new rule
+        // Phase 1303-15: the operator decides about every new class/property that resembles an existing one.
+        if (Array.isArray(payload.duplicateCandidates) && payload.duplicateCandidates.length) {
+          setDupErr("");
+          setDupItems(payload.duplicateCandidates);
+        }
         // loadGraph() → setData() cleared streams; repopulate against the fresh
         // rings so streams target exactly the nodes this turn just created.
         engineRef.current?.emitNewNodeStreams?.(prevIds);
@@ -1014,6 +1019,23 @@ export default function GraphScreen({ active, onBack, project }) {
   // vocabulary and reports any existing Rule sharing the same
   // (Class, DatatypeProperty, comparator) signature. Ambiguous grounding or no
   // match both mean "no conflict" — ingest proceeds exactly as before.
+  const [dupItems, setDupItems] = React.useState([]); // [{kind, a:{iri,label}, b:{iri,label}, reason, existing}]
+  const [dupBusy, setDupBusy] = React.useState(false);
+  const [dupErr, setDupErr] = React.useState("");
+  const decideDuplicate = async (item, decision) => {
+    setDupBusy(true);
+    setDupErr("");
+    try {
+      await resolveOntologyDuplicate(project, item.a.iri, item.b.iri, decision);
+      const rest = dupItems.filter((d) => d !== item && d.a.iri !== item.a.iri);
+      setDupItems(rest);
+      if (decision === "use_existing" || !rest.length) await loadGraph();
+    } catch (err) {
+      setDupErr(describeError(err, t("Could not apply the decision.")));
+    } finally {
+      setDupBusy(false);
+    }
+  };
   const [conflictOpen, setConflictOpen] = React.useState(false);
   const [conflictBusy, setConflictBusy] = React.useState(false);
   const [conflictErr, setConflictErr] = React.useState("");
@@ -1748,6 +1770,51 @@ export default function GraphScreen({ active, onBack, project }) {
           grounding. Cancel sends nothing to n8n at all; Replace/Update/Keep
           both all let the normal ingest turn run, differing only in what
           provenance gets recorded against the new rule afterward. */}
+      {dupItems.length > 0 && (
+        <div
+          style={{ position: "absolute", inset: 0, zIndex: 21, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.28)" }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <Dialog
+              title={t("The new rule introduced something similar to what the project already has")}
+              onClose={() => setDupItems([])}
+              style={{ width: 480, maxHeight: "80vh", overflow: "auto" }}
+              footer={
+                <Button variant="outline" disabled={dupBusy} onClick={() => setDupItems([])}>
+                  {t("Decide later")}
+                </Button>
+              }
+            >
+              {dupErr && (
+                <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>{dupErr}</div>
+              )}
+              {dupItems.map((d) => (
+                <div
+                  key={d.a.iri + "|" + d.b.iri}
+                  style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 10, borderBottom: "1px solid var(--color-hairline)" }}
+                >
+                  <div style={{ font: "400 13px/1.4 var(--font-sans)" }}>
+                    {t("New {kind} «{a}» resembles existing «{b}» ({reason}).", {
+                      kind: d.kind === "Class" ? t("class") : t("property"),
+                      a: d.a.label,
+                      b: d.b.label,
+                      reason: d.reason
+                    })}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Button size="sm" variant="primary" disabled={dupBusy} onClick={() => decideDuplicate(d, "use_existing")}>
+                      {t("Use «{b}»", { b: d.b.label })}
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={dupBusy} onClick={() => decideDuplicate(d, "keep_new")}>
+                      {t("Keep «{a}» as a new concept", { a: d.a.label })}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </Dialog>
+          </div>
+        </div>
+      )}
       {conflictOpen && (
         <div
           style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.28)" }}

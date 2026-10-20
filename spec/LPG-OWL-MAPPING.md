@@ -376,6 +376,7 @@ The relationship to `DesignState` (represented in Cypher as `(:Run)-[:VALIDATES]
 | `PropertyCalculator` node (Phase 1303-15, experimental) | — (candidate `prov:Plan`) | Stored script that computes a DataProperty from the model. Not exported. |
 | `COMPUTED_BY` relationship (`DatatypeProperty` → `PropertyCalculator`) | — | Tooling link from an `owl:DatatypeProperty` to how its values are computed; asserts nothing about individuals. Not exported. |
 | `READS_CLASS` relationship (`PropertyCalculator` → `Class`) | — | Tooling link to the `owl:Class` whose elements a calculator reads; the Class itself is an ordinary OntoGraph `owl:Class` and exports as one. `Class.revitCategories` is a platform binding hint, not an OWL axiom. |
+| `DISTINCT_FROM` relationship (`Class` → `Class`, Phase 1303-15) | `owl:disjointWith` | Operator decision that two similar classes are different concepts; exported by `dg-reasoner/ontology_export.py` (`DISJOINT_QUERY`), so HermiT reports an individual typed with both as unsatisfiable. Between DatatypeProperties the edge only suppresses the duplicate question and is not exported. |
 
 ### UNA Interaction
 

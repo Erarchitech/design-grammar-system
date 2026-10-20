@@ -124,6 +124,16 @@ export const ru = {
 
   // Conflict check after ingest
   "This rule may conflict with an existing one": "Это правило может противоречить существующему",
+  // ── ingest duplicate question (Phase 1303-15)
+  "The new rule introduced something similar to what the project already has":
+    "Новое правило ввело сущность, похожую на уже существующую в проекте",
+  "New {kind} «{a}» resembles existing «{b}» ({reason}).": "Новый {kind} «{a}» похож на существующий «{b}» ({reason}).",
+  "Use «{b}»": "Использовать «{b}»",
+  "Keep «{a}» as a new concept": "Оставить «{a}» как новое понятие",
+  "Decide later": "Решить позже",
+  "class": "класс",
+  "property": "свойство",
+  "Could not apply the decision.": "Не удалось применить решение.",
   "An existing rule already constrains this same class, property, and comparator:":
     "Существующее правило уже ограничивает тот же класс, свойство и оператор сравнения:",
   "{n} existing rules already constrain this same class, property, and comparator:": {

@@ -63,6 +63,12 @@ export const ru = {
   "Run check": "Запустить проверку",
   "Running… {sec}s": "Выполняется… {sec} с",
   "✓ Schema consistent — no unsatisfiable classes found.": "✓ Схема согласована — неудовлетворимых классов не найдено.",
+  // ── near-duplicate classes/properties (Phase 1303-15)
+  "Possible duplicates": "Возможные дубликаты",
+  "No similar classes or properties awaiting a decision.": "Похожих классов и свойств, ожидающих решения, нет.",
+  "Merge into «{b}»": "Объединить в «{b}»",
+  "Merge into «{a}»": "Объединить в «{a}»",
+  "Different concepts": "Разные понятия",
   Consistent: "Согласована",
   Inconsistent: "Противоречива",
   Inconclusive: "Неопределённо",

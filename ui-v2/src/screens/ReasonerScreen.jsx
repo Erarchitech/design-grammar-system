@@ -5,6 +5,7 @@ import {
   selectReasoner,
   runConsistencyCheck,
 } from "../lib/reasonerApi.js";
+import { resolveOntologyDuplicate } from "../lib/graphApi.js";
 import { describeError, t } from "../i18n/index.js";
 import { useT } from "../i18n/LanguageProvider.jsx";
 
@@ -30,6 +31,60 @@ function formatRelativeDate(isoString) {
 // schema-consistency check. Pellet remains a clearly-labeled placeholder
 // ("integration pending" — selection persists server-side but does not yet
 // drive validation). Selection survives revisits (Phase 814: REAS-01..03).
+// Phase 1303-15 (owner 2026-10-20): HermiT cannot see two differently named classes that mean the same thing, so
+// the consistency check also lists the project's near-duplicate classes/properties awaiting a decision.
+function DuplicateCandidates({ project, initial }) {
+  const [items, setItems] = React.useState(initial || []);
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+  React.useEffect(() => setItems(initial || []), [initial]);
+  const decide = async (item, a, b, decision) => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await resolveOntologyDuplicate(project, a, b, decision);
+      setItems(Array.isArray(res?.candidates) ? res.candidates : items.filter((x) => x !== item));
+    } catch (e) {
+      setErr(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ font: "600 13px/1.5 var(--font-sans)" }}>{t("Possible duplicates")}</div>
+      {err && <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>{describeError(err)}</div>}
+      {items.length === 0 && (
+        <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
+          {t("No similar classes or properties awaiting a decision.")}
+        </div>
+      )}
+      {items.map((d) => (
+        <div
+          key={d.a.iri + "|" + d.b.iri}
+          style={{ display: "flex", flexDirection: "column", gap: 6, padding: 10, borderRadius: "var(--radius-cards)", background: "var(--color-surface-sunken, rgba(0,0,0,0.04))" }}
+        >
+          <div style={{ font: "500 13px/1.4 var(--font-mono)" }}>
+            {d.a.label} ↔ {d.b.label}
+          </div>
+          <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>{d.reason}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => decide(d, d.a.iri, d.b.iri, "use_existing")}>
+              {t("Merge into «{b}»", { b: d.b.label })}
+            </Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => decide(d, d.b.iri, d.a.iri, "use_existing")}>
+              {t("Merge into «{a}»", { a: d.a.label })}
+            </Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => decide(d, d.a.iri, d.b.iri, "distinct")}>
+              {t("Different concepts")}
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ReasonerScreen({ active, onBack, project }) {
   const { t, tp } = useT();
   const [reasoners, setReasoners] = React.useState([]);
@@ -513,6 +568,11 @@ export default function ReasonerScreen({ active, onBack, project }) {
                               </>
                             );
                           })()}
+
+                        {(runState === "consistent" || runState === "inconsistent") &&
+                          Array.isArray(runResult?.duplicate_candidates) && (
+                            <DuplicateCandidates project={project} initial={runResult.duplicate_candidates} />
+                          )}
 
                         {runState === "unknown" && (
                           <>

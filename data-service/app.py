@@ -88,6 +88,7 @@ import cg_input_generation
 import cg_paramstate_store
 import mapping_engine
 import mapping_store
+import class_duplicates
 import property_calculator_llm
 import property_calculator_store
 import property_scripts
@@ -1994,7 +1995,48 @@ def post_reasoner_consistency(payload: ReasonerConsistencyRequest):
     except ValueError:
         body = {"detail": response.text}
 
+    # Phase 1303-15 (owner 2026-10-20): HermiT cannot see two differently named classes that mean the same thing,
+    # so the check also reports the project's near-duplicate classes and properties still awaiting a decision.
+    if response.status_code == 200 and isinstance(body, dict):
+        try:
+            with driver.session() as session:
+                body["duplicate_candidates"] = class_duplicates.find(session, payload.project)
+        except Exception:  # noqa: BLE001 - the duplicate scan never hides the reasoner verdict
+            logging.getLogger(__name__).exception("duplicate scan for %s failed", payload.project)
+            body["duplicate_candidates"] = None
+
     return JSONResponse(status_code=response.status_code, content=body)
+
+
+@router.get("/ontology/duplicates")
+def get_ontology_duplicates(project: str = Query(...)):
+    """Near-duplicate classes and data properties of a project that have no SAME_AS / DISTINCT_FROM decision."""
+    with driver.session() as session:
+        return {"project": project, "candidates": class_duplicates.find(session, project)}
+
+
+class DuplicateResolveRequest(BaseModel):
+    project: str
+    a: str
+    b: str
+    decision: str = Field(pattern="^(use_existing|keep_new|distinct)$")
+
+
+@router.post("/ontology/duplicates/resolve")
+def post_ontology_duplicate_resolve(payload: DuplicateResolveRequest, request: Request):
+    """Operator's answer for one pair (``a`` = the new or questioned entity, ``b`` = the one it resembles):
+    ``use_existing`` merges ``a`` into ``b`` (relationships moved, rule SWRL rewritten, ``a`` deleted);
+    ``keep_new``/``distinct`` records DISTINCT_FROM (owl:disjointWith for classes in the reasoner export)."""
+    with driver.session() as session:
+        outcome = class_duplicates.resolve(session, payload.project, payload.a, payload.b, payload.decision,
+                                           _mapping_actor(request), datetime.now(timezone.utc).isoformat())
+        if not (outcome.get("merged") or outcome.get("distinct")):
+            raise _structured_error_response(
+                "Both entities must exist in the project and be of the same kind.",
+                "Pass the iri values of a candidate pair from GET /ontology/duplicates.",
+                "DUPLICATE_PAIR_NOT_FOUND", 404)
+        return {"project": payload.project, "decision": payload.decision, **outcome,
+                "candidates": class_duplicates.find(session, payload.project)}
 
 
 # ---------------------------------------------------------------------------
@@ -3735,6 +3777,17 @@ def store_execution_result(result: ExecutionResult):
         entry["message"] = result.message
     EXECUTION_RESULTS[result.executionId] = entry
     owner = EXECUTION_OWNERS.get(result.executionId) or {}
+    if (result.status == "completed" and owner.get("workflow") == "rules-ingest" and owner.get("project")
+            and owner.get("ontologyBefore") is not None):
+        # The operator decides for every new class/property that resembles an existing one (GraphScreen asks).
+        try:
+            with driver.session() as session:
+                current = class_duplicates.snapshot(session, owner["project"])
+                new_iris = sorted(set(current) - set(owner["ontologyBefore"]))
+                found = class_duplicates.find(session, owner["project"], new_iris) if new_iris else []
+            entry["payload"] = {**entry["payload"], "duplicateCandidates": found, "newOntologyIris": new_iris}
+        except Exception:  # noqa: BLE001
+            logging.getLogger(__name__).exception("duplicate check after ingest failed")
     if result.status == "completed" and owner.get("workflow") == "rules-ingest" and owner.get("project"):
         # Phase 1303-15 (owner 2026-10-20): the classes a new rule implies are created with the rule.
         threading.Thread(target=_ensure_rule_classes_after_ingest,
@@ -3818,7 +3871,15 @@ def _relay_workflow(
 
 @router.post("/workflows/rules-ingest", status_code=202)
 def relay_rules_ingest(payload: WorkflowRulesIngestRequest, request: Request):
-    return _relay_workflow(
+    # Phase 1303-15 (owner 2026-10-20): the classes and properties the project has before the ingest, so the
+    # completed ingest can ask the operator about every NEW entity that resembles an existing one.
+    try:
+        with driver.session() as session:
+            before = class_duplicates.snapshot(session, payload.project)
+    except Exception:  # noqa: BLE001 - the duplicate question is advisory; the ingest itself never waits on it
+        logging.getLogger(__name__).exception("ontology snapshot for %s failed", payload.project)
+        before = None
+    accepted = _relay_workflow(
         request,
         "rules-ingest",
         "dg/rules-ingest",
@@ -3830,6 +3891,11 @@ def relay_rules_ingest(payload: WorkflowRulesIngestRequest, request: Request):
             "cypher_prompt": False,
         },
     )
+    if before is not None:
+        with _EXECUTION_OWNERS_LOCK:
+            if accepted["executionId"] in EXECUTION_OWNERS:
+                EXECUTION_OWNERS[accepted["executionId"]]["ontologyBefore"] = before
+    return accepted
 
 
 @router.post("/workflows/graph-query", status_code=202)

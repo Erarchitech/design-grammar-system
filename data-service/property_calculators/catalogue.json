@@ -1,5 +1,5 @@
 {
-  "version": "1303-15.2",
+  "version": "1303-15.3",
   "description": "Vetted property calculators for Revit models read through Rhino.Inside.Revit. Design Grammars assembles generated scripts from these templates first; only a property no template covers gets a calculator the LLM writes under the contract of property_calculator_llm (validated AST, read-only model helpers).",
   "calculators": {
     "revit_category_intersection_count": {
@@ -24,15 +24,14 @@
       "template": "openings_below_count.py.tmpl",
       "function": "calc_openings_below_count",
       "unit": "count",
-      "summary": "Number of door/window/wall openings in the wall the box intersects whose extent along the wall overlaps the box and whose head is at or below the box bottom.",
+      "summary": "Number of door/window openings in the wall the box intersects whose extent along the wall overlaps the box and whose head is at or below the box bottom.",
       "params": {
         "opening_categories": {
           "type": "builtin_category_list",
           "required": false,
           "default": [
             "OST_Doors",
-            "OST_Windows",
-            "OST_SWallRectOpening"
+            "OST_Windows"
           ]
         }
       },
@@ -49,15 +48,14 @@
       "template": "min_opening_clearance_mm.py.tmpl",
       "function": "calc_min_opening_clearance_mm",
       "unit": "mm",
-      "summary": "Minimal clear distance, in the plane of the wall the box intersects, between the box outline and the outline of any door/window/wall opening in that wall; the sentinel when the wall has no opening.",
+      "summary": "Minimal clear distance, in the plane of the wall the box intersects, between the box outline and the outline of any door/window opening in that wall; the sentinel when the wall has no opening.",
       "params": {
         "opening_categories": {
           "type": "builtin_category_list",
           "required": false,
           "default": [
             "OST_Doors",
-            "OST_Windows",
-            "OST_SWallRectOpening"
+            "OST_Windows"
           ]
         },
         "sentinel_mm": {
@@ -191,5 +189,6 @@
       "meaning": "smallest clear distance from the element to a door/window opening in its host wall",
       "unit": "mm"
     }
-  ]
+  ],
+  "openingCategoriesNote": "Door and window openings only. OST_SWallRectOpening is the opening the structural engineer cuts from a box; counting it would make a box measure itself (owner 2026-10-20)."
 }
