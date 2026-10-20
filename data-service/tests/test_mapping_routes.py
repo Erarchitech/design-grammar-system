@@ -97,7 +97,7 @@ class FakeStore:
 
     def save_batches(self, session, project, session_id, batches):
         self.sessions[(project, session_id)]["batches"] = mapping_store.unpack(mapping_store.pack(batches))
-        self.sessions[(project, session_id)]["lastCommittedAt"] = batches[-1]["committedAt"] if batches else None
+        self.sessions[(project, session_id)]["lastCommittedAt"] = mapping_store.last_human_commit(batches)
 
     def mark_decisions_committed(self, session, project, session_id, ids, actor, at):
         for p, sid, d in self.decisions:
@@ -579,3 +579,23 @@ def test_store_pack_roundtrip_and_query_tags():
             assert "// op=mapping_" in text, name
             assert "$project" in text, name
             assert PROJECT not in text, name
+
+
+def test_elements_recognised_by_a_profile_are_delivered_without_a_further_confirmation(fake_store):
+    """Owner 2026-10-20 (D-03): after new openings were added to the model, 'Read the model again' showed no
+    question and nothing was written to Revit, because only accepted answers reached a batch. An element an
+    active profile maps above the threshold (state auto) is already confirmed: the new session carries one
+    queued profile batch with those elements and no answer ids; it does not count as a human commit (D-49)."""
+    _learn(fake_store)
+    r = _create(fx.facade_v1_descriptors())  # the same model read again: every element is known by a profile
+    assert r.status_code == 200, r.text
+    s = r.json()
+    assert s["summary"]["openQuestions"] == 0 and s["summary"]["auto"] > 0
+    assert len(s["batches"]) == 1
+    batch = s["batches"][0]
+    assert batch["source"] == "profile" and batch["answerIds"] == [] and batch["delivery"]["state"] == "queued"
+    rows = batch["payload"]["elements"]
+    assert len(rows) == s["summary"]["auto"] == batch["payload"]["applied"]
+    assert all(row["nativeId"] and row["roles"] for row in rows)
+    stored = fake_store.sessions[(PROJECT, s["sessionId"])]
+    assert stored.get("lastCommittedAt") is None  # profile delivery is not a human commit

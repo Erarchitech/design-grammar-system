@@ -407,7 +407,10 @@ def _apply(store, client, session, session_id, url, project, token):
             or len(set(r["nativeId"] for r in rows)) != len(rows)):
         return _poll_failure(store, ValueError("invalid committed batch"), token)
     # Preserve the full IRIs in the immutable payload; local names are only display labels.
-    subset = {"elements": [{"nativeId": r["nativeId"], "state": "confirmed",
+    # A profile batch (D-03: an active profile above the threshold) is written as "auto", a human
+    # confirmation as "confirmed", so DG_MappingState tells the two apart in the model.
+    state = "auto" if batch.get("source") == "profile" else "confirmed"
+    subset = {"elements": [{"nativeId": r["nativeId"], "state": state,
                             "roles": [{"classIri": iri} for iri in r["roles"]]} for r in rows]}
     _remember_delivery(store, batch_id, {"state": "executing"})
     job = _session_identity(store)

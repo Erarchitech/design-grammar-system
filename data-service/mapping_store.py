@@ -689,7 +689,28 @@ def create_session(session, project, platform, label, elements, context, actor, 
         ).start()
     meta = {"sessionId": session_id, "project": project, "platform": platform, "label": label, "createdAt": created_at, "createdBy": actor,
             "context": ctx}
+    profile_batch = queue_profile_batch(session, project, session_id, result, created_at)
+    if profile_batch is not None:
+        meta["batches"] = [profile_batch]
     return public_session(meta, result)
+
+
+def queue_profile_batch(session, project: str, session_id: str, result: dict, at: str):
+    """D-03: an element an active profile maps above the threshold (state ``auto``) is already confirmed; it is
+    delivered without a further human confirmation. Since the explicit-confirmation rollout (2026-10-19) only
+    accepted answers reached a batch, so elements added to a model and recognised by a profile were never
+    written to the CAD file (owner, 2026-10-20: new openings were not mapped). One queued batch per session,
+    ``source: profile``, answerIds empty; human answers still need the explicit confirmation."""
+    auto = [el for el in result.get("elements") or [] if el.get("state") == "auto" and el.get("roles")]
+    if not auto:
+        return None
+    constraints = engine.constraints_from_rows(fetch_rule_rows(session, project))
+    part = engine.partition({"elements": auto}, constraints)
+    part["bindings"] = engine.rule_bindings({"elements": auto, "measures": []}, constraints)
+    batch = {"batchId": f"profile-{session_id}", "revision": "profile", "answerIds": [], "committedAt": at,
+             "source": "profile", "payload": part, "delivery": {"state": "queued"}}
+    save_batches(session, project, session_id, [batch])
+    return batch
 
 
 # Background LLM refinement (D-37). Tests set this to False for a synchronous call.
@@ -922,10 +943,17 @@ def lock_session(session, project: str, session_id: str) -> None:
              {"project": project, "sid": session_id})
 
 
+def last_human_commit(batches: list):
+    """``lastCommittedAt`` reflects human confirmations only: a profile batch (D-03) does not make a session the
+    "latest applied" population reference of D-49."""
+    human = [b for b in batches if b.get("source") != "profile"]
+    return human[-1]["committedAt"] if human else None
+
+
 def save_batches(session, project: str, session_id: str, batches: list) -> None:
     _run(session, SESSION_UPDATE_QUERY, {"project": project, "sessionId": session_id,
                                        "props": {"batchesJson": engine.canonical_json(batches),
-                                                 "lastCommittedAt": batches[-1]["committedAt"] if batches else None}})
+                                                 "lastCommittedAt": last_human_commit(batches)}})
 
 
 def mark_decisions_committed(session, project, session_id, ids, actor, at):

@@ -248,10 +248,23 @@ def object_reference(unique_id):
     return ref
 
 
+# Revit feet -> Rhino model units. Not RhinoMath.UnitScale: inside Rhino.Inside.Revit pythonnet sees two
+# Rhino.UnitSystem types and refuses the overload ("Rhino.UnitSystem value cannot be converted to
+# Rhino.UnitSystem"), so the enum is read by name.
+_FEET_IN = {"Millimeters": 304.8, "Centimeters": 30.48, "Decimeters": 3.048, "Meters": 0.3048,
+            "Kilometers": 0.0003048, "Inches": 12.0, "Feet": 1.0, "Yards": 1.0 / 3.0}
+
+
+def feet_to_model_scale():
+    doc = Rhino.RhinoDoc.ActiveDoc
+    name = str(doc.ModelUnitSystem) if doc is not None else "Feet"
+    return _FEET_IN.get(name.split(".")[-1], 1.0)
+
+
 def run_calculator(doc, family_filter):
     boxes = collect_boxes(doc, family_filter)
     ctx = Context(doc, boxes)
-    scale = Rhino.RhinoMath.UnitScale(Rhino.UnitSystem.Feet, Rhino.RhinoDoc.ActiveDoc.ModelUnitSystem)
+    scale = feet_to_model_scale()
     values = []
     errors = []
     for prop in PROPERTIES:

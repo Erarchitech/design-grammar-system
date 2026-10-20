@@ -323,3 +323,17 @@ def test_alias_and_near_match_use_the_iri_name_when_the_label_is_a_description(c
     assert ps.resolve_property(dp, catalogue)["calculator"] == "revit_min_opening_clearance_mm"
     dp = {"iri": DG + "hasBeamIntersectionCount", "label": "number of beams the box crosses"}
     assert ps.resolve_property(dp, catalogue)["resolvedBy"] == "alias"
+
+
+def test_check_summary_never_reports_a_failed_chain_as_clean():
+    import app as app_module
+
+    failed = {"finished": True, "send": True, "clear": False, "status": {
+        "boxes": 0, "violations": [], "validationRunId": [],
+        "messages": ["error DG PROPERTY CALCULATOR: Rhino.UnitSystem value cannot be converted", "warning RULE BY ID: Set RuleId."]}}
+    s = app_module.property_check_summary(failed)
+    assert s["ok"] is False and s["problems"][0].startswith("error DG PROPERTY CALCULATOR")
+    good = {"finished": True, "send": True, "clear": False, "status": {
+        "boxes": 12, "violations": ["box [1]: R1"], "validationRunId": ["VR-1"], "messages": []}}
+    assert app_module.property_check_summary(good) == {"ok": True, "problems": [], "boxes": 12, "violations": 1,
+                                                       "validationRunIds": ["VR-1"], "published": True}

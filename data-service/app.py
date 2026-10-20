@@ -2131,7 +2131,9 @@ class PropertyCheckRunRequest(BaseModel):
     project: str
     paint: bool = True
     clear: bool = False
-    send: bool = False
+    # Owner 2026-10-20: a check run from DeGram or the Web UI is expected in the Model Viewer, so VALIDATOR
+    # publishes by default (SendValid); pass send=false for a dry run.
+    send: bool = True
     refresh: bool = True
 
 
@@ -2158,7 +2160,34 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
     result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
         result["refreshed"] = refreshed
+        result["summary"] = property_check_summary(result)
     return result
+
+
+def property_check_summary(result: dict) -> dict:
+    """A verdict the caller cannot misread: ``ok`` is false when any component of the chain reported an error, so
+    "0 violations" from a calculator that computed nothing is never presented as a clean model (DeGram did)."""
+    status = result.get("status") if isinstance(result.get("status"), dict) else {}
+    messages = [str(m) for m in status.get("messages") or []]
+    errors = [m for m in messages if m.startswith("error")]
+    boxes = int(status.get("boxes") or 0)
+    violations = list(status.get("violations") or [])
+    run_ids = [r for r in status.get("validationRunId") or [] if r]
+    problems = list(errors)
+    if result.get("finished") is False:
+        problems.append("the Grasshopper solution did not finish in time; read /scripts/property-check/status")
+    if not result.get("clear") and boxes == 0 and not errors:
+        problems.append("the calculator found no boxes (check BoxFamilyFilter and the active Revit document)")
+    if result.get("send") and not result.get("clear") and not run_ids and not errors:
+        problems.append("VALIDATOR published no validation run (is CONNECTOR signed in and wired to Token?)")
+    return {
+        "ok": not problems,
+        "problems": problems,
+        "boxes": boxes,
+        "violations": len(violations),
+        "validationRunIds": run_ids,
+        "published": bool(run_ids),
+    }
 
 
 @router.post("/scripts/property-check/status")

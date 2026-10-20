@@ -1668,3 +1668,14 @@ def test_palette_overridden_ids_finds_only_dg_colours(runner, revit_io, monkeypa
     })
     assert revit_io.palette_overridden_ids(FakeColourDocument(elements), view) == ["uid-dg"]
     assert revit_io.palette_overridden_ids(None, view) == []
+
+
+def test_a_profile_batch_writes_auto_mapping_state():
+    """Owner 2026-10-20: elements an active profile classified must get DG_Class and DG_MappingState too; the
+    state written for a profile batch is 'auto', for a human confirmation 'confirmed'."""
+    import inspect
+    from dg_connector import runner
+
+    source = inspect.getsource(runner._apply)
+    assert 'state = "auto" if batch.get("source") == "profile" else "confirmed"' in source
+    assert '"state": state,' in source
