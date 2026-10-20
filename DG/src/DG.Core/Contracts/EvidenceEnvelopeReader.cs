@@ -106,7 +106,7 @@ public static class EvidenceEnvelopeReader
         {
             var value = pending.Pop();
             if (value.ValueKind == JsonValueKind.Number &&
-                (!value.TryGetDouble(out var number) || !double.IsFinite(number))) return false;
+                (!value.TryGetDouble(out var number) || !DG.Core.Compat.DgCompat.IsFinite(number))) return false;
             if (value.ValueKind == JsonValueKind.String)
             {
                 // Escape decoding is lazy; catch only at the string decode seam.
@@ -179,7 +179,7 @@ public static class EvidenceEnvelopeReader
                 case "rows": case "canonicalStatus": break;
                 case "canonicalizationVersion":
                     if (field.Value.ValueKind != JsonValueKind.Number ||
-                        !field.Value.TryGetDouble(out var number) || !double.IsFinite(number) ||
+                        !field.Value.TryGetDouble(out var number) || !DG.Core.Compat.DgCompat.IsFinite(number) ||
                         Math.Truncate(number) != number || Math.Abs(number) > 9007199254740991d) return false;
                     break;
                 case "sourceRepresentation":

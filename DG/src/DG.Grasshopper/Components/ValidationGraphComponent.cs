@@ -100,7 +100,7 @@ public sealed class ValidationGraphComponent : GH_Component
             StartLoad(connection, requestKey);
         }
 
-        if (_queryTask is { IsCompletedSuccessfully: true })
+        if (_queryTask is { Status: TaskStatus.RanToCompletion })
         {
             var result = _queryTask.Result;
             _latestRuns = result.Runs.Select(ToPublicRunInfo).ToList();

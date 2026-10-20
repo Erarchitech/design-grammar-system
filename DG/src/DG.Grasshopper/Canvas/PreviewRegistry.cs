@@ -27,8 +27,8 @@ internal static class PreviewRegistry
         IEnumerable<(string proposalId, Guid groupGuid)> created,
         IEnumerable<ProposalDto> proposals)
     {
-        ArgumentNullException.ThrowIfNull(created);
-        ArgumentNullException.ThrowIfNull(proposals);
+        DG.Core.Compat.DgCompat.ThrowIfNull(created);
+        DG.Core.Compat.DgCompat.ThrowIfNull(proposals);
 
         var proposalsById = proposals.ToDictionary(p => p.ProposalId, StringComparer.Ordinal);
 

@@ -29,7 +29,7 @@ public static class CanvasUiWait
     /// </summary>
     public static T Await<T>(Task<T> task, int timeoutMs = CanvasBridgeProtocol.CanvasUiTimeoutMs)
     {
-        ArgumentNullException.ThrowIfNull(task);
+        DG.Core.Compat.DgCompat.ThrowIfNull(task);
 
         // WaitHandle wait never throws for a faulted task (Task.Wait would wrap in AggregateException).
         if (!((IAsyncResult)task).AsyncWaitHandle.WaitOne(timeoutMs) && !task.IsCompleted)

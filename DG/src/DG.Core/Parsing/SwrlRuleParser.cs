@@ -77,7 +77,7 @@ public static class SwrlRuleParser
             return SwrlParseResult.Create(null, diagnostics);
         }
 
-        var split = swrlExpression.Split("->", StringSplitOptions.TrimEntries);
+        var split = swrlExpression.Split(new[] { "->" }, StringSplitOptions.None).Select(s => s.Trim()).ToArray();
         if (split.Length != 2)
         {
             diagnostics.Add(new ParseDiagnostic(

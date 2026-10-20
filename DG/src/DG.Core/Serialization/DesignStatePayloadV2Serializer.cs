@@ -14,7 +14,7 @@ public static class DesignStatePayloadV2Serializer
 
     public static string Serialize(DesignState designState)
     {
-        ArgumentNullException.ThrowIfNull(designState);
+        DG.Core.Compat.DgCompat.ThrowIfNull(designState);
 
         ValidateDesignState(designState);
 

@@ -108,9 +108,9 @@ public sealed class OntoGraphComponent : GH_Component
             StartLoad(connection, requestKey);
         }
 
-        if (_classesTask is { IsCompletedSuccessfully: true }
-            && _objPropertiesTask is { IsCompletedSuccessfully: true }
-            && _dataPropertiesTask is { IsCompletedSuccessfully: true })
+        if (_classesTask is { Status: TaskStatus.RanToCompletion }
+            && _objPropertiesTask is { Status: TaskStatus.RanToCompletion }
+            && _dataPropertiesTask is { Status: TaskStatus.RanToCompletion })
         {
             _latestClasses = _classesTask.Result.Select(ToPublicClass).ToList();
             _latestObjProperties = _objPropertiesTask.Result.Select(ToPublicProperty).ToList();

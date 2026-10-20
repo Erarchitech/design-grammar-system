@@ -114,8 +114,8 @@ public sealed class MappingSnapshot
     public string Fingerprint()
     {
         var json = JsonSerializer.Serialize(new object[] { ElementsPayload(), ParametersPayload(), MeasuresPayload() });
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(json));
-        return Convert.ToHexString(hash, 0, 8);
+        var hash = DG.Core.Compat.DgCompat.Sha256(Encoding.UTF8.GetBytes(json));
+        return DG.Core.Compat.DgCompat.ToHex(hash, 0, 8);
     }
 
     private List<SortedDictionary<string, object?>> ElementsPayload() =>

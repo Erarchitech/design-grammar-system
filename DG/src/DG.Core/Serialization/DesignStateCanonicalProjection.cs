@@ -67,7 +67,7 @@ public static class DesignStateCanonicalProjection
     /// </summary>
     public static JsonObject Build(DesignState designState)
     {
-        ArgumentNullException.ThrowIfNull(designState);
+        DG.Core.Compat.DgCompat.ThrowIfNull(designState);
 
         var members = new JsonArray();
         foreach (var entry in BuildMembers(designState))

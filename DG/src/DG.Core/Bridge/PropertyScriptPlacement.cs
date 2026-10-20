@@ -25,9 +25,9 @@ public static class PropertyScriptPlacement
     /// <summary>The Rhino 8 "Python 3 Script" component (RhinoCodePluginGH.Components.Python3Component).</summary>
     public static Guid Python3ScriptComponent { get; } = new("719467e6-7cf5-4848-99b0-c5dd57e5442c");
 
-    public static readonly IReadOnlySet<string> Kinds = new HashSet<string>(StringComparer.Ordinal) { "dg", "script", "toggle", "panel" };
+    public static readonly HashSet<string> Kinds = new HashSet<string>(StringComparer.Ordinal) { "dg", "script", "toggle", "panel" };
 
-    public static readonly IReadOnlySet<string> Accesses = new HashSet<string>(StringComparer.Ordinal) { "item", "list", "tree" };
+    public static readonly HashSet<string> Accesses = new HashSet<string>(StringComparer.Ordinal) { "item", "list", "tree" };
 
     public static PropertyScriptPlan Parse(JsonElement parameters)
     {

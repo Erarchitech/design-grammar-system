@@ -70,7 +70,7 @@ public sealed class ConnectorSessionClient : IConnectorSessionClient
                     return new ConnectorSessionResult(ConnectorSessionOutcome.Rejected);
                 }
 
-                if (loginResponse.StatusCode == HttpStatusCode.TooManyRequests)
+                if (loginResponse.StatusCode == (HttpStatusCode)429)
                 {
                     return new ConnectorSessionResult(ConnectorSessionOutcome.Throttled);
                 }
@@ -172,9 +172,9 @@ public sealed class ConnectorSessionClient : IConnectorSessionClient
                 return new ConnectorSessionResult(ConnectorSessionOutcome.Rejected, ServerCode: code, ServerMessage: message);
             case HttpStatusCode.Forbidden:
                 return new ConnectorSessionResult(ConnectorSessionOutcome.Forbidden, ServerCode: code, ServerMessage: message);
-            case HttpStatusCode.UnprocessableEntity:
+            case (HttpStatusCode)422:
                 return new ConnectorSessionResult(ConnectorSessionOutcome.ProjectRequired, ServerCode: code, ServerMessage: message);
-            case HttpStatusCode.TooManyRequests:
+            case (HttpStatusCode)429:
                 return new ConnectorSessionResult(ConnectorSessionOutcome.Throttled, ServerCode: code, ServerMessage: message);
             default:
                 return new ConnectorSessionResult(ConnectorSessionOutcome.Unreachable);

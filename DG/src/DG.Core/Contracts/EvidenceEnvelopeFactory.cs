@@ -26,8 +26,8 @@ public static class EvidenceEnvelopeFactory
         string? ontologyVersion = null, string? ruleVersion = null, string? shapeVersion = null,
         string? provider = null, string? model = null, List<string>? warnings = null)
     {
-        ArgumentNullException.ThrowIfNull(rows);
-        ArgumentNullException.ThrowIfNull(ruleResults);
+        DG.Core.Compat.DgCompat.ThrowIfNull(rows);
+        DG.Core.Compat.DgCompat.ThrowIfNull(ruleResults);
         var sortedRules = ruleResults.OrderBy(r => r.RuleId, StringComparer.Ordinal).ToList();
         if (sortedRules.Select(r => r.RuleId).Distinct(StringComparer.Ordinal).Count() != sortedRules.Count)
             throw new ArgumentException("Duplicate ruleResults ruleId", nameof(ruleResults));

@@ -94,7 +94,7 @@ public static class DgIdMintingService
 
     private static string HashToHex16(string input)
     {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
-        return Convert.ToHexString(hash)[..16];
+        var hash = DG.Core.Compat.DgCompat.Sha256(Encoding.UTF8.GetBytes(input));
+        return DG.Core.Compat.DgCompat.ToHex(hash)[..16];
     }
 }

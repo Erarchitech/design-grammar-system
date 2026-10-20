@@ -14,7 +14,7 @@ public static class ComputgraphContextSerializer
 
     public static string Serialize(CgContext context)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        DG.Core.Compat.DgCompat.ThrowIfNull(context);
 
         ValidateContext(context);
 

@@ -236,7 +236,7 @@ public static class CanvasAnnotationNameFactory
     /// </summary>
     public static int NextFreePatternIndex(IEnumerable<string> existingGroupNicknames, int procIndex)
     {
-        ArgumentNullException.ThrowIfNull(existingGroupNicknames);
+        DG.Core.Compat.DgCompat.ThrowIfNull(existingGroupNicknames);
 
         var prefix = procIndex.ToString(CultureInfo.InvariantCulture) + CanvasAnnotationGrammar.PatternInfix;
         var maxIdx = 0;

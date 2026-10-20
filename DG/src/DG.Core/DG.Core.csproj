@@ -1,13 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net7.0;net9.0;net48</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Neo4j.Driver" Version="5.28.2" />
+  </ItemGroup>
+
+  <!-- Phase 1303-15: net48 build for Rhino.Inside.Revit in Revit 2024 (.NET Framework runtime). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+    <PackageReference Include="PolySharp" Version="1.14.1">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

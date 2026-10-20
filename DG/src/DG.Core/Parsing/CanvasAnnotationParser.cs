@@ -95,7 +95,7 @@ public static class CanvasAnnotationParser
     /// </summary>
     public static CgContext Parse(RawCanvas raw)
     {
-        ArgumentNullException.ThrowIfNull(raw);
+        DG.Core.Compat.DgCompat.ThrowIfNull(raw);
 
         CgObject? cgObject = null;
         var algorithms = new List<CgAlgorithm>();

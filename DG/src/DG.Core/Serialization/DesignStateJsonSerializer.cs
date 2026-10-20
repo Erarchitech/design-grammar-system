@@ -14,7 +14,7 @@ public static class DesignStateJsonSerializer
 
     public static string Serialize(ParamState snapshot)
     {
-        ArgumentNullException.ThrowIfNull(snapshot);
+        DG.Core.Compat.DgCompat.ThrowIfNull(snapshot);
 
         ValidateSnapshot(snapshot);
 

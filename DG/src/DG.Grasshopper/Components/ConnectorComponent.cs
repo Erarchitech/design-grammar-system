@@ -140,7 +140,7 @@ public sealed class ConnectorComponent : GH_Component
                 StartConnection(username, password, project, requestKey);
             }
 
-            if (_connectTask is { IsCompletedSuccessfully: true })
+            if (_connectTask is { Status: TaskStatus.RanToCompletion })
             {
                 var result = _connectTask.Result;
                 _latestConnection = result.Connection;
@@ -381,8 +381,8 @@ public sealed class ConnectorComponent : GH_Component
     private static string HashRequest(string username, string project, string password)
     {
         // The raw username, project and password never enter the dedup key — only their SHA-256 hash.
-        return Convert.ToHexString(
-            System.Security.Cryptography.SHA256.HashData(
+        return DG.Core.Compat.DgCompat.ToHex(
+            DG.Core.Compat.DgCompat.Sha256(
                 System.Text.Encoding.UTF8.GetBytes($"{username}\u0000{project}\u0000{password}")));
     }
 

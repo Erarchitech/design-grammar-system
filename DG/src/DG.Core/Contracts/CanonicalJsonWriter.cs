@@ -61,8 +61,8 @@ public static class CanonicalJsonWriter
         }
 
         var joined = string.Join("|", parts);
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(joined));
-        return Convert.ToHexString(hash);
+        var hash = DG.Core.Compat.DgCompat.Sha256(Encoding.UTF8.GetBytes(joined));
+        return DG.Core.Compat.DgCompat.ToHex(hash);
     }
 
     /// <summary>
@@ -98,8 +98,8 @@ public static class CanonicalJsonWriter
     public static string HashCanonical(JsonNode? node)
     {
         var canonical = Canonicalize(node);
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(canonical));
-        return Convert.ToHexString(hash);
+        var hash = DG.Core.Compat.DgCompat.Sha256(Encoding.UTF8.GetBytes(canonical));
+        return DG.Core.Compat.DgCompat.ToHex(hash);
     }
 
     private static void WriteNode(JsonNode? node, StringBuilder sb, string path)

@@ -405,8 +405,8 @@ internal static class MappingCanvasReader
         return HashParts(parts);
     }
 
-    private static string HashParts(List<string> parts) => Convert.ToHexString(
-        System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+    private static string HashParts(List<string> parts) => DG.Core.Compat.DgCompat.ToHex(
+        DG.Core.Compat.DgCompat.Sha256(System.Text.Encoding.UTF8.GetBytes(
             System.Text.Json.JsonSerializer.Serialize(parts))));
 
     public static bool IsDg(IGH_DocumentObject? obj) =>

@@ -8,8 +8,17 @@
     <EmbeddedResource Include="Properties\*.png" />
   </ItemGroup>
 
+  <!-- Phase 1303-15: net48 build for Rhino.Inside.Revit in Revit 2024 (.NET Framework runtime). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="PolySharp" Version="1.14.1">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Net.Http.Json" Version="8.0.1" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFrameworks>net7.0-windows;net48</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <ImplicitUsings>enable</ImplicitUsings>

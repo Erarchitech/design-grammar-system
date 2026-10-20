@@ -94,7 +94,7 @@ public sealed class MetagraphComponent : GH_Component
             StartLoad(connection, requestKey);
         }
 
-        if (_loadTask is { IsCompletedSuccessfully: true } && _objectsLoadTask is { IsCompletedSuccessfully: true })
+        if (_loadTask is { Status: TaskStatus.RanToCompletion } && _objectsLoadTask is { Status: TaskStatus.RanToCompletion })
         {
             _latestRules = _loadTask.Result.Select(ToPublicRule).ToList();
             _latestObjects = _objectsLoadTask.Result.Select<DG.Core.Models.OntologyClass, global::DG.OntologyClass>(ToPublicOntologyClass).ToList();

@@ -16,7 +16,7 @@ public static class SupportedBuiltins
     /// The six supported comparison builtins, in their canonical <c>swrlb:</c>-prefixed spelling.
     /// Lookups against this set are case-insensitive (<see cref="IsSupported"/>).
     /// </summary>
-    public static readonly IReadOnlySet<string> Names = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    public static readonly HashSet<string> Names = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "swrlb:lessThan",
         "swrlb:greaterThan",
@@ -32,7 +32,7 @@ public static class SupportedBuiltins
     /// (<c>RuleEvaluator.cs</c>'s non-numeric fallback branch). The other four members of
     /// <see cref="Names"/> are numeric-only comparisons and have no non-numeric meaning.
     /// </summary>
-    public static readonly IReadOnlySet<string> NonNumericCapableNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    public static readonly HashSet<string> NonNumericCapableNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "swrlb:equal",
         "swrlb:notEqual",

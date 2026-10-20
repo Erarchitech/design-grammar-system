@@ -263,7 +263,7 @@ public sealed class MappingSessionClient
             Parameters = parameters,
             Measures = measures,
             LlmStatus = llm,
-            Revision = Text(root, "revision") ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
+            Revision = Text(root, "revision") ?? DG.Core.Compat.DgCompat.ToHex(DG.Core.Compat.DgCompat.Sha256(Encoding.UTF8.GetBytes(revision.ToString())), 0, 8),
         };
     }
 

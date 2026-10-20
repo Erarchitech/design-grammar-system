@@ -27,7 +27,7 @@ public static class CgContextDgIdAssigner
     /// <exception cref="InvalidOperationException">When <paramref name="context"/> has no Definition.DocumentId.</exception>
     public static void AssignDgIds(CgContext context, string project)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        DG.Core.Compat.DgCompat.ThrowIfNull(context);
 
         if (string.IsNullOrWhiteSpace(context.Definition.DocumentId))
         {

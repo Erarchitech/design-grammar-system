@@ -255,7 +255,7 @@ public sealed class CanvasListenerComponent : GH_Component
             {
                 var b = top.Bounds;
                 var zoom = Math.Min(canvas.Width / (b.Width + 400f), canvas.Height / (b.Height + 300f));
-                canvas.Viewport.Zoom = Math.Clamp(zoom, 0.4f, 1.6f);
+                canvas.Viewport.Zoom = Math.Max(0.4f, Math.Min(1.6f, zoom));
                 canvas.Viewport.MidPoint = new PointF(b.X + b.Width / 2f, b.Y + b.Height / 2f);
                 canvas.Refresh();
             }
@@ -889,8 +889,8 @@ public sealed class CanvasListenerComponent : GH_Component
 
     private static string Sha256Hex(string text)
     {
-        var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text));
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        var hash = DG.Core.Compat.DgCompat.Sha256(Encoding.UTF8.GetBytes(text));
+        return DG.Core.Compat.DgCompat.ToHex(hash).ToLowerInvariant();
     }
 
     /// <summary>
