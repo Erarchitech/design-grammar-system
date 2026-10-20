@@ -159,6 +159,9 @@ class _Session:
 
     def run(self, query, **params):
         self.calls.append((query, params))
+        if "READS_CLASS" in query:
+            self.classes = getattr(self, "classes", []) + [params]
+            return _Result([])
         if "PropertyCalculator" in query and query.lstrip().startswith("MERGE"):
             self.saved.append(params)
             return _Result([])
@@ -229,6 +232,42 @@ def test_unknown_property_is_generated_validated_stored_and_then_reused(catalogu
     assert len(calls) == 1
     assert again["resolved"][0]["resolvedBy"] == "stored"
     assert again["calculator"]["sha256"] == first["calculator"]["sha256"]
+
+
+def test_classes_behind_the_read_categories_are_created_and_linked(catalogue):
+    session = _Session(_rows())
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue, store=True)
+    by_rule = {r["ruleId"]: [c["label"] for c in r["contextClasses"]] for r in out["resolved"]}
+    assert by_rule["R_STR_OPENING_BEAM_V"] == ["Beam"]
+    assert by_rule["R_STR_OPENING_COLUMN_V"] == ["Column"]
+    assert by_rule["R_STR_OPENING_ABOVE_V"] == ["Door", "Wall", "WallOpening", "Window"]
+    assert by_rule["R_STR_OPENING_CLEARANCE_300_V"] == ["Door", "Wall", "WallOpening", "Window"]
+    column = next(c for r in out["resolved"] for c in r["contextClasses"] if c["label"] == "Column")
+    assert column == {"label": "Column", "iri": DG + "Column", "revitCategories": ["OST_Columns", "OST_StructuralColumns"]}
+    written = {(c["dataPropertyIri"].split("#")[-1], c["label"]) for c in session.classes}
+    assert ("hasBeamIntersectionCount", "Beam") in written and ("hasOpeningsBelowCount", "WallOpening") in written
+    assert len(session.classes) == 1 + 1 + 4 + 4
+
+
+def test_preview_creates_no_classes(catalogue):
+    session = _Session(_rows())
+    ps.generate(session, PROJECT, None, catalogue=catalogue)
+    assert not getattr(session, "classes", [])
+
+
+def test_generated_calculator_classes_come_from_its_source_not_from_the_llm(catalogue):
+    from property_calculator_llm import finalize
+
+    source = "def calc_gen(ctx, box, params):\n    return len(ctx.intersecting(box, ['OST_Floors', 'OST_Bogus']))\n"
+
+    def generator(dp, rules, box):
+        name, src = finalize(source)
+        return {"status": "ok", "function": name, "source": src, "provider": "fake", "model": "m"}
+
+    out = ps.generate(_Session(_rows({"R_X_V": "hasSlabCrossingCount"})), PROJECT, None, catalogue=catalogue,
+                      generator=generator, store=True)
+    assert out["resolved"][0]["contextClasses"] == [
+        {"label": "Floor", "iri": DG + "Floor", "revitCategories": ["OST_Floors"]}]
 
 
 def test_failed_generation_is_reported_unsupported(catalogue):

@@ -33,6 +33,25 @@ SAVE_QUERY = (
 )
 
 
+# A context class (Beam, Column, Wall, ...) is matched by project + label so a class the user or the rule ingest
+# already created is reused, never duplicated; DG adds the Revit categories it stands for and links the calculator.
+CONTEXT_CLASS_QUERY = (
+    "MERGE (k:Class {project:$project, label:$label}) "
+    "ON CREATE SET k.iri = $iri, k.graph = 'OntoGraph', k.source = 'property_scripts' "
+    "SET k.revitCategories = [x IN coalesce(k.revitCategories, []) WHERE NOT x IN $categories] + $categories "
+    "WITH k "
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
+    "MERGE (pc)-[r:READS_CLASS]->(k) SET r.revitCategories = $categories "
+    "RETURN k.iri AS iri"
+)
+
+
+def save_context_classes(session: Any, project: str, data_property_iri: str, classes: list[dict]) -> None:
+    for c in classes:
+        session.run(CONTEXT_CLASS_QUERY, project=project, label=c["label"], iri=c["iri"],
+                    categories=list(c["revitCategories"]), dataPropertyIri=data_property_iri).consume()
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 

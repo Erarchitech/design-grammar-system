@@ -645,6 +645,7 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 | `CREATED_PROFILE` | MappingDecision | MappingProfile | — | Experimental (Phase 1303 MVP slice): the decision that created or re-confirmed the profile; written only by `mapping_store.save_profile` |
 | `ASSIGNS_ROLE` | MappingProfile | Class | — | Experimental (Phase 1303 MVP slice): the class roles a profile assigns to matching elements (Computgraph → OntoGraph cross-layer, Class matched by `iri`); written only by `mapping_store.save_profile` |
 | `COMPUTED_BY` | DatatypeProperty | PropertyCalculator | — | Experimental (Phase 1303-15): the stored script that computes the property for the project (OntoGraph → Computgraph, DatatypeProperty matched by `iri`+`project`); written only by `property_calculator_store.save` |
+| `READS_CLASS` | PropertyCalculator | Class | `revitCategories` (string list) | Experimental (Phase 1303-15): the context classes (Beam, Column, Wall, Floor, Door, Window, WallOpening, …) whose Revit elements the calculator reads to compute the property. DG creates a missing context Class in the project OntoGraph (matched by `project`+`label`; new ones get `source: 'property_scripts'` and accumulate `revitCategories`); categories come from the catalogue `reads` declaration or, for a generated calculator, from its source by AST, mapped through `catalogue.json` `categoryClasses`. Written only by `property_calculator_store.save_context_classes` |
 
 ## Rule ID Format
 

@@ -140,6 +140,39 @@ def resolve_property(data_property: dict, catalogue: dict, chooser: Chooser | No
 Generator = Callable[[dict, list, str], dict]
 
 
+def read_categories(entry: dict, catalogue: dict) -> list[str]:
+    """Revit categories the bound calculator reads: declared by the catalogue entry (``reads``), or extracted from a
+    generated calculator's source by AST. Only known categories count."""
+    if entry.get("origin") == "generated":
+        from property_calculator_llm import categories_in
+
+        categories = categories_in(entry.get("source") or "")
+    else:
+        spec = catalogue["calculators"].get(entry["calculator"], {}).get("reads") or {}
+        categories = list(spec.get("fixed") or [])
+        for name in spec.get("params") or []:
+            categories += list((entry.get("params") or {}).get(name) or [])
+    allowed = set(catalogue["builtin_categories"])
+    return sorted({c for c in categories if c in allowed})
+
+
+def context_classes(entry: dict, catalogue: dict, iri_prefix: str) -> list[dict]:
+    """The DG classes behind the categories a calculator reads (Beam, Column, Wall, ...), so every class a rule's
+    property depends on exists in the OntoGraph; DG creates them, the user never has to."""
+    by_label: dict[str, list[str]] = {}
+    for category in read_categories(entry, catalogue):
+        label = catalogue.get("categoryClasses", {}).get(category)
+        if label:
+            by_label.setdefault(label, []).append(category)
+    return [{"label": label, "iri": f"{iri_prefix}{label}", "revitCategories": sorted(cats)}
+            for label, cats in sorted(by_label.items())]
+
+
+def iri_prefix_of(iri: str) -> str:
+    name = local_name(iri)
+    return iri[: len(iri) - len(name)] if name and iri.endswith(name) else "ex:"
+
+
 def _from_stored(record: dict, catalogue: dict) -> dict | None:
     """A stored calculator as a binding; a catalogue entry that no longer exists is not reused."""
     if record.get("origin") == "generated":
@@ -355,12 +388,19 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
     resolution = resolve(rules, catalogue, chooser, stored=stored, generator=generator)
     if resolution["unsupported"] and not resolution["resolved"]:
         raise PropertyScriptError("NOTHING_TO_COMPUTE", "No rule DataProperty resolved to a catalogue calculator")
+    prefix = iri_prefix_of(resolution["boxClass"]["iri"])
+    for entry in resolution["resolved"]:
+        entry["contextClasses"] = context_classes(entry, catalogue, prefix)
     if store:
         saved = set()
         for entry in resolution["resolved"]:
-            if entry.get("new") and entry["dataPropertyIri"] not in saved:
+            if entry["dataPropertyIri"] in saved:
+                continue
+            if entry.get("new"):
                 property_calculator_store.save(session, project, entry, actor)
-                saved.add(entry["dataPropertyIri"])
+            property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
+                                                           entry["contextClasses"])
+            saved.add(entry["dataPropertyIri"])
     for entry in resolution["resolved"]:
         entry.pop("new", None)
     scripts = assemble(project, resolution, catalogue)

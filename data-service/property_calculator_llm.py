@@ -111,6 +111,17 @@ def validate_function(source: str) -> str:
     return ast.unparse(fn).strip() + "\n"
 
 
+def categories_in(source: str) -> list[str]:
+    """The Revit BuiltInCategory names a calculator reads, taken from its string constants (``"OST_..."``) by AST,
+    so the classes DG creates for it never depend on what the LLM claims."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    return sorted({n.value for n in ast.walk(tree)
+                   if isinstance(n, ast.Constant) and isinstance(n.value, str) and re.fullmatch(r"OST_[A-Za-z]+", n.value)})
+
+
 def finalize(source: str) -> tuple[str, str]:
     """(function name, source) with a content-derived name, so the same function always gets the same name."""
     normalized = validate_function(source)
