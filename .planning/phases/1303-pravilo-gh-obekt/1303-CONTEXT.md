@@ -207,7 +207,19 @@ Supersede D-10 and D-20 (Revit read-only), D-27 (no geometry from Revit), the Re
   - The Web UI «Импорт дескрипторов (JSON)» + `revit_read.py` path stays as a fallback.
   - Plans are split by committing repository. Framework: connector fork, server, Web UI, docs. Component: DeGram in `D:\dgb\src`.
   - The demo setup must stay intact. Images come from `git archive` with `pre-1303-11` rollback tags. The pyRevit extension is installed with a backup. DG.gha is not touched by this work.
+
+### Property-calculator catalogue (plan 1303-15, owner decision 2026-10-20)
+
+- **D-54: A generated calculator joins the shared catalogue only after the operator confirms its result on a model.**
+  - Problem: the vetted catalogue (`data-service/property_calculators/catalogue.json` + `*.py.tmpl`) is static and grows only by hand. A calculator the LLM writes for an uncovered property is checked for safety (AST contract), not for correctness, and stays in one project (`PropertyCalculator`, `origin: generated`). The ingest vocabulary knows only catalogue properties, so the LLM invents names for new concepts (`hasMinHostOpeningClearanceMm`).
+  - Decision: promotion after confirmation.
+    1. After a run, the operator sees for a generated calculator its source, the values it produced on sample boxes and the rule verdicts; they confirm or reject it (Web UI, DeGram tool).
+    2. A confirmed calculator moves to a shared catalogue stored in Neo4j (not the file): source, sha256, property name, unit, the Revit categories it reads, provenance (project, run id, confirmedBy/At).
+    3. Its property joins the ingest vocabulary (`SWRL_CONVENTIONS.computable_form.computable_properties`), so later rules and projects reuse it by name without the LLM.
+    4. A rejected calculator is retired (`status: rejected`) and the property is regenerated or marked unsupported.
+    5. The file catalogue stays the vetted seed; the Neo4j catalogue extends it. Resolution order: file catalogue, shared catalogue, project-stored, LLM generation.
+  - Not yet built. To be planned and executed in the next session (todo `2026-10-20-promote-confirmed-generated-calculators-to-catalogue.md`).
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
-*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice)*
+*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion)*
