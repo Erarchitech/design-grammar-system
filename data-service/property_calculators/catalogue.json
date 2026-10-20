@@ -1,0 +1,53 @@
+{
+  "version": "1303-15.1",
+  "description": "Vetted property calculators for Revit models read through Rhino.Inside.Revit. Design Grammars assembles generated scripts only from these templates; an LLM may choose an entry and fill its declared parameters, never write code.",
+  "calculators": {
+    "revit_category_intersection_count": {
+      "template": "category_intersection_count.py.tmpl",
+      "function": "calc_category_intersection_count",
+      "unit": "count",
+      "summary": "Number of elements of the given Revit categories whose solid intersects the box solid (bounding-box overlap when the box has no solid).",
+      "params": {
+        "categories": {"type": "builtin_category_list", "required": true}
+      }
+    },
+    "revit_openings_below_count": {
+      "template": "openings_below_count.py.tmpl",
+      "function": "calc_openings_below_count",
+      "unit": "count",
+      "summary": "Number of door/window/wall openings in the wall the box intersects whose extent along the wall overlaps the box and whose head is at or below the box bottom.",
+      "params": {
+        "opening_categories": {"type": "builtin_category_list", "required": false, "default": ["OST_Doors", "OST_Windows", "OST_SWallRectOpening"]}
+      }
+    },
+    "revit_min_opening_clearance_mm": {
+      "template": "min_opening_clearance_mm.py.tmpl",
+      "function": "calc_min_opening_clearance_mm",
+      "unit": "mm",
+      "summary": "Minimal clear distance, in the plane of the wall the box intersects, between the box outline and the outline of any door/window/wall opening in that wall; the sentinel when the wall has no opening.",
+      "params": {
+        "opening_categories": {"type": "builtin_category_list", "required": false, "default": ["OST_Doors", "OST_Windows", "OST_SWallRectOpening"]},
+        "sentinel_mm": {"type": "number", "required": false, "default": 100000}
+      }
+    }
+  },
+  "aliases": [
+    {"pattern": "^has(beam|structuralframing|framing)intersectioncount$", "calculator": "revit_category_intersection_count", "params": {"categories": ["OST_StructuralFraming"]}},
+    {"pattern": "^has(column|structuralcolumn)intersectioncount$", "calculator": "revit_category_intersection_count", "params": {"categories": ["OST_StructuralColumns", "OST_Columns"]}},
+    {"pattern": "^haswallintersectioncount$", "calculator": "revit_category_intersection_count", "params": {"categories": ["OST_Walls"]}},
+    {"pattern": "^has(floor|slab)intersectioncount$", "calculator": "revit_category_intersection_count", "params": {"categories": ["OST_Floors"]}},
+    {"pattern": "^hasopenings?belowcount$", "calculator": "revit_openings_below_count", "params": {}},
+    {"pattern": "^hasminopeningclearancemm$", "calculator": "revit_min_opening_clearance_mm", "params": {}}
+  ],
+  "builtin_categories": [
+    "OST_StructuralFraming", "OST_StructuralColumns", "OST_Columns", "OST_Walls", "OST_Floors",
+    "OST_Doors", "OST_Windows", "OST_SWallRectOpening", "OST_ArcWallRectOpening", "OST_GenericModel",
+    "OST_StructuralFoundation", "OST_Roofs"
+  ],
+  "highlighter": {
+    "template": "highlighter.py.tmpl"
+  },
+  "shell": {
+    "template": "calculator_shell.py.tmpl"
+  }
+}

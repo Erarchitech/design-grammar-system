@@ -225,6 +225,10 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/computgraph/recognize"): _p(_MEM, source="body", role="viewer"),
     ("POST", "/computgraph/publish"): _p(_MEM, _CON, source="body", role="editor"),
     ("POST", "/computgraph/validate"): _p(_MEM, source="body", role="viewer"),
+    # ── property-calculator scripts (Phase 1303-15, DGOPN-02) ──
+    # generate is read-only; place writes to the user's own live GH canvas via the loopback bridge.
+    ("POST", "/scripts/property-calculator"): _p(_MEM, _DEL, source="body", role="viewer"),
+    ("POST", "/scripts/property-calculator/place"): _p(_MEM, _DEL, source="body", role="editor"),
     ("POST", "/computgraph/consult"): _p(_MEM, source="body", role="viewer"),
     ("POST", "/computgraph/generate-inputs"): _p(_MEM, source="body", role="editor"),
     ("POST", "/computgraph/candidates/accept"): _p(_MEM, source="body", role="editor"),

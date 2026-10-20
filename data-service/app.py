@@ -88,6 +88,7 @@ import cg_input_generation
 import cg_paramstate_store
 import mapping_engine
 import mapping_store
+import property_scripts
 import dsav_watcher
 import evidence_contract
 import design_state_projection
@@ -2016,6 +2017,59 @@ def pull_computgraph_context(payload: ComputgraphContextPullRequest):
     if isinstance(context, dict):
         context["project"] = payload.project
     return context
+
+
+# ---------------------------------------------------------------------------
+# Property-calculator scripts (Phase 1303-15: DGOPN-02)
+# ---------------------------------------------------------------------------
+
+
+class PropertyScriptRequest(BaseModel):
+    project: str
+    ruleIds: list[str] | None = None
+
+
+def _generate_property_scripts(payload: PropertyScriptRequest) -> dict:
+    try:
+        with driver.session() as session:
+            return property_scripts.generate(session, payload.project, payload.ruleIds)
+    except property_scripts.PropertyScriptError as exc:
+        hints = {
+            "NO_RULES": "Ingest the project's rules first; only body DataProperty atoms are computed.",
+            "BOX_CLASS_AMBIGUOUS": "Pass ruleIds for rules that test one element class.",
+            "NOTHING_TO_COMPUTE": "No rule DataProperty matches a catalogue calculator; see unsupported.",
+        }
+        raise _structured_error_response(
+            str(exc), hints.get(exc.code, "Check the project's rules."),
+            f"PROPERTY_SCRIPT_{exc.code}", 422)
+
+
+@router.post("/scripts/property-calculator")
+def post_property_calculator(payload: PropertyScriptRequest):
+    """Generate the property-calculator and highlighter scripts for the rules of a
+    project from the vetted catalogue (no LLM-written code, no write)."""
+    return _generate_property_scripts(payload)
+
+
+@router.post("/scripts/property-calculator/place")
+def post_property_calculator_place(payload: PropertyScriptRequest):
+    """Generate the scripts and let the DG CANVAS LISTENER place the whole checking
+    chain on the live Grasshopper canvas (one undo record)."""
+    generated = _generate_property_scripts(payload)
+    placed = gh_bridge.place_property_script({
+        "project": payload.project,
+        "calculator": generated["calculator"],
+        "highlighter": generated["highlighter"],
+        "placement": generated["placement"],
+    })
+    return {
+        "project": payload.project,
+        "resolved": generated["resolved"],
+        "unsupported": generated["unsupported"],
+        "calculatorSha256": generated["calculator"]["sha256"],
+        "highlighterSha256": generated["highlighter"]["sha256"],
+        "placed": placed,
+    }
 
 
 # ---------------------------------------------------------------------------

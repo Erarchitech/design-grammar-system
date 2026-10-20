@@ -132,3 +132,10 @@ def get_preview_status() -> dict:
     """Forward a preview-status request to the DG CANVAS LISTENER and return
     its live pending-proposal result unchanged."""
     return _call("get_preview_status", {})
+
+
+def place_property_script(payload: dict) -> dict:
+    """Place a generated property-checking chain (calculator script, DG components,
+    highlighter script) on the canvas under one undo record (Phase 1303-15,
+    DGOPN-02). Returns the listener's `{placed: {key: instanceGuid}, ...}`."""
+    return _call("place_property_script", payload)

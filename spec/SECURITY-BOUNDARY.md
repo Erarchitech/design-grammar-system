@@ -305,6 +305,8 @@ GET|/rules/{project}|delegated+member|path|viewer
 DELETE|/rules/{project}/{rule_id}|member|path|editor
 GET|/rules/{project}/{rule_id}|member|path|viewer
 GET|/rules/{project}/{rule_id}/delete-preview|member|path|viewer
+POST|/scripts/property-calculator|delegated+member|body|viewer
+POST|/scripts/property-calculator/place|delegated+member|body|editor
 GET|/settings/speckle|admin|-|-
 PUT|/settings/speckle|admin|-|-
 POST|/speckle-proxy/{project}/api/getobjects/{speckle_project_id}|delegated+member|path|viewer

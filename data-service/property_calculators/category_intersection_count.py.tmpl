@@ -1,0 +1,3 @@
+def calc_category_intersection_count(ctx, box, params):
+    """Elements of params["categories"] whose solid intersects the box solid."""
+    return len(ctx.intersecting(box, list(params["categories"])))

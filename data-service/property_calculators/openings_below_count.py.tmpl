@@ -1,0 +1,8 @@
+def calc_openings_below_count(ctx, box, params):
+    """Openings in the box's host walls that overlap the box along the wall and end at or below its bottom."""
+    count = 0
+    for (u0, u1, z0, z1), rects in ctx.box_and_openings_in_walls(box, list(params["opening_categories"])):
+        for (a0, a1, b0, b1) in rects:
+            if min(u1, a1) - max(u0, a0) > TOL_FT and z0 >= b1 - TOL_FT:
+                count += 1
+    return count

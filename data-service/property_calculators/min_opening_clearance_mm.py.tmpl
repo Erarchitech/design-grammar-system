@@ -1,0 +1,10 @@
+def calc_min_opening_clearance_mm(ctx, box, params):
+    """Minimal clear distance in the wall plane between the box and any opening of its host walls, in mm."""
+    best = None
+    for (u0, u1, z0, z1), rects in ctx.box_and_openings_in_walls(box, list(params["opening_categories"])):
+        for (a0, a1, b0, b1) in rects:
+            dx = max(0.0, a0 - u1, u0 - a1)
+            dz = max(0.0, b0 - z1, z0 - b1)
+            d = math.hypot(dx, dz) * FEET_TO_MM
+            best = d if best is None else min(best, d)
+    return float(params["sentinel_mm"]) if best is None else round(best, 1)
