@@ -5,12 +5,13 @@ Grasshopper chain: a calculator script that computes those properties from the a
 Revit model (Rhino.Inside.Revit), the OBJECT STATE / PROPERTY STATE / DESIGN STATE /
 VALIDATOR components, and a highlighter script that colours the result in Revit.
 
-The scripts are assembled only from the vetted templates of
-``property_calculators/catalogue.json``. A DataProperty is resolved to a catalogue entry by
-alias pattern; an optional chooser (an LLM) may name an entry and its parameters for a
-property no alias covers, and its answer is accepted only when it names an existing entry
-with schema-valid parameters. Nothing a chooser returns is ever inserted as code, and an
-unresolved property is reported as unsupported, never guessed. Same input, same bytes.
+A DataProperty is bound, in order, to: its stored calculator (property_calculator_store, so
+scripts persist across rule updates and Design States), a vetted catalogue template
+(``property_calculators/catalogue.json``) by alias, an optional catalogue chooser, and, for a
+property nothing covers, a calculator the LLM writes under the contract of
+property_calculator_llm (validated AST, read-only model helpers). New bindings are stored when
+the scripts are placed, so the LLM is asked once per property; a property that still has no
+calculator is reported as unsupported, never guessed. Same rules and store, same bytes.
 """
 
 from __future__ import annotations
@@ -24,11 +25,12 @@ from typing import Any, Callable, Iterable
 
 CATALOGUE_DIR = Path(__file__).resolve().parent / "property_calculators"
 
+# Same corpus as VALIDATOR (Neo4jRuleRepository.RulesQuery): a superseded rule (rule update) is excluded.
 RULE_ATOMS_QUERY = (
     "MATCH (r:Rule {graph:'Metagraph', project:$project})-[:HAS_BODY]->(a:Atom)-[:REFERS_TO]->(p) "
-    "WHERE $ruleIds IS NULL OR r.Rule_Id IN $ruleIds "
-    "RETURN r.Rule_Id AS ruleId, labels(p) AS labels, p.iri AS iri, "
-    "coalesce(p.label, p.SWRL_label, p.iri) AS label "
+    "WHERE ($ruleIds IS NULL OR r.Rule_Id IN $ruleIds) AND NOT EXISTS { (r)-[:SUPERSEDED_BY]->() } "
+    "RETURN r.Rule_Id AS ruleId, coalesce(r.text, '') AS text, coalesce(r.SWRL, r.swrl, '') AS swrl, "
+    "labels(p) AS labels, p.iri AS iri, coalesce(p.label, p.SWRL_label, p.iri) AS label "
     "ORDER BY ruleId, iri"
 )
 
@@ -65,7 +67,8 @@ def rules_from_rows(rows: Iterable[dict]) -> list[dict]:
     """Group RULE_ATOMS_QUERY rows into [{ruleId, classes, dataProperties}] sorted by ruleId."""
     rules: dict[str, dict] = {}
     for row in rows:
-        rule = rules.setdefault(row["ruleId"], {"ruleId": row["ruleId"], "classes": [], "dataProperties": []})
+        rule = rules.setdefault(row["ruleId"], {"ruleId": row["ruleId"], "text": row.get("text") or "",
+                                                "swrl": row.get("swrl") or "", "classes": [], "dataProperties": []})
         labels = set(row.get("labels") or [])
         entry = {"iri": row.get("iri") or "", "label": row.get("label") or row.get("iri") or ""}
         if "Class" in labels:
@@ -134,7 +137,30 @@ def resolve_property(data_property: dict, catalogue: dict, chooser: Chooser | No
     return {"calculator": answer["calculator"], "params": params, "resolvedBy": "chooser"}
 
 
-def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None) -> dict:
+Generator = Callable[[dict, list, str], dict]
+
+
+def _from_stored(record: dict, catalogue: dict) -> dict | None:
+    """A stored calculator as a binding; a catalogue entry that no longer exists is not reused."""
+    if record.get("origin") == "generated":
+        if not record.get("source") or not record.get("function"):
+            return None
+        return {"calculator": record["calculator"], "params": record.get("params") or {}, "resolvedBy": "stored",
+                "origin": "generated", "function": record["function"], "source": record["source"],
+                "sha256": record.get("sha256"), "provider": record.get("provider"), "model": record.get("model")}
+    if record.get("calculator") not in catalogue["calculators"]:
+        return None
+    try:
+        params = _validate_params(catalogue, record["calculator"], record.get("params") or {})
+    except PropertyScriptError:
+        return None
+    return {"calculator": record["calculator"], "params": params, "resolvedBy": "stored", "origin": "catalogue"}
+
+
+def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
+            stored: dict[str, dict] | None = None, generator: Generator | None = None) -> dict:
+    """Bind every body DataProperty: a stored calculator first (scripts persist across rule updates and Design
+    States), then a catalogue alias, then the optional catalogue chooser, then the optional LLM generator."""
     if not rules:
         raise PropertyScriptError("NO_RULES", "The project has no rules with DataProperty atoms to compute")
     classes = sorted({(c["iri"], c["label"]) for r in rules for c in r["classes"]})
@@ -142,22 +168,49 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None) 
         raise PropertyScriptError(
             "BOX_CLASS_AMBIGUOUS",
             f"The rules must test exactly one element class; found {[c[1] for c in classes] or 'none'}")
+    box_label = local_name(classes[0][1])
+    stored = stored or {}
+    rules_by_dp: dict[str, list[dict]] = {}
+    for rule in rules:
+        for dp in rule["dataProperties"]:
+            rules_by_dp.setdefault(dp["iri"], []).append(rule)
     resolved: list[dict] = []
     unsupported: list[dict] = []
+    fresh: dict[str, dict] = {}
     for rule in rules:
         for dp in sorted(rule["dataProperties"], key=lambda d: d["iri"]):
-            binding = resolve_property(dp, catalogue, chooser)
+            binding = fresh.get(dp["iri"])
+            if binding is None and dp["iri"] in stored:
+                binding = _from_stored(stored[dp["iri"]], catalogue)
+            if binding is None:
+                binding = resolve_property(dp, catalogue, chooser)
+                if binding is not None:
+                    binding = {**binding, "origin": "catalogue", "new": True}
+            if binding is None and generator is not None:
+                answer = generator(dp, rules_by_dp[dp["iri"]], box_label)
+                if answer.get("status") == "ok":
+                    digest = hashlib.sha256(answer["source"].encode("utf-8")).hexdigest()
+                    binding = {"calculator": f"generated:{digest[:10]}", "params": {}, "resolvedBy": "llm",
+                               "origin": "generated", "function": answer["function"], "source": answer["source"],
+                               "sha256": digest, "provider": answer.get("provider"), "model": answer.get("model"),
+                               "explanation": answer.get("explanation"), "new": True}
+                else:
+                    unsupported.append({"ruleId": rule["ruleId"], "dataPropertyIri": dp["iri"],
+                                        "dataPropertyLabel": dp["label"],
+                                        "reason": f"generation {answer.get('status')}: {answer.get('error', '')}"})
+                    continue
             if binding is None:
                 unsupported.append({"ruleId": rule["ruleId"], "dataPropertyIri": dp["iri"],
                                     "dataPropertyLabel": dp["label"], "reason": "no catalogue calculator"})
                 continue
+            fresh[dp["iri"]] = binding
             resolved.append({
                 "ruleId": rule["ruleId"],
                 "dataPropertyIri": dp["iri"],
                 "dataPropertyLabel": local_name(dp["label"]),
                 **binding,
             })
-    return {"boxClass": {"iri": classes[0][0], "label": local_name(classes[0][1])},
+    return {"boxClass": {"iri": classes[0][0], "label": box_label},
             "resolved": resolved, "unsupported": unsupported}
 
 
@@ -172,8 +225,18 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
     if not resolved:
         raise PropertyScriptError("NOTHING_TO_COMPUTE", "No rule DataProperty resolved to a catalogue calculator")
     used = sorted({r["calculator"] for r in resolved})
-    functions = "\n\n".join(_template_text(catalogue, catalogue["calculators"][c]["template"]).rstrip()
-                            for c in used)
+    generated = {r["calculator"]: r for r in resolved if r.get("origin") == "generated"}
+    blocks = []
+    function_of = {}
+    for c in used:
+        if c in generated:
+            blocks.append(f"# generated calculator {c} (stored; provider {generated[c].get('provider') or '-'})\n"
+                          + generated[c]["source"].rstrip())
+            function_of[c] = generated[c]["function"]
+        else:
+            blocks.append(_template_text(catalogue, catalogue["calculators"][c]["template"]).rstrip())
+            function_of[c] = catalogue["calculators"][c]["function"]
+    functions = "\n\n".join(blocks)
     table = [{"key": f"P{k}", "ruleId": r["ruleId"], "dataPropertyIri": r["dataPropertyIri"],
               "dataPropertyLabel": r["dataPropertyLabel"], "calculator": r["calculator"], "params": r["params"]}
              for k, r in enumerate(resolved, start=1)]
@@ -193,8 +256,7 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
         box_class_label=resolution["boxClass"]["label"],
         property_table=_py_literal(table),
         calculators=functions,
-        calculator_functions="{" + ", ".join(
-            f'"{c}": {catalogue["calculators"][c]["function"]}' for c in used) + "}",
+        calculator_functions="{" + ", ".join(f'"{c}": {function_of[c]}' for c in used) + "}",
         output_defaults=defaults,
         output_assignments=assignments,
     )
@@ -281,12 +343,26 @@ def placement_plan(project: str, property_count: int) -> dict:
 
 
 def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Chooser | None = None,
-             catalogue: dict | None = None) -> dict:
+             catalogue: dict | None = None, generator: Generator | None = None, store: bool = False,
+             actor: str | None = None) -> dict:
+    """Scripts for the project's current rules. With ``store`` the new bindings (catalogue or LLM-generated) are
+    saved, so the next generation reuses them; without it nothing is written (preview)."""
+    import property_calculator_store
+
     catalogue = catalogue or load_catalogue()
     rules = load_rules(session, project, rule_ids)
-    resolution = resolve(rules, catalogue, chooser)
+    stored = property_calculator_store.load_active(session, project)
+    resolution = resolve(rules, catalogue, chooser, stored=stored, generator=generator)
     if resolution["unsupported"] and not resolution["resolved"]:
         raise PropertyScriptError("NOTHING_TO_COMPUTE", "No rule DataProperty resolved to a catalogue calculator")
+    if store:
+        saved = set()
+        for entry in resolution["resolved"]:
+            if entry.get("new") and entry["dataPropertyIri"] not in saved:
+                property_calculator_store.save(session, project, entry, actor)
+                saved.add(entry["dataPropertyIri"])
+    for entry in resolution["resolved"]:
+        entry.pop("new", None)
     scripts = assemble(project, resolution, catalogue)
     return {
         "project": project,

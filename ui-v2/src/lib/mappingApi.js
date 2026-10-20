@@ -51,6 +51,12 @@ export function placePropertyCheck(project) {
   return apiFetch(`${dataServiceBase()}/scripts/property-calculator/place`, { method: "POST", body: { project } });
 }
 
+// Runs the check for the current Design State and rules (re-places the chain first when the rules' properties changed)
+// → { finished, status: { boxes, violations, calculatorReport, highlighterReport, messages, ... }, refreshed }.
+export function runPropertyCheck(project, { clear = false } = {}) {
+  return apiFetch(`${dataServiceBase()}/scripts/property-check/run`, { method: "POST", body: { project, clear } });
+}
+
 // One decision per call → { decisions, profiles, session }. groupIds narrows a batch-assign answer to a subset.
 export function postDecision(project, sessionId, { questionId, optionId, groupIds, roles, comment } = {}) {
   const body = { project, questionId, optionId };

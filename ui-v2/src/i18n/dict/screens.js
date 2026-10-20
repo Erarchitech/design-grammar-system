@@ -194,6 +194,14 @@ export const ru = {
   "Could not generate the check.": "Не удалось сгенерировать проверку.",
   "Placed on the canvas: {created} components, {wires} wires": "Размещено на канвасе: компонентов {created}, проводов {wires}",
   "No calculator for {property} ({rule})": "Нет калькулятора для {property} ({rule})",
+  "Run check": "Запустить проверку",
+  "Checking…": "Проверка…",
+  "Clear colours": "Очистить цвета",
+  "Could not run the check.": "Не удалось запустить проверку.",
+  "Checked {boxes} boxes · {violations} with violations": "Проверено боксов: {boxes} · с нарушениями: {violations}",
+  "The check is still running in Grasshopper · run it again in a moment":
+    "Проверка ещё идёт в Grasshopper · запустите ещё раз через несколько секунд",
+  "The scripts were regenerated for the current rules.": "Скрипты пересозданы под текущие правила.",
   "This file was prepared for project {fileProject}; the session is created in {project}.":
     "Файл подготовлен для проекта {fileProject}; сессия создаётся в проекте {project}.",
   "Creating session…": "Создание сессии…",

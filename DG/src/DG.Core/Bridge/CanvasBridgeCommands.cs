@@ -37,6 +37,15 @@ public static class CanvasBridgeCommands
     /// </summary>
     public const string PlacePropertyScript = "place_property_script";
 
+    /// <summary>
+    /// Phase 1303-15: run the placed property check (Run/Paint/Clear/SendValid toggles, calculator re-reads the live
+    /// model), wait briefly for the solution and return its reports. Lets DeGram or the Web UI run the check.
+    /// </summary>
+    public const string RunPropertyCheck = "run_property_check";
+
+    /// <summary>Phase 1303-15: the reports, violations and runtime messages of the placed property check (read only).</summary>
+    public const string GetPropertyCheckStatus = "get_property_check_status";
+
     public static IReadOnlyList<string> All { get; } = new[]
     {
         GetCanvasContext,
@@ -49,6 +58,8 @@ public static class CanvasBridgeCommands
         StartMapping,
         GetMappingStatus,
         PlacePropertyScript,
+        RunPropertyCheck,
+        GetPropertyCheckStatus,
     };
 
     /// <summary>

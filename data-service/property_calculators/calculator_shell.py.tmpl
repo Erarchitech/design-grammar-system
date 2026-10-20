@@ -204,6 +204,27 @@ def collect_boxes(doc, family_filter):
     return boxes
 
 
+INVENTORY_CATEGORIES = ["OST_GenericModel", "OST_StructuralFraming", "OST_StructuralColumns", "OST_Columns",
+                        "OST_Walls", "OST_Floors", "OST_Doors", "OST_Windows", "OST_SWallRectOpening"]
+
+
+def inventory(doc):
+    """Model counts for the report: instances per category and the Generic Model families (to pick BoxFamilyFilter)."""
+    lines = []
+    for name in INVENTORY_CATEGORIES:
+        n = (DB.FilteredElementCollector(doc).OfCategory(_bic(name)).WhereElementIsNotElementType().GetElementCount())
+        lines.append("inventory %s: %d" % (name, n))
+    families = {}
+    for e in (DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_GenericModel)
+              .WhereElementIsNotElementType()):
+        if isinstance(e, DB.FamilyInstance):
+            key = "%s : %s" % (e.Symbol.Family.Name, e.Symbol.Name)
+            families[key] = families.get(key, 0) + 1
+    for key in sorted(families, key=lambda k: (-families[k], k))[:40]:
+        lines.append("generic model family: %s x%d" % (key, families[key]))
+    return lines
+
+
 def box_geometry(box, scale):
     bb = box.get_BoundingBox(None)
     if bb is None:
@@ -278,3 +299,4 @@ $output_assignments
                 _prop["dataPropertyLabel"], _prop["ruleId"], len(_col),
                 min(_col) if _col else "-", max(_col) if _col else "-"))
         Report.extend(_errors)
+        Report.extend(inventory(_doc))

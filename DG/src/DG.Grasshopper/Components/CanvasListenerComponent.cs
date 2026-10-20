@@ -152,6 +152,8 @@ public sealed class CanvasListenerComponent : GH_Component
             [CanvasBridgeCommands.StartMapping] = HandleStartMapping,
             [CanvasBridgeCommands.GetMappingStatus] = HandleGetMappingStatus,
             [CanvasBridgeCommands.PlacePropertyScript] = HandlePlacePropertyScript,
+            [CanvasBridgeCommands.RunPropertyCheck] = HandleRunPropertyCheck,
+            [CanvasBridgeCommands.GetPropertyCheckStatus] = HandleGetPropertyCheckStatus,
         };
 
         return new CanvasCommandDispatcher(handlers);
@@ -560,6 +562,21 @@ public sealed class CanvasListenerComponent : GH_Component
             var anchor = objects.Values.FirstOrDefault()?.Attributes.Pivot ?? new PointF(0, 0);
             var origin = new PointF(anchor.X + 450, anchor.Y);
             var record = new GH_UndoRecord("DG property check");
+
+            // Regenerating replaces the project's previous chain (new rules, new calculators) in the same undo record.
+            var replaced = 0;
+            foreach (var oldGroup in PropertyCheckGroups(doc, plan.Group).ToList())
+            {
+                foreach (var member in GroupMembers(doc, oldGroup).Where(m => !objects.Values.Contains(m)).ToList())
+                {
+                    record.AddAction(new GH_RemoveObjectAction(member));
+                    doc.RemoveObject(member, false);
+                    replaced++;
+                }
+
+                record.AddAction(new GH_RemoveObjectAction(oldGroup));
+                doc.RemoveObject(oldGroup, false);
+            }
             var created = new List<IGH_DocumentObject>();
             foreach (var c in plan.Components.Where(c => !objects.ContainsKey(c.Key)))
             {
@@ -626,9 +643,162 @@ public sealed class CanvasListenerComponent : GH_Component
                 placed = objects.ToDictionary(kv => kv.Key, kv => kv.Value.InstanceGuid.ToString()),
                 reused,
                 created = created.Count,
+                replaced,
                 wires = wired,
                 warnings,
                 groupId = group.InstanceGuid.ToString(),
+            };
+        });
+    }
+
+    private const string PropertyCheckGroupPrefix = "DG · Проверка свойств";
+    private const string CalculatorNickName = "DG PROPERTY CALCULATOR";
+    private const string HighlighterNickName = "DG VALIDATION HIGHLIGHTER";
+    private GH_Document? _solutionCounterDoc;
+    private long _solutionsEnded;
+
+    private static IEnumerable<GH_Group> PropertyCheckGroups(GH_Document doc, string groupName) =>
+        doc.Objects.OfType<GH_Group>().Where(g => string.IsNullOrEmpty(groupName)
+            ? g.NickName.StartsWith(PropertyCheckGroupPrefix, StringComparison.Ordinal)
+            : string.Equals(g.NickName, groupName, StringComparison.Ordinal));
+
+    private static List<IGH_DocumentObject> GroupMembers(GH_Document doc, GH_Group group) =>
+        group.ObjectIDs.Select(id => doc.FindObject(id, true)).Where(o => o is not null).Select(o => o!).ToList();
+
+    private static List<IGH_DocumentObject>? PropertyCheckMembers(GH_Document doc, string project)
+    {
+        var groups = PropertyCheckGroups(doc, string.Empty)
+            .Where(g => string.IsNullOrEmpty(project) || g.NickName.Contains($"({project})", StringComparison.Ordinal))
+            .ToList();
+        return groups.Count == 0 ? null : groups.SelectMany(g => GroupMembers(doc, g)).ToList();
+    }
+
+    private static bool BoolParam(CanvasCommandRequest request, string key, bool fallback) =>
+        request.Parameters.ValueKind == JsonValueKind.Object && request.Parameters.TryGetProperty(key, out var v)
+            ? v.ValueKind == JsonValueKind.True || (v.ValueKind != JsonValueKind.False && fallback)
+            : fallback;
+
+    /// <summary>
+    /// Sets the Run / Paint / Clear / SendValid toggles of the placed check, expires the calculator so it re-reads the
+    /// live Revit model (a new Design State), schedules a solution and waits up to 25 s for it to finish. A longer
+    /// solution answers <c>finished = false</c>; <c>get_property_check_status</c> reads the result later.
+    /// </summary>
+    private object? HandleRunPropertyCheck(CanvasCommandRequest request)
+    {
+        var project = request.TryGetString("project");
+        var clear = BoolParam(request, "clear", false);
+        var paint = BoolParam(request, "paint", true) && !clear;
+        var send = BoolParam(request, "send", false);
+        long before = 0;
+
+        InvokeOnCanvasWrite(doc =>
+        {
+            var members = PropertyCheckMembers(doc, project)
+                ?? throw new InvalidOperationException("No DG property check on this canvas: generate it first.");
+            if (!ReferenceEquals(_solutionCounterDoc, doc))
+            {
+                if (_solutionCounterDoc is not null)
+                {
+                    _solutionCounterDoc.SolutionEnd -= OnPropertyCheckSolutionEnd;
+                }
+
+                doc.SolutionEnd += OnPropertyCheckSolutionEnd;
+                _solutionCounterDoc = doc;
+            }
+
+            before = Interlocked.Read(ref _solutionsEnded);
+            foreach (var toggle in members.OfType<GH_BooleanToggle>())
+            {
+                bool? value = toggle.NickName switch
+                {
+                    "Run" => true,
+                    "Paint" => paint,
+                    "Clear" => clear,
+                    "SendValid" => send,
+                    _ => null,
+                };
+                if (value is { } v && toggle.Value != v)
+                {
+                    toggle.Value = v;
+                    toggle.ExpireSolution(false);
+                }
+            }
+
+            foreach (var calculator in members.OfType<IGH_Component>().Where(c => c.NickName == CalculatorNickName || c.NickName == HighlighterNickName))
+            {
+                calculator.ExpireSolution(false);
+            }
+
+            doc.ScheduleSolution(5);
+            return null;
+        });
+
+        var deadline = DateTime.UtcNow.AddSeconds(25);
+        var finished = false;
+        while (DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(400);
+            if (Interlocked.Read(ref _solutionsEnded) > before)
+            {
+                finished = true;
+                break;
+            }
+        }
+
+        var status = HandleGetPropertyCheckStatus(request);
+        return new { finished, paint, clear, send, status };
+    }
+
+    private void OnPropertyCheckSolutionEnd(object sender, GH_SolutionEventArgs e) => Interlocked.Increment(ref _solutionsEnded);
+
+    private object? HandleGetPropertyCheckStatus(CanvasCommandRequest request)
+    {
+        var project = request.TryGetString("project");
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument() ?? throw new InvalidOperationException("No active document.");
+            var members = PropertyCheckMembers(doc, project)
+                ?? throw new InvalidOperationException("No DG property check on this canvas: generate it first.");
+            var components = members.OfType<IGH_Component>().ToList();
+
+            static string[] Output(IGH_Component? c, string name) =>
+                c?.Params.Output.FirstOrDefault(p => p.Name == name)?.VolatileData.AllData(true)
+                    .Select(g => g?.ToString() ?? string.Empty).ToArray() ?? Array.Empty<string>();
+
+            var calculator = components.FirstOrDefault(c => c.NickName == CalculatorNickName);
+            var highlighter = components.FirstOrDefault(c => c.NickName == HighlighterNickName);
+            var validator = components.FirstOrDefault(c => c.ComponentGuid == PropertyScriptPlacement.DgComponentTypes["VALIDATOR"]);
+            var messages = components.SelectMany(c =>
+                c.RuntimeMessages(GH_RuntimeMessageLevel.Error).Select(m => $"error {c.NickName}: {m}")
+                    .Concat(c.RuntimeMessages(GH_RuntimeMessageLevel.Warning).Select(m => $"warning {c.NickName}: {m}")))
+                .ToList();
+            var toggles = members.OfType<GH_BooleanToggle>().GroupBy(t => t.NickName).ToDictionary(g => g.Key, g => g.First().Value);
+
+            // sha256 of the calculator source on the canvas (LF-normalized): data-service compares it with the script it
+            // would generate now and re-places the chain only when the rules' properties changed.
+            string? calculatorSha256 = null;
+            var tryGetSource = calculator?.GetType().GetMethod("TryGetSource");
+            var sourceArgs = new object?[] { null };
+            if (tryGetSource is not null && tryGetSource.Invoke(calculator, sourceArgs) is true && sourceArgs[0] is string placedSource)
+            {
+                calculatorSha256 = Sha256Hex(placedSource.Replace("\r\n", "\n"));
+            }
+
+            return (object?)new
+            {
+                calculatorSha256,
+                toggles,
+                boxes = Output(calculator, "UniqueIds").Length,
+                calculatorReport = Output(calculator, "Report"),
+                calculatorOut = Output(calculator, "out"),
+                validatorReport = Output(validator, "Report"),
+                validStatus = Output(validator, "ValidStatus"),
+                ruleNames = Output(validator, "RuleName"),
+                validationRunId = Output(validator, "ValidationRunId"),
+                highlighterReport = Output(highlighter, "Report"),
+                highlighterOut = Output(highlighter, "out"),
+                violations = Output(highlighter, "Violations"),
+                messages,
             };
         });
     }

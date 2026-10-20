@@ -21,6 +21,7 @@ import {
   listSessions,
   pendingAnswerIds,
   placePropertyCheck,
+  runPropertyCheck,
   optionKind,
   parseDescriptorUpload,
   postDecision,
@@ -943,6 +944,9 @@ function PropertyCheckCard({ project, t }) {
   const [busy, setBusy] = React.useState(false);
   const [result, setResult] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [checking, setChecking] = React.useState(false);
+  const [check, setCheck] = React.useState(null);
+  const [checkErr, setCheckErr] = React.useState(null);
   const run = async () => {
     setBusy(true);
     setError(null);
@@ -955,17 +959,52 @@ function PropertyCheckCard({ project, t }) {
       setBusy(false);
     }
   };
+  const runCheck = async (clear) => {
+    setChecking(true);
+    setCheckErr(null);
+    try {
+      setCheck(await runPropertyCheck(project, { clear }));
+    } catch (err) {
+      setCheckErr(err);
+    } finally {
+      setChecking(false);
+    }
+  };
   const placed = result?.placed || {};
+  const status = check?.status || {};
   return (
     <div style={CARD}>
       <div style={BODY}>{t("Property check from the project rules")}</div>
       <div style={MUTED}>{t("DG writes the scripts that compute the rule properties and places them on the Grasshopper canvas.")}</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <Button size="sm" disabled={busy || !project} onClick={run}>
+        <Button size="sm" disabled={busy || checking || !project} onClick={run}>
           {busy ? t("Generating check…") : t("Generate check")}
+        </Button>
+        <Button size="sm" variant="secondary" disabled={busy || checking || !project} onClick={() => runCheck(false)}>
+          {checking ? t("Checking…") : t("Run check")}
+        </Button>
+        <Button size="sm" variant="outline" disabled={busy || checking || !project} onClick={() => runCheck(true)}>
+          {t("Clear colours")}
         </Button>
       </div>
       {error && <div style={ERR_STYLE}>{describeError(error, t("Could not generate the check."))}</div>}
+      {checkErr && <div style={ERR_STYLE}>{describeError(checkErr, t("Could not run the check."))}</div>}
+      {check && (
+        <div style={{ display: "grid", gap: 4 }}>
+          <div style={BODY}>
+            {check.finished
+              ? t("Checked {boxes} boxes · {violations} with violations", { boxes: status.boxes ?? 0, violations: (status.violations || []).length })
+              : t("The check is still running in Grasshopper · run it again in a moment")}
+          </div>
+          {check.refreshed && <div style={MUTED}>{t("The scripts were regenerated for the current rules.")}</div>}
+          {(status.violations || []).map((v) => (
+            <div key={v} style={{ ...MONO, color: "var(--color-signal)", overflowWrap: "anywhere" }}>{v}</div>
+          ))}
+          {[...(status.highlighterReport || []), ...(status.messages || [])].map((line, i) => (
+            <div key={`r${i}`} style={{ ...MUTED, overflowWrap: "anywhere" }}>{line}</div>
+          ))}
+        </div>
+      )}
       {result && (
         <div style={{ display: "grid", gap: 4 }}>
           <div style={MUTED}>

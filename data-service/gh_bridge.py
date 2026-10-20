@@ -139,3 +139,14 @@ def place_property_script(payload: dict) -> dict:
     highlighter script) on the canvas under one undo record (Phase 1303-15,
     DGOPN-02). Returns the listener's `{placed: {key: instanceGuid}, ...}`."""
     return _call("place_property_script", payload)
+
+
+def run_property_check(payload: dict) -> dict:
+    """Run the placed property check (toggles, live model re-read, solution) and
+    return its reports (Phase 1303-15)."""
+    return _call("run_property_check", payload)
+
+
+def get_property_check_status(project: str) -> dict:
+    """Reports, violations and runtime messages of the placed property check."""
+    return _call("get_property_check_status", {"project": project})

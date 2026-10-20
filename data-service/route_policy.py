@@ -229,6 +229,10 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # generate is read-only; place writes to the user's own live GH canvas via the loopback bridge.
     ("POST", "/scripts/property-calculator"): _p(_MEM, _DEL, source="body", role="viewer"),
     ("POST", "/scripts/property-calculator/place"): _p(_MEM, _DEL, source="body", role="editor"),
+    ("GET", "/scripts/property-calculators"): _p(_MEM, _DEL, source="query", role="viewer"),
+    # run re-places the chain when the rules changed and writes Revit colours through the canvas: editor.
+    ("POST", "/scripts/property-check/run"): _p(_MEM, _DEL, source="body", role="editor"),
+    ("POST", "/scripts/property-check/status"): _p(_MEM, _DEL, source="body", role="viewer"),
     ("POST", "/computgraph/consult"): _p(_MEM, source="body", role="viewer"),
     ("POST", "/computgraph/generate-inputs"): _p(_MEM, source="body", role="editor"),
     ("POST", "/computgraph/candidates/accept"): _p(_MEM, source="body", role="editor"),

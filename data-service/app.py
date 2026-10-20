@@ -88,6 +88,8 @@ import cg_input_generation
 import cg_paramstate_store
 import mapping_engine
 import mapping_store
+import property_calculator_llm
+import property_calculator_store
 import property_scripts
 import dsav_watcher
 import evidence_contract
@@ -2029,47 +2031,106 @@ class PropertyScriptRequest(BaseModel):
     ruleIds: list[str] | None = None
 
 
-def _generate_property_scripts(payload: PropertyScriptRequest) -> dict:
+def _generate_property_scripts(payload: PropertyScriptRequest, *, store: bool = False, llm: bool = False,
+                               actor: str | None = None) -> dict:
+    generator = None
+    if llm:
+        generator = lambda dp, rules, box: property_calculator_llm.generate_calculator(dp, rules, box)  # noqa: E731
     try:
         with driver.session() as session:
-            return property_scripts.generate(session, payload.project, payload.ruleIds)
+            return property_scripts.generate(session, payload.project, payload.ruleIds,
+                                             generator=generator, store=store, actor=actor)
     except property_scripts.PropertyScriptError as exc:
         hints = {
             "NO_RULES": "Ingest the project's rules first; only body DataProperty atoms are computed.",
             "BOX_CLASS_AMBIGUOUS": "Pass ruleIds for rules that test one element class.",
-            "NOTHING_TO_COMPUTE": "No rule DataProperty matches a catalogue calculator; see unsupported.",
+            "NOTHING_TO_COMPUTE": "No rule DataProperty has a stored, catalogue or generated calculator; see unsupported.",
         }
         raise _structured_error_response(
             str(exc), hints.get(exc.code, "Check the project's rules."),
             f"PROPERTY_SCRIPT_{exc.code}", 422)
 
 
-@router.post("/scripts/property-calculator")
-def post_property_calculator(payload: PropertyScriptRequest):
-    """Generate the property-calculator and highlighter scripts for the rules of a
-    project from the vetted catalogue (no LLM-written code, no write)."""
-    return _generate_property_scripts(payload)
-
-
-@router.post("/scripts/property-calculator/place")
-def post_property_calculator_place(payload: PropertyScriptRequest):
-    """Generate the scripts and let the DG CANVAS LISTENER place the whole checking
-    chain on the live Grasshopper canvas (one undo record)."""
-    generated = _generate_property_scripts(payload)
+def _place_property_scripts(project: str, generated: dict) -> dict:
     placed = gh_bridge.place_property_script({
-        "project": payload.project,
+        "project": project,
         "calculator": generated["calculator"],
         "highlighter": generated["highlighter"],
         "placement": generated["placement"],
     })
     return {
-        "project": payload.project,
-        "resolved": generated["resolved"],
+        "project": project,
+        "resolved": [{k: v for k, v in r.items() if k != "source"} for r in generated["resolved"]],
         "unsupported": generated["unsupported"],
         "calculatorSha256": generated["calculator"]["sha256"],
         "highlighterSha256": generated["highlighter"]["sha256"],
         "placed": placed,
     }
+
+
+@router.post("/scripts/property-calculator")
+def post_property_calculator(payload: PropertyScriptRequest):
+    """Preview the property-calculator and highlighter scripts for the project's current
+    rules from stored and catalogue calculators. Writes nothing and calls no LLM."""
+    return _generate_property_scripts(payload)
+
+
+@router.post("/scripts/property-calculator/place")
+def post_property_calculator_place(payload: PropertyScriptRequest, request: Request):
+    """Generate the scripts (stored calculators reused, catalogue next, the LLM writes a
+    validated calculator for a property nothing covers; new ones are stored) and let the
+    DG CANVAS LISTENER place the checking chain on the live canvas, replacing the project's
+    previous chain (one undo record)."""
+    generated = _generate_property_scripts(payload, store=True, llm=True, actor=_mapping_actor(request))
+    return _place_property_scripts(payload.project, generated)
+
+
+class PropertyCheckRunRequest(BaseModel):
+    project: str
+    paint: bool = True
+    clear: bool = False
+    send: bool = False
+    refresh: bool = True
+
+
+@router.post("/scripts/property-check/run")
+def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
+    """Run the property check on the live canvas for the current Design State and rules.
+
+    With ``refresh`` (default) the scripts are generated for the project's current rules
+    first; when the calculator differs from the one on the canvas (a rule over a new
+    property was added, or none is placed yet) the chain is re-placed. Then the calculator
+    re-reads the live Revit model, VALIDATOR re-evaluates the current rules (a changed
+    threshold needs no new script) and the highlighter repaints. finished=false means the
+    solution outlived the listener's wait; read /scripts/property-check/status then."""
+    refreshed = None
+    if payload.refresh and not payload.clear:
+        generated = _generate_property_scripts(PropertyScriptRequest(project=payload.project), store=True, llm=True,
+                                               actor=_mapping_actor(request))
+        try:
+            canvas_sha = gh_bridge.get_property_check_status(payload.project).get("calculatorSha256")
+        except HTTPException:
+            canvas_sha = None
+        if canvas_sha != generated["calculator"]["sha256"]:
+            refreshed = _place_property_scripts(payload.project, generated)
+    result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
+    if isinstance(result, dict):
+        result["refreshed"] = refreshed
+    return result
+
+
+@router.post("/scripts/property-check/status")
+def post_property_check_status(payload: PropertyScriptRequest):
+    """Reports, violations and runtime messages of the placed property check (read only)."""
+    return gh_bridge.get_property_check_status(payload.project)
+
+
+@router.get("/scripts/property-calculators")
+def get_property_calculators(project: str = Query(...)):
+    """The project's stored calculators (catalogue bindings and LLM-generated sources)."""
+    with driver.session() as session:
+        stored = property_calculator_store.load_active(session, project)
+    return {"project": project, "calculators": list(stored.values())}
 
 
 # ---------------------------------------------------------------------------
