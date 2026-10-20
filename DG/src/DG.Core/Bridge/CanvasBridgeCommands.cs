@@ -31,6 +31,12 @@ public static class CanvasBridgeCommands
     /// <summary>Phase 1303-10: the document key, current mapping session and CONNECTOR mapping status.</summary>
     public const string GetMappingStatus = "get_mapping_status";
 
+    /// <summary>
+    /// Phase 1303-15 (DGOPN-02): place a generated property-checking chain (calculator and highlighter
+    /// scripts plus the DG validation components) on the canvas under one undo record.
+    /// </summary>
+    public const string PlacePropertyScript = "place_property_script";
+
     public static IReadOnlyList<string> All { get; } = new[]
     {
         GetCanvasContext,
@@ -42,6 +48,7 @@ public static class CanvasBridgeCommands
         FocusComponent,
         StartMapping,
         GetMappingStatus,
+        PlacePropertyScript,
     };
 
     /// <summary>

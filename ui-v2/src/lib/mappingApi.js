@@ -45,6 +45,12 @@ export function createSession(project, { platform, label, elements, context } = 
   return apiFetch(mappingUrl("/sessions"), { method: "POST", body });
 }
 
+// Phase 1303-15 (DGOPN-02): DG generates the property-calculator and highlighter scripts from the project's rules and
+// places the whole checking chain on the live Grasshopper canvas (LISTENER bridge) → { resolved, unsupported, placed }.
+export function placePropertyCheck(project) {
+  return apiFetch(`${dataServiceBase()}/scripts/property-calculator/place`, { method: "POST", body: { project } });
+}
+
 // One decision per call → { decisions, profiles, session }. groupIds narrows a batch-assign answer to a subset.
 export function postDecision(project, sessionId, { questionId, optionId, groupIds, roles, comment } = {}) {
   const body = { project, questionId, optionId };

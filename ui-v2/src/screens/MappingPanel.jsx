@@ -20,6 +20,7 @@ import {
   listProfiles,
   listSessions,
   pendingAnswerIds,
+  placePropertyCheck,
   optionKind,
   parseDescriptorUpload,
   postDecision,
@@ -935,6 +936,60 @@ export function ApplyResult({ result, labelOf }) {
   );
 }
 
+// Phase 1303-15 (DGOPN-02): one action puts a ready-to-run property check on the Grasshopper canvas. DG reads the
+// project's rules, assembles the calculator and highlighter scripts from its vetted catalogue and places them with the
+// OBJECT STATE / PROPERTY STATE / VALIDATOR chain next to the signed-in CONNECTOR; the user only runs it.
+function PropertyCheckCard({ project, t }) {
+  const [busy, setBusy] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const run = async () => {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      setResult(await placePropertyCheck(project));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const placed = result?.placed || {};
+  return (
+    <div style={CARD}>
+      <div style={BODY}>{t("Property check from the project rules")}</div>
+      <div style={MUTED}>{t("DG writes the scripts that compute the rule properties and places them on the Grasshopper canvas.")}</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Button size="sm" disabled={busy || !project} onClick={run}>
+          {busy ? t("Generating check…") : t("Generate check")}
+        </Button>
+      </div>
+      {error && <div style={ERR_STYLE}>{describeError(error, t("Could not generate the check."))}</div>}
+      {result && (
+        <div style={{ display: "grid", gap: 4 }}>
+          <div style={MUTED}>
+            {t("Placed on the canvas: {created} components, {wires} wires", { created: placed.created ?? 0, wires: placed.wires ?? 0 })}
+          </div>
+          {(result.resolved || []).map((r) => (
+            <div key={`${r.ruleId}-${r.dataPropertyIri}`} style={{ ...MONO, overflowWrap: "anywhere" }}>
+              {`${r.ruleId} · ${r.dataPropertyLabel} · ${r.calculator}`}
+            </div>
+          ))}
+          {(result.unsupported || []).map((u) => (
+            <div key={`${u.ruleId}-${u.dataPropertyIri}`} style={{ ...MUTED, color: "var(--color-warning-ink)" }}>
+              {t("No calculator for {property} ({rule})", { property: u.dataPropertyLabel, rule: u.ruleId })}
+            </div>
+          ))}
+          {(placed.warnings || []).map((w) => (
+            <div key={w} style={{ ...MUTED, color: "var(--color-warning-ink)" }}>{w}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MappingPanel({ project, active }) {
   const { t, tp } = useT();
   const [open, setOpen] = React.useState(false);
@@ -1369,6 +1424,7 @@ export default function MappingPanel({ project, active }) {
             </div>
           )}
           {createErr && <div style={ERR_STYLE}>{describeError(createErr, t("Could not create the session."))}</div>}
+          <PropertyCheckCard project={project} t={t} />
           {sessions.length === 0 && !upload?.body && (
             <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
               {t("No mapping sessions yet · import a descriptor file to start")}

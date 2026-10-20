@@ -185,6 +185,15 @@ export const ru = {
   "No mapping sessions yet · import a descriptor file to start":
     "Сессий меппинга пока нет · импортируйте файл дескрипторов, чтобы начать",
   "Import descriptors (JSON)": "Импорт дескрипторов (JSON)",
+  // ── property check from the project rules (plan 1303-15)
+  "Property check from the project rules": "Проверка по правилам проекта",
+  "DG writes the scripts that compute the rule properties and places them on the Grasshopper canvas.":
+    "DG сама пишет скрипты расчёта свойств из правил и размещает их на канвасе Grasshopper.",
+  "Generate check": "Сгенерировать проверку",
+  "Generating check…": "Генерация проверки…",
+  "Could not generate the check.": "Не удалось сгенерировать проверку.",
+  "Placed on the canvas: {created} components, {wires} wires": "Размещено на канвасе: компонентов {created}, проводов {wires}",
+  "No calculator for {property} ({rule})": "Нет калькулятора для {property} ({rule})",
   "This file was prepared for project {fileProject}; the session is created in {project}.":
     "Файл подготовлен для проекта {fileProject}; сессия создаётся в проекте {project}.",
   "Creating session…": "Создание сессии…",

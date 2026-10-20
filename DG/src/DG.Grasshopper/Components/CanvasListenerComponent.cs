@@ -151,6 +151,7 @@ public sealed class CanvasListenerComponent : GH_Component
             [CanvasBridgeCommands.FocusComponent] = HandleFocusComponent,
             [CanvasBridgeCommands.StartMapping] = HandleStartMapping,
             [CanvasBridgeCommands.GetMappingStatus] = HandleGetMappingStatus,
+            [CanvasBridgeCommands.PlacePropertyScript] = HandlePlacePropertyScript,
         };
 
         return new CanvasCommandDispatcher(handlers);
@@ -516,6 +517,210 @@ public sealed class CanvasListenerComponent : GH_Component
 
             return (object?)new { cleared = removal.Groups };
         });
+    }
+
+    /// <summary>
+    /// Phase 1303-15 (DGOPN-02): places a generated property-checking chain -- the calculator
+    /// and highlighter as Rhino 8 Python 3 script components, the DG validation components,
+    /// toggles and a panel -- next to the CONNECTOR the user signed in on, wires it as the plan
+    /// says and groups it, all inside one <see cref="GH_UndoRecord"/> so one Ctrl+Z removes it.
+    /// The plan is parsed and validated in DG.Core (<see cref="PropertyScriptPlacement"/>)
+    /// before anything touches the document.
+    /// </summary>
+    private object? HandlePlacePropertyScript(CanvasCommandRequest request)
+    {
+        var plan = PropertyScriptPlacement.Parse(request.Parameters);
+        foreach (var (name, script) in plan.Scripts)
+        {
+            if (!string.IsNullOrEmpty(script.Sha256) && !string.Equals(Sha256Hex(script.Source), script.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"Script '{name}' does not match its sha256.");
+            }
+        }
+
+        return InvokeOnCanvasWrite(doc =>
+        {
+            var objects = new Dictionary<string, IGH_DocumentObject>(StringComparer.Ordinal);
+            var reused = new List<string>();
+            foreach (var c in plan.Components.Where(c => c.Reuse))
+            {
+                var guid = PropertyScriptPlacement.DgComponentTypes[c.Type];
+                var existing = doc.Objects.FirstOrDefault(o => o.ComponentGuid == guid);
+                if (existing is not null)
+                {
+                    objects[c.Key] = existing;
+                    reused.Add(c.Key);
+                }
+                else if (c.Required)
+                {
+                    throw new InvalidOperationException($"Place {c.Type} on the canvas and sign in first.");
+                }
+            }
+
+            var anchor = objects.Values.FirstOrDefault()?.Attributes.Pivot ?? new PointF(0, 0);
+            var origin = new PointF(anchor.X + 450, anchor.Y);
+            var record = new GH_UndoRecord("DG property check");
+            var created = new List<IGH_DocumentObject>();
+            foreach (var c in plan.Components.Where(c => !objects.ContainsKey(c.Key)))
+            {
+                IGH_DocumentObject obj = c.Kind switch
+                {
+                    "dg" => global::Grasshopper.Instances.ComponentServer.EmitObject(PropertyScriptPlacement.DgComponentTypes[c.Type])
+                        ?? throw new InvalidOperationException($"DG component {c.Type} is not loaded."),
+                    "script" => CreateScriptComponent(plan.Scripts[c.Script]),
+                    "toggle" => new GH_BooleanToggle { Value = c.Value },
+                    "panel" => new GH_Panel { UserText = c.Text },
+                    _ => throw new InvalidOperationException($"Unknown component kind {c.Kind}."),
+                };
+                obj.CreateAttributes();
+                if (!string.IsNullOrEmpty(c.NickName))
+                {
+                    obj.NickName = c.NickName;
+                }
+
+                obj.Attributes.Pivot = new PointF(origin.X + c.X, origin.Y + c.Y);
+                doc.AddObject(obj, false);
+                record.AddAction(new GH_AddObjectAction(obj));
+                objects[c.Key] = obj;
+                created.Add(obj);
+            }
+
+            var warnings = new List<string>();
+            var wired = 0;
+            foreach (var wire in plan.Wires)
+            {
+                var source = ResolvePort(objects[wire.From.Key], wire.From.Port, output: true);
+                var target = ResolvePort(objects[wire.To.Key], wire.To.Port, output: false);
+                if (source is null || target is null)
+                {
+                    warnings.Add($"wire {wire.From} -> {wire.To}: port not found");
+                    continue;
+                }
+
+                if (target.Sources.Contains(source))
+                {
+                    continue;
+                }
+
+                record.AddAction(new GH_WireAction(target));
+                target.AddSource(source);
+                wired++;
+            }
+
+            var group = new GH_Group();
+            group.CreateAttributes();
+            group.NickName = string.IsNullOrEmpty(plan.Group) ? "DG property check" : plan.Group;
+            group.Colour = Color.FromArgb(60, 22, 163, 74);
+            foreach (var obj in created)
+            {
+                group.AddObject(obj.InstanceGuid);
+            }
+
+            doc.AddObject(group, false);
+            record.AddAction(new GH_AddObjectAction(group));
+            doc.UndoServer.PushUndoRecord(record);
+            doc.ScheduleSolution(10);
+
+            return (object?)new
+            {
+                placed = objects.ToDictionary(kv => kv.Key, kv => kv.Value.InstanceGuid.ToString()),
+                reused,
+                created = created.Count,
+                wires = wired,
+                warnings,
+                groupId = group.InstanceGuid.ToString(),
+            };
+        });
+    }
+
+    /// <summary>
+    /// A Rhino 8 Python 3 script component with exactly the plan's inputs and outputs (plus the
+    /// standard <c>out</c> output) and the generated source. Uses the public variable-parameter
+    /// API and <c>SetSource(string)</c> of RhinoCodePluginGH's script component, verified live on
+    /// Rhino 8.25 (1303-15 spike); reflection keeps DG.gha free of a RhinoCodePluginGH reference.
+    /// </summary>
+    private static IGH_DocumentObject CreateScriptComponent(ScriptSpec spec)
+    {
+        var obj = global::Grasshopper.Instances.ComponentServer.EmitObject(PropertyScriptPlacement.Python3ScriptComponent)
+            ?? throw new InvalidOperationException("The Rhino 8 Python 3 Script component is not available.");
+        if (obj is not IGH_Component comp || obj is not IGH_VariableParameterComponent variable)
+        {
+            throw new InvalidOperationException("The Python 3 Script component does not support variable parameters.");
+        }
+
+        comp.CreateAttributes();
+        comp.NickName = string.IsNullOrEmpty(spec.NickName) ? comp.NickName : spec.NickName;
+        while (comp.Params.Input.Count > 0)
+        {
+            comp.Params.UnregisterInputParameter(comp.Params.Input[0], true);
+        }
+
+        foreach (var output in comp.Params.Output.Where(p => p.Name != "out").ToList())
+        {
+            comp.Params.UnregisterOutputParameter(output, true);
+        }
+
+        foreach (var port in spec.Inputs)
+        {
+            var index = comp.Params.Input.Count;
+            var param = variable.CreateParameter(GH_ParameterSide.Input, index);
+            NameScriptParam(param, port.Name);
+            param.Access = port.Access switch
+            {
+                "list" => GH_ParamAccess.list,
+                "tree" => GH_ParamAccess.tree,
+                _ => GH_ParamAccess.item,
+            };
+            param.Optional = true;
+            comp.Params.RegisterInputParam(param, index);
+        }
+
+        foreach (var name in spec.Outputs)
+        {
+            var index = comp.Params.Output.Count;
+            var param = variable.CreateParameter(GH_ParameterSide.Output, index);
+            NameScriptParam(param, name);
+            comp.Params.RegisterOutputParam(param, index);
+        }
+
+        var setSource = comp.GetType().GetMethod("SetSource", new[] { typeof(string) })
+            ?? throw new InvalidOperationException("The Python 3 Script component has no SetSource(string).");
+        setSource.Invoke(comp, new object[] { spec.Source });
+        variable.VariableParameterMaintenance();
+        comp.Params.OnParametersChanged();
+        return comp;
+    }
+
+    private static void NameScriptParam(IGH_Param param, string name)
+    {
+        param.Name = name;
+        param.NickName = name;
+        param.GetType().GetProperty("VariableName")?.SetValue(param, name);
+    }
+
+    /// <summary>The parameter a wire end names: toggles and panels are themselves the parameter;
+    /// a component port is matched by Name, then NickName.</summary>
+    private static IGH_Param? ResolvePort(IGH_DocumentObject obj, string port, bool output)
+    {
+        if (string.IsNullOrEmpty(port))
+        {
+            return obj as IGH_Param;
+        }
+
+        if (obj is not IGH_Component comp)
+        {
+            return null;
+        }
+
+        var list = output ? comp.Params.Output : comp.Params.Input;
+        return list.FirstOrDefault(p => string.Equals(p.Name, port, StringComparison.Ordinal))
+            ?? list.FirstOrDefault(p => string.Equals(p.NickName, port, StringComparison.Ordinal));
+    }
+
+    private static string Sha256Hex(string text)
+    {
+        var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text));
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     /// <summary>
