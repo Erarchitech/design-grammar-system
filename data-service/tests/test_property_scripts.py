@@ -402,3 +402,23 @@ def test_generated_calculator_output_names_do_not_shadow_its_helpers(catalogue):
     defined = {n.name for n in tree.body if isinstance(n, (ast.ClassDef, ast.FunctionDef))}
     outputs = set(out["calculator"]["outputs"])
     assert not (defined & outputs), defined & outputs
+
+
+def test_a_published_check_turns_send_and_paint_off_again(monkeypatch):
+    """Live 2026-10-21: toggles left on made Rhino.Inside re-solve and republish in a loop (148 runs)."""
+    import app as app_module
+    import gh_bridge
+
+    calls = []
+
+    def fake_run(params):
+        calls.append(dict(params))
+        return {"finished": True, "send": params["send"], "clear": params["clear"], "paint": params["paint"],
+                "status": {"boxes": 3, "violations": [], "validationRunId": ["VR-1"], "messages": []}}
+
+    monkeypatch.setattr(gh_bridge, "run_property_check", fake_run)
+    monkeypatch.setattr(app_module, "_publish_check_context", lambda project, runs: {"published": False})
+    req = app_module.PropertyCheckRunRequest(project="p", refresh=False)
+    out = app_module.post_property_check_run(req, request=None)
+    assert out["togglesReset"] is True
+    assert calls[0]["send"] is True and calls[-1] == {"project": "p", "paint": False, "clear": False, "send": False}

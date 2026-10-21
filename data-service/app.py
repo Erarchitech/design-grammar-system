@@ -2178,6 +2178,16 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
         result["summary"] = property_check_summary(result)
         if result["summary"]["ok"] and payload.send and not payload.clear:
             result["context"] = _publish_check_context(payload.project, result["summary"]["validationRunIds"])
+        if (payload.send or payload.paint) and not payload.clear:
+            # Live 2026-10-21: with SendValid/Paint left on, the highlighter's Revit write made Rhino.Inside re-solve the
+            # canvas, which published and painted again - 148 runs in 55 min and a busy Revit. A check is one shot:
+            # the toggles go back off (colours stay in Revit).
+            try:
+                gh_bridge.run_property_check({"project": payload.project, "paint": False, "clear": False, "send": False})
+                result["togglesReset"] = True
+            except HTTPException as exc:
+                result["togglesReset"] = False
+                result["togglesResetError"] = str(exc.detail)[:200]
         if not result["summary"]["ok"]:
             # Owner 2026-10-20: DeGram twice reported "no violations" for a chain whose VALIDATOR had no rules.
             # A failed check is an error response, so no caller can present it as a clean model.
