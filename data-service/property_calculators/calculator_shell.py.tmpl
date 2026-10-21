@@ -354,15 +354,19 @@ CONTEXT_LIMIT = 4000
 
 
 def context_elements(ctx):
+    """(element, BuiltInCategory name) of every element a calculator read in this run."""
     seen = set()
     out = []
     for key in sorted(ctx._candidates):
+        ids = dict((int(_bic(name)), name) for name in key)
         for element, _lo, _hi in ctx._candidates[key]:
             eid = element.Id.IntegerValue
             if eid in seen:
                 continue
             seen.add(eid)
-            out.append(element)
+            cat = element.Category
+            name = ids.get(cat.Id.IntegerValue) if cat is not None else None
+            out.append((element, name or (key[0] if key else "OST_Unknown")))
     return out[:CONTEXT_LIMIT]
 
 
@@ -387,12 +391,13 @@ else:
         Report = ["No active Revit document"]
     else:
         _boxes, _values, _errors, _scale, _ctx = run_calculator(_doc, BoxFamilyFilter)
-        for _el in context_elements(_ctx):
+        for _el, _ost in context_elements(_ctx):
             _geo = _decoded_geometry(_el)
             if _geo is not None:
                 Context.append(_geo)
                 _cat = _el.Category.Name if _el.Category is not None else "?"
-                ContextLabels.append("%s : %s [%d]" % (_cat, _el.Name, _el.Id.IntegerValue))
+                # "OST_Walls|Стены : name [id]": the category lets data-service show per rule only what it reads
+                ContextLabels.append("%s|%s : %s [%d]" % (_ost, _cat, _el.Name, _el.Id.IntegerValue))
         for _box in _boxes:
             Objects.append(object_reference(_box.UniqueId))
             Geometry.append(box_geometry(_box, _scale))

@@ -3,6 +3,7 @@ calculator resolution and deterministic script assembly. No Neo4j, no Rhino."""
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 
@@ -364,19 +365,28 @@ def test_context_is_added_to_each_runs_validation_version(monkeypatch):
 
     monkeypatch.setattr(gh_bridge, "get_property_check_context", lambda project: {
         "count": 1, "skipped": 0,
-        "elements": [{"label": "Стены : Wall [1]", "geometry": {"units": "mm", "items": [
-            {"kind": "mesh", "vertices": [0, 0, 0, 1, 0, 0, 0, 1, 0], "faces": [[0, 1, 2]]}]}}]})
+        "elements": [
+            {"label": "OST_Walls|Стены : Wall [1]", "geometry": {"units": "mm", "items": [
+                {"kind": "mesh", "vertices": [0, 0, 0, 1, 0, 0, 0, 1, 0], "faces": [[0, 1, 2]]}]}},
+            {"label": "OST_StructuralColumns|Колонны : C [2]", "geometry": {"units": "mm", "items": [
+                {"kind": "mesh", "vertices": [0, 0, 0, 1, 0, 0, 0, 1, 0], "faces": [[0, 1, 2]]}]}}]})
     monkeypatch.setattr(app_module, "get_speckle_settings", lambda: speckle_validation.SpeckleConnectionSettings(
         base_url="http://s", internal_url="http://s", write_token="w", read_token="r", dg_base_url="http://dg"))
+    monkeypatch.setattr(app_module, "rule_context_categories", lambda project: {
+        "R_WALL": {"OST_Walls"}, "R_COL": {"OST_StructuralColumns", "OST_Columns"}})
+    rule_of = {"run-a": "R_WALL", "run-b": "R_COL"}
     monkeypatch.setattr(app_module, "read_many", lambda q, p=None: [
-        {"runId": r, "speckleProjectId": "p1", "validationModelId": "vm", "validationVersionId": "old-" + r}
-        for r in p["runIds"]])
+        {"runId": r, "speckleProjectId": "p1", "validationModelId": "vm", "validationVersionId": "old-" + r,
+         "rulesJson": json.dumps([{"ruleId": rule_of[r]}])} for r in p["runIds"]])
     calls = []
     monkeypatch.setattr(speckle_validation, "add_context_to_validation_version",
                         lambda settings, **kw: calls.append(kw) or "new-" + kw["run_id"])
     writes = []
     monkeypatch.setattr(app_module, "write_query", lambda q, p=None: writes.append(p))
     out = app_module._publish_check_context("str-openings-01", ["run-a", "run-b"])
-    assert out["published"] is True and out["runs"] == ["run-a", "run-b"] and out["elements"] == 1
+    assert out["published"] is True and out["runs"] == ["run-a", "run-b"] and out["elements"] == 2
     assert [c["validation_version_id"] for c in calls] == ["old-run-a", "old-run-b"]
+    # each run shows only its rule's classes: walls for the wall rule, columns for the column rule
+    assert [[n["name"] for n in c["nodes"]] for c in calls] == [["OST_Walls|Стены : Wall [1]"],
+                                                                 ["OST_StructuralColumns|Колонны : C [2]"]]
     assert [w["versionId"] for w in writes] == ["new-run-a", "new-run-b"]

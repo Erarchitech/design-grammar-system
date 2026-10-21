@@ -2193,6 +2193,19 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
     return result
 
 
+def rule_context_categories(project: str) -> dict[str, set[str]]:
+    """{ruleId: Revit BuiltInCategory names its property calculator reads}."""
+    generated = _generate_property_scripts(PropertyScriptRequest(project=project))
+    catalogue = property_scripts.load_catalogue()
+    prefix = property_scripts.iri_prefix_of(generated["boxClass"]["iri"])
+    out: dict[str, set[str]] = {}
+    for entry in generated["resolved"]:
+        classes = entry.get("contextClasses") or property_scripts.context_classes(entry, catalogue, prefix)
+        for c in classes:
+            out.setdefault(entry["ruleId"], set()).update(c.get("revitCategories") or [])
+    return out
+
+
 def _publish_check_context(project: str, run_ids: list[str]) -> dict:
     """Owner 2026-10-21: walls, columns and beams are checked against but were missing from the Model Viewer, which
     loads only a run's validation version. The context the calculator read is added to the validation version of
@@ -2206,15 +2219,28 @@ def _publish_check_context(project: str, run_ids: list[str]) -> dict:
         settings = get_speckle_settings()
         if not settings.write_token:
             return {"published": False, "reason": "no Speckle write token"}
-        nodes = speckle_validation.context_nodes(elements)
+        # Owner 2026-10-21: a run shows only the classes of its rule (openings + columns for the column rule), i.e.
+        # the Revit categories that rule's calculator reads.
+        categories_by_rule = rule_context_categories(project)
         runs = read_many(
             "MATCH (run:ValidationRun {project: $project}) WHERE run.runId IN $runIds "
-            "RETURN run.runId AS runId, run.speckleProjectId AS speckleProjectId, "
+            "RETURN run.runId AS runId, run.speckleProjectId AS speckleProjectId, run.rulesJson AS rulesJson, "
             "run.validationModelId AS validationModelId, run.validationVersionId AS validationVersionId",
             {"project": project, "runIds": run_ids})
         updated = []
         for run in runs:
             if not (run.get("speckleProjectId") and run.get("validationModelId") and run.get("validationVersionId")):
+                continue
+            try:
+                rule_ids = [r.get("ruleId") for r in json.loads(run.get("rulesJson") or "[]") if isinstance(r, dict)]
+            except ValueError:
+                rule_ids = []
+            wanted = set()
+            for rule_id in rule_ids:
+                wanted |= categories_by_rule.get(rule_id, set())
+            chosen = [e for e in elements if str(e.get("label") or "").split("|", 1)[0] in wanted]
+            nodes = speckle_validation.context_nodes(chosen)
+            if not nodes:
                 continue
             version_id = speckle_validation.add_context_to_validation_version(
                 settings, speckle_project_id=run["speckleProjectId"], validation_model_id=run["validationModelId"],
@@ -2226,7 +2252,7 @@ def _publish_check_context(project: str, run_ids: list[str]) -> dict:
                  "url": build_model_version_url(settings.base_url, run["speckleProjectId"], run["validationModelId"],
                                                 version_id)})
             updated.append(run["runId"])
-        return {"published": bool(updated), "elements": len(nodes), "skipped": context.get("skipped"), "runs": updated}
+        return {"published": bool(updated), "elements": len(elements), "skipped": context.get("skipped"), "runs": updated}
     except Exception as exc:  # noqa: BLE001
         log.exception("context publish for %s failed", project)
         return {"published": False, "reason": str(exc)[:300]}
