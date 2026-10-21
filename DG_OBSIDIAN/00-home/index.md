@@ -9,6 +9,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-21 Multi-participant rules design, plans 1303-19 to 23 and Graph Viewer cap fix|Session — multi-participant rules design, plans 1303-19…23, OntoGraph analysis, Graph Viewer cap fix]] (2026-10-21)
+- [[knowledge/decisions/Multi-participant rules keep one subject and assert the other classes as context (Phase 1303, D-61 to D-65)|Decision: multi-participant rules keep one subject and assert the other classes as context (D-61…D-65)]] (2026-10-21)
+- [[knowledge/debugging/Graph Viewer cap hid rules behind validation history|Debugging: Graph Viewer 2,000-node cap hid new rules behind validation history]] (2026-10-21)
+- [[knowledge/debugging/Rebuilding data-service from the main folder replaced the mapping release image|Debugging: rebuilding data-service from the main folder replaced the mapping release image]] (2026-10-21)
 - [[sessions/2026-10-21 Phase 1303-15 MEP opening boxes checked in Revit through Rhino.Inside and VALIDATOR|Phase 1303-15 session — MEP opening boxes checked in Revit through Rhino.Inside and VALIDATOR, started from DeGram; per-rule context and source model in the Model Viewer]] (2026-10-21)
 - [[knowledge/decisions/Property calculators read elements by their DG mapping, not only by Revit category (Phase 1303-15)|Decision: property calculators read elements by their DG mapping, not only by Revit category]] (2026-10-21)
 - [[knowledge/debugging/A property check was started again while VALIDATOR was still uploading its runs|Debugging: check restarted during the asynchronous VALIDATOR upload (502, no context)]] (2026-10-21)
