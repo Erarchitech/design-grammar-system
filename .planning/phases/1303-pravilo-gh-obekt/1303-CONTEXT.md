@@ -242,6 +242,28 @@ Open questions from `1303-RESEARCH.md`; the owner chose the recommended option e
   - A retired copy must not be offered for regeneration: regenerate would turn a pause into a permanent rejection.
   - Owner answer 2026-10-21: reject is refused (409 `CALCULATOR_IN_CATALOGUE`) for every catalogue copy, active or retired. A catalogue calculator leaves use only through retire (D-59), so its hash never becomes "rejected".
 - Planner default taken from the research recommendation (Claude's discretion, not an owner decision): one active entry per property name per company, a second confirm for a taken name returns 409.
+
+### Multi-participant rules (plans 1303-19 and on, owner decisions 2026-10-21)
+
+Trigger: the rule "an opening in a slab may not be closer than 500 mm to the outline of the projection of columns and walls onto that slab" (`str-openings-01`) was ingested as `Opening` plus one derived property; Slab, Column, Wall and their relations never reached the graph. Approved design: `docs/superpowers/specs/2026-10-21-multi-participant-rule-extraction-design.md` (commit `a298613`).
+
+- **D-61: Relations are asserted preconditions, not evaluated constraints (design option a).**
+  - Rule ingest extracts every participant object class as a `ClassAtom` and every relation between participants as an `ObjectProperty` and an `ObjectPropertyAtom`.
+  - A context-only variable (only in body `ClassAtom`/`ObjectPropertyAtom`, never in a `DataPropertyAtom`, `BuiltinAtom` or head atom) is excluded from binding; its atoms count as matched and the result detail discloses them as asserted, not verified. No new status.
+  - A rule with participants must evaluate exactly like its one-class form; a genuine multi-object join stays `unsupported`.
+- **D-62: Every participant class of a rule reaches the property calculator of the rule's measured property.**
+  - The participants bind a calculator to the concrete model elements it computes over, once those elements are mapped to the classes. The subject class is the box class; the context participants are the classes the calculator reads (`READS_CLASS`), each with its relation.
+  - Script-read categories are checked against the participants; a mismatch is reported, never silently relinked. Regeneration stays a confirmed, paid LLM call.
+- **D-64: The ingest conflict check covers every class of the rule (owner choice "overlap", 2026-10-21).**
+  - `/rules/check-conflict` grounds every class named in the rule text, not only the first one.
+  - Two rules conflict when subject class, DatatypeProperty and comparator are equal and their participant sets share at least one class. Example: "opening ≥ 500 mm from the projection of columns and walls" conflicts with "opening ≥ 300 mm from the projection of columns" (two thresholds for columns).
+  - Refinement found while planning 1303-21 (planner, reported to the owner): the subject class would make every pair with equal keys overlap, so the overlap is taken over the context participants only, subject excluded. A rule with no participants applies regardless of them and overlaps every rule with the same key; two one-class rules with the same key conflict as before.
+  - A class that cannot be grounded keeps today's policy: report "no conflict", never guess.
+- **D-65: The conflict check runs on the written rule's atoms, after ingest (owner choice, 2026-10-21).**
+  - Finding behind it: the pre-ingest text check tokenizes on `[^a-zA-Z0-9]+` and matches English class labels, so a Russian rule never grounds and always reports "no conflict".
+  - The check compares what was actually written: subject class (class of the head's position-1 variable), DatatypeProperty, comparator and the participant set (D-64). It is language-independent and LLM-free.
+  - The dialog appears after the new rule is written. Its actions: Replace/Update (supersede, as today), Keep both (accept-overlap, as today), and Cancel, which removes the new rule through the existing delete with preview.
+- **D-63: D-61, D-62, D-64 and D-65 are tracked as new requirement DGOPN-06** (planner default, Claude's discretion). Plans 1303-19… run after 1303-16…18, which touch the same calculator files.
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*

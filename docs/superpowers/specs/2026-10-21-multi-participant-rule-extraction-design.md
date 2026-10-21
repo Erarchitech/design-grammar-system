@@ -58,6 +58,9 @@ object.
   property calculator of the rule's measured property. The participants are what
   binds a calculator to the concrete model elements it computes over, once those
   elements are mapped to the classes.
+- **D3 (2026-10-21):** the conflict check covers every class of the rule;
+  overlapping participant sets count as a conflict (see G6). Recorded as D-64 in
+  `1303-CONTEXT.md`, where D1 and D2 are D-61 and D-62.
 
 ## 3. Goals
 
@@ -82,9 +85,15 @@ object.
 - **G5 Language-independent prompting.** The participant/relation instruction
   is part of every ingest prompt irrespective of shape selection, and the
   existing shapes get Russian keyword synonyms.
-- **G6 Conflict check still keys on the subject.** `/rules/check-conflict`
-  keeps its (Class, DatatypeProperty, comparator) key, where Class is the
-  *subject's* class, never "the first class mentioned".
+- **G6 Conflict check covers every class (owner decision D-64, 2026-10-21).**
+  Every class of the rule is compared. Two rules conflict when subject class,
+  DatatypeProperty and comparator are equal and their context participants
+  (subject excluded) share at least one class, or one of them has none (a rule
+  without participants applies regardless of them). The check runs on the
+  written rule's atoms after ingest (owner decision D-65), because the
+  pre-ingest text grounding is ASCII-only and never matches a Russian rule;
+  the dialog then offers Replace/Update, Keep both, or Cancel (delete the new
+  rule with preview).
 - **G7 Acceptance example.** Re-ingesting (Edit) `R_OpeningSlabEdgeClearance500`
   in `str-openings-01` yields a rule whose graph shows Opening, Slab, Column and
   Wall and the relations between them, and which still validates exactly as
@@ -217,7 +226,9 @@ Required behaviour:
   one-class rule unchanged; a rule with context participants and relations
   evaluated like its one-class form; a multi-object join still `unsupported`.
 - `data-service` tests: Russian rule text reaches the participant instruction;
-  allowlist accepts the new output shape; conflict check keys on the subject.
+  allowlist accepts the new output shape; conflict check grounds every class and
+  reports a conflict for overlapping participants (columns-and-walls 500 mm vs
+  columns 300 mm) but not for disjoint ones.
 - Live: Edit `R_OpeningSlabEdgeClearance500` in `str-openings-01` against the
   rebuilt stack; Graph Viewer shows the four classes and the relations; the
   validation result for the existing design state is unchanged.
