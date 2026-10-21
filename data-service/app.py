@@ -2182,6 +2182,12 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
             # Live 2026-10-21: publishing 4 rules takes ~70 s, the listener waits 25 s, and VALIDATOR's run-id outputs
             # are blank again after the listener switches SendValid off. The published runs are therefore read from
             # the graph: one ValidationRun per rule created since this request started.
+            if _send_reset_before_publish(payload.project, started_at):
+                # DG.gha before 588f740 arms its one-shot reset too early: the end of a solution already running
+                # switched SendValid off before the run's own solution (live 2026-10-21, nothing published).
+                result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
+                result["refreshed"] = refreshed
+                result["retriedAfterEarlyReset"] = True
             published = _wait_for_published_runs(payload.project, started_at, result)
             if published:
                 status = result.setdefault("status", {})
@@ -2300,6 +2306,19 @@ def _publish_check_context(project: str, run_ids: list[str]) -> dict:
         return {"published": False, "reason": str(exc)[:300]}
 
 
+def _send_reset_before_publish(project: str, since: str) -> bool:
+    """True when SendValid is already off on the canvas and no run of this request exists."""
+    try:
+        status = gh_bridge.get_property_check_status(project)
+    except HTTPException:
+        return False  # canvas busy: a solution is running, presumably the publishing one
+    if (status.get("toggles") or {}).get("SendValid") is not False:
+        return False
+    rows = read_many("MATCH (r:ValidationRun {project: $project}) WHERE r.createdAt >= $since RETURN count(r) AS n",
+                     {"project": project, "since": since})
+    return not rows or not rows[0].get("n")
+
+
 PUBLISH_WAIT_S = 110.0
 PUBLISH_POLL_S = 4.0
 
@@ -2336,7 +2355,8 @@ def property_check_summary(result: dict) -> dict:
     if not result.get("clear") and boxes == 0 and not errors:
         problems.append("the calculator found no boxes (check BoxFamilyFilter and the active Revit document)")
     if result.get("send") and not result.get("clear") and not run_ids and not errors:
-        problems.append("VALIDATOR published no validation run (is CONNECTOR signed in and wired to Token?)")
+        problems.append("VALIDATOR of the property check published no run: SendValid was switched off before the "
+                        "publishing solution or the publish failed (see VALIDATOR SendStatus); run the check again")
     return {
         "ok": not problems,
         "problems": problems,
