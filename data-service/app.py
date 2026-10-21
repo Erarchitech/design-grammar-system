@@ -2174,23 +2174,21 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
         if (canvas_sha != generated["calculator"]["sha256"]
                 or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
-    one_shot = (payload.send or payload.paint) and not payload.clear
-    reset = None
-    try:
-        result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
-        if isinstance(result, dict):
-            result["refreshed"] = refreshed
-            result["summary"] = property_check_summary(result)
-            if result["summary"]["ok"] and payload.send and not payload.clear:
-                result["context"] = _publish_check_context(payload.project, result["summary"]["validationRunIds"])
-    finally:
-        # Live 2026-10-21: with SendValid/Paint left on, the highlighter's Revit write made Rhino.Inside re-solve the
-        # canvas, which published and painted again every ~22 s (148 runs, a busy Revit). A run that answered 502
-        # (canvas BUSY) skipped the reset and the loop came back. The toggles go back off in every case.
-        if one_shot:
-            reset = _reset_check_toggles(payload.project)
+    result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
-        result["togglesReset"] = reset
+        result["refreshed"] = refreshed
+        result["summary"] = property_check_summary(result)
+        if result["summary"]["ok"] and payload.send and not payload.clear:
+            # Live 2026-10-21: publishing the context into every run's Speckle version took longer than the 60 s
+            # proxy limit (DeGram got 504). It runs in the background; the check answers at once.
+            run_ids = list(result["summary"]["validationRunIds"])
+            threading.Thread(target=_publish_check_context, args=(payload.project, run_ids), daemon=True).start()
+            result["context"] = {"scheduled": True, "runs": run_ids}
+        # No toggle reset from here: it went through run_property_check, which expires the calculator and the
+        # highlighter, and when Rhino.Inside was already solving that stopped Grasshopper ("object expired during a
+        # solution", live 2026-10-21). The loop is broken by the highlighter, which writes Revit only on change; the
+        # listener (DG.gha) switches SendValid/Paint off itself after the run's solution.
+    if isinstance(result, dict):
         if not result["summary"]["ok"]:
             # Owner 2026-10-20: DeGram twice reported "no violations" for a chain whose VALIDATOR had no rules.
             # A failed check is an error response, so no caller can present it as a clean model.

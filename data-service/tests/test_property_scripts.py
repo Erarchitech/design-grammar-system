@@ -404,51 +404,31 @@ def test_generated_calculator_output_names_do_not_shadow_its_helpers(catalogue):
     assert not (defined & outputs), defined & outputs
 
 
-def test_a_published_check_turns_send_and_paint_off_again(monkeypatch):
-    """Live 2026-10-21: toggles left on made Rhino.Inside re-solve and republish in a loop (148 runs)."""
+def test_a_published_check_answers_at_once_and_publishes_context_in_the_background(monkeypatch):
+    """Live 2026-10-21: DeGram got 504 (60 s proxy limit), and the toggle reset expired the chain mid-solution."""
     import app as app_module
     import gh_bridge
 
     calls = []
+    monkeypatch.setattr(gh_bridge, "run_property_check", lambda params: calls.append(dict(params)) or {
+        "finished": True, "send": params["send"], "clear": params["clear"], "paint": params["paint"],
+        "status": {"boxes": 3, "violations": [], "validationRunId": ["VR-1"], "messages": []}})
+    started = []
 
-    def fake_run(params):
-        calls.append(dict(params))
-        return {"finished": True, "send": params["send"], "clear": params["clear"], "paint": params["paint"],
-                "status": {"boxes": 3, "violations": [], "validationRunId": ["VR-1"], "messages": []}}
+    class FakeThread:
+        def __init__(self, target, args, daemon):
+            started.append((target, args))
 
-    monkeypatch.setattr(gh_bridge, "run_property_check", fake_run)
-    monkeypatch.setattr(app_module, "_publish_check_context", lambda project, runs: {"published": False})
-    req = app_module.PropertyCheckRunRequest(project="p", refresh=False)
-    out = app_module.post_property_check_run(req, request=None)
-    assert out["togglesReset"] is True
-    assert calls[0]["send"] is True and calls[-1] == {"project": "p", "paint": False, "clear": False, "send": False}
+        def start(self):
+            pass
 
+    monkeypatch.setattr(app_module.threading, "Thread", FakeThread)
+    out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", refresh=False),
+                                             request=None)
+    assert len(calls) == 1 and calls[0]["send"] is True  # one canvas call, no reset run afterwards
+    assert out["context"] == {"scheduled": True, "runs": ["VR-1"]}
+    assert started and started[0][1] == ("p", ["VR-1"])
 
-def test_toggles_are_reset_even_when_the_run_fails(monkeypatch):
-    """Live 2026-10-21: a run answered 502 (canvas BUSY) and skipped the reset, so the publish loop came back."""
-    import app as app_module
-    import gh_bridge
-    from fastapi import HTTPException
-
-    calls = []
-
-    def fake_run(params):
-        calls.append(dict(params))
-        if params["send"]:
-            raise HTTPException(status_code=502, detail={"code": "BUSY"})
-        if len([c for c in calls if not c["send"]]) < 2:
-            raise HTTPException(status_code=502, detail={"code": "BUSY"})  # first reset attempt: still busy
-        return {"finished": True}
-
-    monkeypatch.setattr(gh_bridge, "run_property_check", fake_run)
-    monkeypatch.setattr(app_module, "RESET_PAUSE_S", 0)
-    req = app_module.PropertyCheckRunRequest(project="p", refresh=False)
-    try:
-        app_module.post_property_check_run(req, request=None)
-    except HTTPException as exc:
-        assert exc.status_code == 502
-    resets = [c for c in calls if not c["send"] and not c["paint"]]
-    assert len(resets) == 2 and resets[-1] == {"project": "p", "paint": False, "clear": False, "send": False}
 
 
 def test_highlighter_writes_revit_only_when_the_verdict_changed(catalogue):

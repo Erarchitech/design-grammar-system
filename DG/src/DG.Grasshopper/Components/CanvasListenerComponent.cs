@@ -719,34 +719,39 @@ public sealed class CanvasListenerComponent : GH_Component
             }
 
             before = Interlocked.Read(ref _solutionsEnded);
-            foreach (var toggle in members.OfType<GH_BooleanToggle>())
-            {
-                bool? value = toggle.NickName switch
-                {
-                    "Run" => true,
-                    "Paint" => paint,
-                    "Clear" => clear,
-                    "SendValid" => send,
-                    _ => null,
-                };
-                if (value is { } v && toggle.Value != v)
-                {
-                    toggle.Value = v;
-                    toggle.ExpireSolution(false);
-                }
-            }
-
-            foreach (var calculator in members.OfType<IGH_Component>().Where(c => c.NickName == CalculatorNickName || c.NickName == HighlighterNickName))
-            {
-                calculator.ExpireSolution(false);
-            }
 
             // Live 2026-10-21: SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again. The
             // listener itself turns them off after the solution this run started, whether or not the HTTP caller is
             // still waiting.
             _oneShotDoc = (send || paint) && !clear ? doc : null;
             _oneShotAfter = before;
-            doc.ScheduleSolution(5);
+
+            // Toggles and expiry go into the scheduled callback, which Grasshopper runs between solutions: expiring
+            // while Rhino.Inside was already solving stopped Grasshopper ("object expired during a solution").
+            doc.ScheduleSolution(5, d =>
+            {
+                foreach (var toggle in members.OfType<GH_BooleanToggle>())
+                {
+                    bool? value = toggle.NickName switch
+                    {
+                        "Run" => true,
+                        "Paint" => paint,
+                        "Clear" => clear,
+                        "SendValid" => send,
+                        _ => null,
+                    };
+                    if (value is { } v && toggle.Value != v)
+                    {
+                        toggle.Value = v;
+                        toggle.ExpireSolution(false);
+                    }
+                }
+
+                foreach (var calculator in members.OfType<IGH_Component>().Where(c => c.NickName == CalculatorNickName || c.NickName == HighlighterNickName))
+                {
+                    calculator.ExpireSolution(false);
+                }
+            });
             return null;
         });
 
