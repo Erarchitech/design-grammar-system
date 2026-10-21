@@ -578,3 +578,42 @@ def test_an_element_mapped_to_a_class_is_read_as_that_class_whatever_its_revit_c
     assert walls == [1, 2, 4]  # the pylon is a Column now; a rejected mapping does not reclassify
     assert ctx.category_of[4711685] in ("OST_StructuralColumns", "OST_Columns")
     assert ctx.category_of[1] == "OST_Walls"
+
+
+def test_a_check_whose_runs_are_still_uploading_is_not_started_again(monkeypatch):
+    """Live 2026-10-21 12:55: VALIDATOR uploads its runs after the solution (one per rule, ~25 s apart), so SendValid is
+    already off and no run exists when the listener answers. Taking that for an early reset started the check again;
+    the canvas answered BUSY while it published, DeGram got 502 and the model context was never added."""
+    import app as app_module
+    import gh_bridge
+
+    calls = []
+    monkeypatch.setattr(gh_bridge, "run_property_check", lambda params: calls.append(dict(params)) or {
+        "finished": True, "send": True, "clear": False, "paint": True,
+        "status": {"boxes": 313, "violations": [], "validationRunId": [""], "messages": [],
+                   "ruleNames": ["R1", "R2", "R3", "R4"]}})
+    monkeypatch.setattr(gh_bridge, "get_property_check_status", lambda project: {
+        "toggles": {"Run": True, "SendValid": False, "Paint": False}, "boxes": 313})
+    polls = []
+
+    def fake_read_many(query, params=None):
+        polls.append(query)
+        return [{"runId": "VR-%d" % i, "n": 0} for i in range(min(4, len(polls) - 1))]
+
+    monkeypatch.setattr(app_module, "read_many", fake_read_many)
+    monkeypatch.setattr(app_module, "PUBLISH_POLL_S", 0)
+    started = []
+
+    class FakeThread:
+        def __init__(self, target, args, daemon):
+            started.append(args)
+
+        def start(self):
+            pass
+
+    monkeypatch.setattr(app_module.threading, "Thread", FakeThread)
+    out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", refresh=False),
+                                             request=None)
+    assert len(calls) == 1  # never started a second time
+    assert out["summary"]["validationRunIds"] == ["VR-0", "VR-1", "VR-2", "VR-3"]
+    assert started == [("p", ["VR-0", "VR-1", "VR-2", "VR-3"])]

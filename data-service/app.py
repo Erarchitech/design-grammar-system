@@ -2182,12 +2182,9 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
             # Live 2026-10-21: publishing 4 rules takes ~70 s, the listener waits 25 s, and VALIDATOR's run-id outputs
             # are blank again after the listener switches SendValid off. The published runs are therefore read from
             # the graph: one ValidationRun per rule created since this request started.
-            if _send_reset_before_publish(payload.project, started_at):
-                # DG.gha before 588f740 arms its one-shot reset too early: the end of a solution already running
-                # switched SendValid off before the run's own solution (live 2026-10-21, nothing published).
-                result = _run_check_retrying_busy(payload.model_dump(exclude={"refresh"}))
-                result["refreshed"] = refreshed
-                result["retriedAfterEarlyReset"] = True
+            # No second run when SendValid is already off and no run exists yet: VALIDATOR uploads its runs after the
+            # solution (live 2026-10-21 12:55, one per rule ~25 s apart), so that is the normal state; a retry met
+            # BUSY while it published and failed the whole check with 502.
             published = _wait_for_published_runs(payload.project, started_at, result)
             if published:
                 if not (result.get("status") or {}).get("boxes"):
@@ -2332,19 +2329,6 @@ def _run_check_retrying_busy(params: dict) -> dict:
                 raise
         time.sleep(BUSY_PAUSE_S)
     raise RuntimeError("unreachable")
-
-
-def _send_reset_before_publish(project: str, since: str) -> bool:
-    """True when SendValid is already off on the canvas and no run of this request exists."""
-    try:
-        status = gh_bridge.get_property_check_status(project)
-    except HTTPException:
-        return False  # canvas busy: a solution is running, presumably the publishing one
-    if (status.get("toggles") or {}).get("SendValid") is not False:
-        return False
-    rows = read_many("MATCH (r:ValidationRun {project: $project}) WHERE r.createdAt >= $since RETURN count(r) AS n",
-                     {"project": project, "since": since})
-    return not rows or not rows[0].get("n")
 
 
 def load_rule_ids(project: str) -> list[str]:
