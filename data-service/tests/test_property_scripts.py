@@ -423,6 +423,7 @@ def test_a_published_check_answers_at_once_and_publishes_context_in_the_backgrou
             pass
 
     monkeypatch.setattr(app_module.threading, "Thread", FakeThread)
+    monkeypatch.setattr(app_module, "read_many", lambda q, p=None: [{"runId": "VR-1"}])
     out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", refresh=False),
                                              request=None)
     assert len(calls) == 1 and calls[0]["send"] is True  # one canvas call, no reset run afterwards
@@ -437,3 +438,36 @@ def test_highlighter_writes_revit_only_when_the_verdict_changed(catalogue):
     src = out["highlighter"]["source"]
     assert "DG.Highlighter.LastDigest" in src and "if unchanged:" in src
     assert src.index("if unchanged:") < src.index("t.Start()")
+
+
+def test_published_runs_are_read_from_the_graph_when_the_listener_stopped_waiting(monkeypatch):
+    """Live 2026-10-21: the 4 publishes took ~70 s, the listener answered after 25 s and DeGram reported a failure."""
+    import app as app_module
+    import gh_bridge
+
+    monkeypatch.setattr(gh_bridge, "run_property_check", lambda params: {
+        "finished": False, "send": True, "clear": False, "paint": True,
+        "status": {"boxes": 313, "violations": [], "validationRunId": ["", "", "", ""], "messages": [],
+                   "ruleNames": ["R1", "R2", "R3", "R4"]}})
+    polls = []
+
+    def fake_read_many(query, params=None):
+        polls.append(params)
+        return [{"runId": "VR-%d" % i} for i in range(min(4, 2 * len(polls)))]
+
+    monkeypatch.setattr(app_module, "read_many", fake_read_many)
+    monkeypatch.setattr(app_module, "PUBLISH_POLL_S", 0)
+    monkeypatch.setattr(app_module, "_publish_check_context", lambda project, runs: None)
+
+    class NoThread:
+        def __init__(self, target, args, daemon):
+            pass
+
+        def start(self):
+            pass
+
+    monkeypatch.setattr(app_module.threading, "Thread", NoThread)
+    out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", refresh=False),
+                                             request=None)
+    assert out["summary"]["ok"] is True and out["summary"]["published"] is True
+    assert out["summary"]["validationRunIds"] == ["VR-0", "VR-1", "VR-2", "VR-3"] and len(polls) == 2

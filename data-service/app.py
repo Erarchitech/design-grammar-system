@@ -2174,9 +2174,19 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
         if (canvas_sha != generated["calculator"]["sha256"]
                 or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
+    started_at = datetime.now(timezone.utc).isoformat()
     result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
         result["refreshed"] = refreshed
+        if payload.send and not payload.clear:
+            # Live 2026-10-21: publishing 4 rules takes ~70 s, the listener waits 25 s, and VALIDATOR's run-id outputs
+            # are blank again after the listener switches SendValid off. The published runs are therefore read from
+            # the graph: one ValidationRun per rule created since this request started.
+            published = _wait_for_published_runs(payload.project, started_at, result)
+            if published:
+                status = result.setdefault("status", {})
+                status["validationRunId"] = published
+                result["finished"] = True
         result["summary"] = property_check_summary(result)
         if result["summary"]["ok"] and payload.send and not payload.clear:
             # Live 2026-10-21: publishing the context into every run's Speckle version took longer than the 60 s
@@ -2288,6 +2298,27 @@ def _publish_check_context(project: str, run_ids: list[str]) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.exception("context publish for %s failed", project)
         return {"published": False, "reason": str(exc)[:300]}
+
+
+PUBLISH_WAIT_S = 110.0
+PUBLISH_POLL_S = 4.0
+
+
+def _wait_for_published_runs(project: str, since: str, result: dict) -> list[str]:
+    """Run ids of the ValidationRuns this check published (one per rule), waiting up to PUBLISH_WAIT_S."""
+    status = result.get("status") if isinstance(result.get("status"), dict) else {}
+    expected = max(1, len([r for r in (status.get("ruleNames") or []) if r]) or 1)
+    deadline = time.monotonic() + PUBLISH_WAIT_S
+    ids: list[str] = []
+    while True:
+        rows = read_many(
+            "MATCH (r:ValidationRun {project: $project}) WHERE r.createdAt >= $since "
+            "RETURN r.runId AS runId ORDER BY r.createdAt",
+            {"project": project, "since": since})
+        ids = [r["runId"] for r in rows if r.get("runId")]
+        if len(ids) >= expected or time.monotonic() >= deadline:
+            return ids
+        time.sleep(PUBLISH_POLL_S)
 
 
 def property_check_summary(result: dict) -> dict:

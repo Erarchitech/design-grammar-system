@@ -720,16 +720,17 @@ public sealed class CanvasListenerComponent : GH_Component
 
             before = Interlocked.Read(ref _solutionsEnded);
 
-            // Live 2026-10-21: SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again. The
-            // listener itself turns them off after the solution this run started, whether or not the HTTP caller is
-            // still waiting.
-            _oneShotDoc = (send || paint) && !clear ? doc : null;
-            _oneShotAfter = before;
-
             // Toggles and expiry go into the scheduled callback, which Grasshopper runs between solutions: expiring
             // while Rhino.Inside was already solving stopped Grasshopper ("object expired during a solution").
             doc.ScheduleSolution(5, d =>
             {
+                // Live 2026-10-21: SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again,
+                // so the listener turns them off after THIS run's solution. Armed here, inside the callback: armed
+                // earlier, the end of a solution already running reset SendValid before the run's own solution and
+                // nothing was published.
+                _oneShotDoc = (send || paint) && !clear ? d : null;
+                _oneShotAfter = Interlocked.Read(ref _solutionsEnded);
+
                 foreach (var toggle in members.OfType<GH_BooleanToggle>())
                 {
                     bool? value = toggle.NickName switch
