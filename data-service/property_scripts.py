@@ -348,6 +348,9 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
             "placement": placement_plan(project, n)}
 
 
+BOX_FAMILY_FILTER_DEFAULT = "Box"
+
+
 def placement_plan(project: str, property_count: int) -> dict:
     """Components, positions and wires of the checking chain; executed by the LISTENER command
     place_property_script. CONNECTOR is reused from the canvas (the user signs in there)."""
@@ -359,7 +362,10 @@ def placement_plan(project: str, property_count: int) -> dict:
         {"key": "graphdecon", "kind": "dg", "type": "GRAPH DECONSTRUCT", "reuse": True, "x": col[0] - 220, "y": -260},
         {"key": "metagraph", "kind": "dg", "type": "METAGRAPH", "reuse": True, "x": col[0], "y": -260},
         {"key": "run", "kind": "toggle", "nickname": "Run", "value": False, "x": col[0] - 200, "y": 0},
-        {"key": "filter", "kind": "panel", "nickname": "BoxFamilyFilter", "text": "", "x": col[0] - 200, "y": 60},
+        # Default "Box": the opening-box families (BoxПерекрытиеПрямоугольный, BoxСтенаПрямоугольный); other Generic
+        # Models such as "котлован" / "засыпка" are not boxes (live 2026-10-21). Editable on the canvas.
+        {"key": "filter", "kind": "panel", "nickname": "BoxFamilyFilter", "text": BOX_FAMILY_FILTER_DEFAULT,
+         "x": col[0] - 200, "y": 60},
         {"key": "calculator", "kind": "script", "script": "calculator", "x": col[0], "y": 0},
         {"key": "objstate", "kind": "dg", "type": "OBJECT STATE", "x": col[1], "y": 0},
         {"key": "rulebyid", "kind": "dg", "type": "RULE BY ID", "x": col[2], "y": -260},

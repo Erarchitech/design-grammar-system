@@ -264,7 +264,37 @@ def _gh_point(x, y, z):
     return System.Activator.CreateInstance(_P3, System.Array[System.Object]([float(x), float(y), float(z)]))
 
 
+def _decoded_geometry(box):
+    """The box's own solids converted by Rhino.Inside (model units, true shape), joined into one Brep."""
+    try:
+        from RhinoInside.Revit.Convert.Geometry import GeometryDecoder
+    except Exception:
+        return None
+    breps = []
+    for solid in element_solids(box):
+        try:
+            b = GeometryDecoder.ToBrep(solid)
+        except Exception:
+            b = None
+        if b is not None:
+            breps.append(b)
+    if not breps:
+        return None
+    if len(breps) == 1:
+        return Grasshopper.Kernel.Types.GH_Brep(breps[0])
+    brep_t = breps[0].GetType()
+    joined = brep_t.GetMethod("JoinBreps", [clr.GetClrType(System.Collections.Generic.IEnumerable[brep_t]), clr.GetClrType(float)])
+    try:
+        out = joined.Invoke(None, [System.Collections.Generic.List[brep_t](breps), 0.001]) if joined else None
+    except Exception:
+        out = None
+    return Grasshopper.Kernel.Types.GH_Brep(out[0] if out else breps[0])
+
+
 def box_geometry(box, scale):
+    decoded = _decoded_geometry(box)
+    if decoded is not None:
+        return decoded
     bb = box.get_BoundingBox(None)
     if bb is None:
         return None
