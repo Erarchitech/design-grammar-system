@@ -114,8 +114,9 @@ def sign_in(window, store, client, remember=None):
         try:  # only after a successful sign-in, so a wrong password is never remembered
             remember.save(url, user, result.get("project") or project, password=password,
                           remember_password=getattr(window, "remember_password", False))
-        except Exception:
-            pass
+        except Exception as error:  # reported (without the password), never silent
+            forms.alert(u"Signed in, but the sign-in could not be remembered: {}".format(
+                type(error).__name__), title="DG")
     password = None
     window.password = None
     signed_in_project = result.get("project") or project
