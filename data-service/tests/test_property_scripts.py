@@ -390,3 +390,15 @@ def test_context_is_added_to_each_runs_validation_version(monkeypatch):
     assert [[n["name"] for n in c["nodes"]] for c in calls] == [["OST_Walls|Стены : Wall [1]"],
                                                                  ["OST_StructuralColumns|Колонны : C [2]"]]
     assert [w["versionId"] for w in writes] == ["new-run-a", "new-run-b"]
+
+
+def test_generated_calculator_output_names_do_not_shadow_its_helpers(catalogue):
+    """Live 2026-10-21: the output 'Context = []' replaced the helper class Context, so the calculator failed with
+    "'list' object is not callable". No assembled output may rebind a class or function of the script."""
+    import ast
+
+    out = ps.assemble(PROJECT, ps.resolve(ps.rules_from_rows(_rows()), catalogue), catalogue)
+    tree = ast.parse(out["calculator"]["source"])
+    defined = {n.name for n in tree.body if isinstance(n, (ast.ClassDef, ast.FunctionDef))}
+    outputs = set(out["calculator"]["outputs"])
+    assert not (defined & outputs), defined & outputs

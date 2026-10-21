@@ -67,7 +67,7 @@ def bbox_corners(element):
     return pts
 
 
-class Context(object):
+class ModelContext(object):
     """Model facts shared by every calculator; each fact is computed once per run."""
 
     def __init__(self, doc, boxes):
@@ -331,7 +331,7 @@ def feet_to_model_scale():
 
 def run_calculator(doc, family_filter):
     boxes = collect_boxes(doc, family_filter)
-    ctx = Context(doc, boxes)
+    ctx = ModelContext(doc, boxes)
     scale = feet_to_model_scale()
     values = []
     errors = []
