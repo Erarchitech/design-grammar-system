@@ -2190,6 +2190,11 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
                 result["retriedAfterEarlyReset"] = True
             published = _wait_for_published_runs(payload.project, started_at, result)
             if published:
+                if not (result.get("status") or {}).get("boxes"):
+                    try:  # the run's own answer was lost to the bridge timeout: read the reports now
+                        result["status"] = gh_bridge.get_property_check_status(payload.project)
+                    except HTTPException:
+                        pass
                 status = result.setdefault("status", {})
                 status["validationRunId"] = published
                 result["finished"] = True
@@ -2318,6 +2323,11 @@ def _run_check_retrying_busy(params: dict) -> dict:
             return gh_bridge.run_property_check(params)
         except HTTPException as exc:
             detail = exc.detail if isinstance(exc.detail, dict) else {}
+            if detail.get("code") == "GH_BRIDGE_UNREACHABLE" and params.get("send"):
+                # The listener accepted the run and is still solving (it published at 12:18 while data-service had
+                # timed out): treat as started and let the caller wait for the published runs in the graph.
+                return {"finished": False, "send": True, "clear": params.get("clear", False),
+                        "paint": params.get("paint", True), "status": {}, "bridgeTimedOut": True}
             if detail.get("code") != "BUSY" or attempt == BUSY_ATTEMPTS - 1:
                 raise
         time.sleep(BUSY_PAUSE_S)
@@ -2337,6 +2347,12 @@ def _send_reset_before_publish(project: str, since: str) -> bool:
     return not rows or not rows[0].get("n")
 
 
+def load_rule_ids(project: str) -> list[str]:
+    rows = read_many("MATCH (r:Rule {project: $project, graph: 'Metagraph'}) "
+                     "WHERE NOT EXISTS { (r)-[:SUPERSEDED_BY]->() } RETURN r.Rule_Id AS id", {"project": project})
+    return [r["id"] for r in rows if r.get("id")]
+
+
 PUBLISH_WAIT_S = 110.0
 PUBLISH_POLL_S = 4.0
 
@@ -2344,7 +2360,9 @@ PUBLISH_POLL_S = 4.0
 def _wait_for_published_runs(project: str, since: str, result: dict) -> list[str]:
     """Run ids of the ValidationRuns this check published (one per rule), waiting up to PUBLISH_WAIT_S."""
     status = result.get("status") if isinstance(result.get("status"), dict) else {}
-    expected = max(1, len([r for r in (status.get("ruleNames") or []) if r]) or 1)
+    expected = len([r for r in (status.get("ruleNames") or []) if r])
+    if not expected:  # no status yet (bridge timed out): one run per rule of the project
+        expected = len(load_rule_ids(project)) or 1
     deadline = time.monotonic() + PUBLISH_WAIT_S
     ids: list[str] = []
     while True:

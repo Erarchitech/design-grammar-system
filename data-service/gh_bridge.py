@@ -33,6 +33,11 @@ READ_TIMEOUT_SECONDS = 30.0
 MAX_RESPONSE_BYTES = 10 * 1024 * 1024  # 10 MiB
 
 
+# A check run holds the connection while the listener waits for its solution (up to 25 s) and then reads the status;
+# 30 s was too short (live 2026-10-21: the run published, data-service had already given up).
+LONG_COMMANDS = {"run_property_check": 75.0, "place_property_script": 60.0, "get_property_check_context": 60.0}
+
+
 def _call(command_type: str, parameters: dict) -> dict:
     """Send one `{type, parameters}` request line, read one response line.
 
@@ -46,7 +51,7 @@ def _call(command_type: str, parameters: dict) -> dict:
         with socket.create_connection(
             (GH_BRIDGE_HOST, GH_BRIDGE_PORT), timeout=CONNECT_TIMEOUT_SECONDS
         ) as sock:
-            sock.settimeout(READ_TIMEOUT_SECONDS)
+            sock.settimeout(LONG_COMMANDS.get(command_type, READ_TIMEOUT_SECONDS))
             request = json.dumps({"type": command_type, "parameters": parameters}) + "\n"
             sock.sendall(request.encode("utf-8"))
             buffered = sock.makefile("r", encoding="utf-8")
