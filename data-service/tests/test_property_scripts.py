@@ -347,3 +347,11 @@ def test_atom_type_repair_derives_the_type_from_refers_to_and_never_overwrites()
     for label, atom_type in (("Class", "ClassAtom"), ("DatatypeProperty", "DataPropertyAtom"),
                              ("ObjectProperty", "ObjectPropertyAtom"), ("Builtin", "BuiltinAtom")):
         assert f"p:{label} THEN '{atom_type}'" in q
+
+
+def test_bare_variable_names_get_the_question_mark_prefix():
+    import app as app_module
+
+    assert "SET v.name = '?' + v.name" in app_module.VAR_RENAME
+    assert "NOT v.name STARTS WITH '?'" in app_module.VAR_RENAME and "project:$project" in app_module.VAR_RENAME
+    assert "name: '?' + v.name" in app_module.VAR_MERGE_INTO_TWIN and "DELETE g" in app_module.VAR_MERGE_INTO_TWIN

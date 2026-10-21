@@ -3866,6 +3866,33 @@ def repair_atom_types(session, project: str) -> int:
     return int(row["n"]) if row else 0
 
 
+# Same ingest (live 2026-10-21): Var nodes came back as "n", "o" instead of "?n", "?o". VALIDATOR takes variable names
+# from the SWRL text ("?n") and finds no atom argument of that name ("Cannot classify variable '??n'"). The DG
+# convention is the "?" prefix (cypher_template.txt); a bare Var is renamed, or merged into an existing "?" twin.
+VAR_MERGE_INTO_TWIN = (
+    "MATCH (v:Var {project:$project}) WHERE NOT v.name STARTS WITH '?' "
+    "MATCH (twin:Var {project:$project, name: '?' + v.name}) "
+    "MATCH (a:Atom)-[g:ARG]->(v) "
+    "MERGE (a)-[g2:ARG {pos: g.pos}]->(twin) "
+    "DELETE g RETURN count(g2) AS n"
+)
+VAR_RENAME = (
+    "MATCH (v:Var {project:$project}) WHERE NOT v.name STARTS WITH '?' "
+    "AND NOT EXISTS { MATCH (:Var {project:$project, name: '?' + v.name}) } "
+    "SET v.name = '?' + v.name RETURN count(v) AS n"
+)
+VAR_DROP_ORPHANS = (
+    "MATCH (v:Var {project:$project}) WHERE NOT v.name STARTS WITH '?' AND NOT (v)--() DELETE v RETURN count(v) AS n"
+)
+
+
+def repair_var_names(session, project: str) -> int:
+    moved = session.run(VAR_MERGE_INTO_TWIN, project=project).single()
+    renamed = session.run(VAR_RENAME, project=project).single()
+    session.run(VAR_DROP_ORPHANS, project=project).consume()
+    return int((moved or {"n": 0})["n"]) + int((renamed or {"n": 0})["n"])
+
+
 def _llm_calculator(dp, rules, box):
     return property_calculator_llm.generate_calculator(dp, rules, box)
 
@@ -3874,9 +3901,9 @@ def _ensure_rule_classes_after_ingest(project: str, actor: str | None) -> None:
     log = logging.getLogger(__name__)
     try:
         with driver.session() as session:
-            repaired = repair_atom_types(session, project)
+            repaired = repair_atom_types(session, project) + repair_var_names(session, project)
             if repaired:
-                log.info("rule ingest for %s: typed %d atoms from REFERS_TO", project, repaired)
+                log.info("rule ingest for %s: repaired %d atom types / variable names", project, repaired)
             out = property_scripts.ensure_rule_classes(session, project, actor=actor, generator=_llm_calculator)
         log.info("rule classes for %s: %d linked, %d unsupported", project, len(out["linked"]), len(out["unsupported"]))
     except Exception:  # noqa: BLE001 - never fails the ingest; placing or running the check links them again
