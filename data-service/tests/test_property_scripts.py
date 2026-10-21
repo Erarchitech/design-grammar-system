@@ -337,3 +337,13 @@ def test_check_summary_never_reports_a_failed_chain_as_clean():
         "boxes": 12, "violations": ["box [1]: R1"], "validationRunId": ["VR-1"], "messages": []}}
     assert app_module.property_check_summary(good) == {"ok": True, "problems": [], "boxes": 12, "violations": 1,
                                                        "validationRunIds": ["VR-1"], "published": True}
+
+
+def test_atom_type_repair_derives_the_type_from_refers_to_and_never_overwrites():
+    import app as app_module
+
+    q = app_module.ATOM_TYPE_REPAIR
+    assert "a.type IS NULL OR a.type = ''" in q and "project:$project" in q
+    for label, atom_type in (("Class", "ClassAtom"), ("DatatypeProperty", "DataPropertyAtom"),
+                             ("ObjectProperty", "ObjectPropertyAtom"), ("Builtin", "BuiltinAtom")):
+        assert f"p:{label} THEN '{atom_type}'" in q

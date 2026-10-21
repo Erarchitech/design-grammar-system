@@ -3849,6 +3849,23 @@ def store_execution_result(result: ExecutionResult):
     return {"status": "ok"}
 
 
+# Phase 1303-15 (live 2026-10-21): the rule ingest LLM left Atom.type empty on all atoms of the opening rules, and
+# VALIDATOR classifies variables by atom type ("Cannot classify variable '?n'"). The type follows from what the
+# atom REFERS_TO, so it is filled deterministically after every ingest (never overwrites an existing type).
+ATOM_TYPE_REPAIR = (
+    "MATCH (r:Rule {project:$project})-[:HAS_BODY|HAS_HEAD]->(a:Atom)-[:REFERS_TO]->(p) "
+    "WHERE a.type IS NULL OR a.type = '' "
+    "WITH a, CASE WHEN p:Class THEN 'ClassAtom' WHEN p:DatatypeProperty THEN 'DataPropertyAtom' "
+    "WHEN p:ObjectProperty THEN 'ObjectPropertyAtom' WHEN p:Builtin THEN 'BuiltinAtom' END AS t "
+    "WHERE t IS NOT NULL SET a.type = t RETURN count(a) AS n"
+)
+
+
+def repair_atom_types(session, project: str) -> int:
+    row = session.run(ATOM_TYPE_REPAIR, project=project).single()
+    return int(row["n"]) if row else 0
+
+
 def _llm_calculator(dp, rules, box):
     return property_calculator_llm.generate_calculator(dp, rules, box)
 
@@ -3857,6 +3874,9 @@ def _ensure_rule_classes_after_ingest(project: str, actor: str | None) -> None:
     log = logging.getLogger(__name__)
     try:
         with driver.session() as session:
+            repaired = repair_atom_types(session, project)
+            if repaired:
+                log.info("rule ingest for %s: typed %d atoms from REFERS_TO", project, repaired)
             out = property_scripts.ensure_rule_classes(session, project, actor=actor, generator=_llm_calculator)
         log.info("rule classes for %s: %d linked, %d unsupported", project, len(out["linked"]), len(out["unsupported"]))
     except Exception:  # noqa: BLE001 - never fails the ingest; placing or running the check links them again
