@@ -2172,22 +2172,23 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
         if (canvas_sha != generated["calculator"]["sha256"]
                 or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
-    result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
+    one_shot = (payload.send or payload.paint) and not payload.clear
+    reset = None
+    try:
+        result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
+        if isinstance(result, dict):
+            result["refreshed"] = refreshed
+            result["summary"] = property_check_summary(result)
+            if result["summary"]["ok"] and payload.send and not payload.clear:
+                result["context"] = _publish_check_context(payload.project, result["summary"]["validationRunIds"])
+    finally:
+        # Live 2026-10-21: with SendValid/Paint left on, the highlighter's Revit write made Rhino.Inside re-solve the
+        # canvas, which published and painted again every ~22 s (148 runs, a busy Revit). A run that answered 502
+        # (canvas BUSY) skipped the reset and the loop came back. The toggles go back off in every case.
+        if one_shot:
+            reset = _reset_check_toggles(payload.project)
     if isinstance(result, dict):
-        result["refreshed"] = refreshed
-        result["summary"] = property_check_summary(result)
-        if result["summary"]["ok"] and payload.send and not payload.clear:
-            result["context"] = _publish_check_context(payload.project, result["summary"]["validationRunIds"])
-        if (payload.send or payload.paint) and not payload.clear:
-            # Live 2026-10-21: with SendValid/Paint left on, the highlighter's Revit write made Rhino.Inside re-solve the
-            # canvas, which published and painted again - 148 runs in 55 min and a busy Revit. A check is one shot:
-            # the toggles go back off (colours stay in Revit).
-            try:
-                gh_bridge.run_property_check({"project": payload.project, "paint": False, "clear": False, "send": False})
-                result["togglesReset"] = True
-            except HTTPException as exc:
-                result["togglesReset"] = False
-                result["togglesResetError"] = str(exc.detail)[:200]
+        result["togglesReset"] = reset
         if not result["summary"]["ok"]:
             # Owner 2026-10-20: DeGram twice reported "no violations" for a chain whose VALIDATOR had no rules.
             # A failed check is an error response, so no caller can present it as a clean model.
@@ -2201,6 +2202,27 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
                 "upstream": (result.get("status") or {}).get("upstream"),
             })
     return result
+
+
+RESET_ATTEMPTS = 12
+RESET_PAUSE_S = 5.0
+
+
+def _reset_check_toggles(project: str) -> bool:
+    """SendValid and Paint off, retried while the canvas is BUSY (a running solution); never raises."""
+    log = logging.getLogger(__name__)
+    for attempt in range(RESET_ATTEMPTS):
+        try:
+            gh_bridge.run_property_check({"project": project, "paint": False, "clear": False, "send": False})
+            return True
+        except HTTPException as exc:
+            log.warning("property check toggle reset for %s, attempt %d: %s", project, attempt + 1,
+                        str(exc.detail)[:160])
+        except Exception:  # noqa: BLE001
+            log.exception("property check toggle reset for %s failed", project)
+        time.sleep(RESET_PAUSE_S)
+    log.error("property check toggles for %s are still on: switch SendValid and Paint off on the canvas", project)
+    return False
 
 
 def rule_context_categories(project: str) -> dict[str, set[str]]:

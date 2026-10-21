@@ -741,6 +741,11 @@ public sealed class CanvasListenerComponent : GH_Component
                 calculator.ExpireSolution(false);
             }
 
+            // Live 2026-10-21: SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again. The
+            // listener itself turns them off after the solution this run started, whether or not the HTTP caller is
+            // still waiting.
+            _oneShotDoc = (send || paint) && !clear ? doc : null;
+            _oneShotAfter = before;
             doc.ScheduleSolution(5);
             return null;
         });
@@ -761,7 +766,32 @@ public sealed class CanvasListenerComponent : GH_Component
         return new { finished, paint, clear, send, status };
     }
 
-    private void OnPropertyCheckSolutionEnd(object sender, GH_SolutionEventArgs e) => Interlocked.Increment(ref _solutionsEnded);
+    private GH_Document? _oneShotDoc;
+    private long _oneShotAfter;
+
+    private void OnPropertyCheckSolutionEnd(object sender, GH_SolutionEventArgs e)
+    {
+        var ended = Interlocked.Increment(ref _solutionsEnded);
+        var doc = _oneShotDoc;
+        if (doc is null || ended <= _oneShotAfter)
+        {
+            return;
+        }
+
+        _oneShotDoc = null;
+        doc.ScheduleSolution(1, d =>
+        {
+            foreach (var group in PropertyCheckGroups(d, string.Empty))
+            {
+                foreach (var toggle in GroupMembers(d, group).OfType<GH_BooleanToggle>()
+                             .Where(t => (t.NickName == "SendValid" || t.NickName == "Paint") && t.Value))
+                {
+                    toggle.Value = false;
+                    toggle.ExpireSolution(false);
+                }
+            }
+        });
+    }
 
     /// <summary>
     /// Phase 1303-15 (owner 2026-10-21: walls, columns and beams are checked against but were not in the Model Viewer):

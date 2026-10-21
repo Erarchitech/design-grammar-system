@@ -422,3 +422,30 @@ def test_a_published_check_turns_send_and_paint_off_again(monkeypatch):
     out = app_module.post_property_check_run(req, request=None)
     assert out["togglesReset"] is True
     assert calls[0]["send"] is True and calls[-1] == {"project": "p", "paint": False, "clear": False, "send": False}
+
+
+def test_toggles_are_reset_even_when_the_run_fails(monkeypatch):
+    """Live 2026-10-21: a run answered 502 (canvas BUSY) and skipped the reset, so the publish loop came back."""
+    import app as app_module
+    import gh_bridge
+    from fastapi import HTTPException
+
+    calls = []
+
+    def fake_run(params):
+        calls.append(dict(params))
+        if params["send"]:
+            raise HTTPException(status_code=502, detail={"code": "BUSY"})
+        if len([c for c in calls if not c["send"]]) < 2:
+            raise HTTPException(status_code=502, detail={"code": "BUSY"})  # first reset attempt: still busy
+        return {"finished": True}
+
+    monkeypatch.setattr(gh_bridge, "run_property_check", fake_run)
+    monkeypatch.setattr(app_module, "RESET_PAUSE_S", 0)
+    req = app_module.PropertyCheckRunRequest(project="p", refresh=False)
+    try:
+        app_module.post_property_check_run(req, request=None)
+    except HTTPException as exc:
+        assert exc.status_code == 502
+    resets = [c for c in calls if not c["send"] and not c["paint"]]
+    assert len(resets) == 2 and resets[-1] == {"project": "p", "paint": False, "clear": False, "send": False}
