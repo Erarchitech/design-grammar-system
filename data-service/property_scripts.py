@@ -313,6 +313,7 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
         box_class_iri=resolution["boxClass"]["iri"],
         box_class_label=resolution["boxClass"]["label"],
         property_table=_py_literal(table),
+        category_classes=_py_literal(dict(sorted(catalogue.get("categoryClasses", {}).items()))),
         calculators=functions,
         calculator_functions="{" + ", ".join(f'"{c}": {function_of[c]}' for c in used) + "}",
         output_defaults=defaults,

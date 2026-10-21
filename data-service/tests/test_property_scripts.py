@@ -471,3 +471,110 @@ def test_published_runs_are_read_from_the_graph_when_the_listener_stopped_waitin
                                              request=None)
     assert out["summary"]["ok"] is True and out["summary"]["published"] is True
     assert out["summary"]["validationRunIds"] == ["VR-0", "VR-1", "VR-2", "VR-3"] and len(polls) == 2
+
+
+def _shell_namespace(source):
+    """The model-reading part of an assembled calculator (constants, helpers, ModelContext) against a fake Revit DB."""
+    import ast
+    import types
+
+    class Xyz:
+        def __init__(self, x, y, z):
+            self.X, self.Y, self.Z = x, y, z
+
+    class Box:
+        def __init__(self, lo, hi):
+            self.Min, self.Max = Xyz(*lo), Xyz(*hi)
+
+    names = ["OST_GenericModel", "OST_StructuralFraming", "OST_StructuralColumns", "OST_Columns", "OST_Walls",
+             "OST_Floors", "OST_Doors", "OST_Windows", "OST_SWallRectOpening", "OST_ArcWallRectOpening",
+             "OST_StructuralFoundation", "OST_Roofs"]
+    bic = types.SimpleNamespace(**{n: -2000 - i for i, n in enumerate(names)})
+
+    class Collector:
+        def __init__(self, doc):
+            self.doc = doc
+            self.cat = None
+
+        def OfCategory(self, c):
+            self.cat = int(c)
+            return self
+
+        def OfCategoryId(self, cid):
+            self.cat = cid.IntegerValue
+            return self
+
+        def WhereElementIsNotElementType(self):
+            return self
+
+        def __iter__(self):
+            return iter([e for e in self.doc.elements if e.Category.Id.IntegerValue == self.cat])
+
+    db = types.SimpleNamespace(BuiltInCategory=bic, FilteredElementCollector=Collector,
+                               StorageType=types.SimpleNamespace(String="String"),
+                               Options=lambda: types.SimpleNamespace())
+    tree = ast.parse(source)
+    wanted = ("_bic", "_text_parameter", "dg_classes", "ModelContext")
+    skipped = {n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name not in wanted}
+    keep = [n for n in tree.body
+            if (isinstance(n, ast.Assign)
+                and all(isinstance(t, ast.Name) and t.id.isupper() and not t.id.startswith("_") for t in n.targets)
+                and not any(m.id in skipped or m.id.startswith("_")
+                            for m in ast.walk(n.value) if isinstance(m, ast.Name)))
+            or (isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in wanted)]
+    ns = {"DB": db, "math": __import__("math")}
+    exec(compile(ast.Module(body=keep, type_ignores=[]), "<shell>", "exec"), ns)
+
+    def element(eid, category, dg_class="", state="", lo=(0, 0, 0), hi=(1, 1, 1)):
+        params = {"DG_Class": dg_class, "DG_MappingState": state}
+
+        def lookup(name):
+            if name not in params:
+                return None
+            return types.SimpleNamespace(StorageType="String", AsString=lambda: params[name])
+
+        cat = types.SimpleNamespace(Id=types.SimpleNamespace(IntegerValue=int(getattr(bic, category))))
+        return types.SimpleNamespace(Id=types.SimpleNamespace(IntegerValue=eid), Category=cat,
+                                     LookupParameter=lookup, get_BoundingBox=lambda view: Box(lo, hi))
+
+    return ns, element, bic
+
+
+def test_an_element_mapped_to_a_class_is_read_as_that_class_whatever_its_revit_category(catalogue):
+    """Live 2026-10-21: column 4711685 is modelled as a wall (category Walls) and mapped DG_Class = Column; the column
+    calculator read only the column categories, so three boxes through it passed and the run showed no column."""
+    out = ps.assemble(PROJECT, ps.resolve(ps.rules_from_rows(_rows()), catalogue), catalogue)
+    ns, element, bic = _shell_namespace(out["calculator"]["source"])
+
+    pylon = element(4711685, "OST_Walls", "Column", "confirmed")
+    wall = element(1, "OST_Walls", "Wall", "confirmed")
+    unmapped_wall = element(2, "OST_Walls")
+    column = element(3, "OST_StructuralColumns")
+    rejected = element(4, "OST_Walls", "Column", "rejected")
+    types_ns = __import__("types")
+    walls_cat = types_ns.SimpleNamespace(Id=types_ns.SimpleNamespace(IntegerValue=int(bic.OST_Walls)))
+
+    class Bindings:
+        def ForwardIterator(self):
+            items = iter([(types_ns.SimpleNamespace(Name="DG_Class"),
+                           types_ns.SimpleNamespace(Categories=[walls_cat]))])
+
+            class It:
+                Key = Current = None
+
+                def MoveNext(self):
+                    try:
+                        self.Key, self.Current = next(items)
+                        return True
+                    except StopIteration:
+                        return False
+            return It()
+
+    doc = types_ns.SimpleNamespace(elements=[pylon, wall, unmapped_wall, column, rejected], ParameterBindings=Bindings())
+    ctx = ns["ModelContext"](doc, [])
+    columns = sorted(e.Id.IntegerValue for e, _lo, _hi in ctx.candidates(["OST_StructuralColumns", "OST_Columns"]))
+    walls = sorted(e.Id.IntegerValue for e, _lo, _hi in ctx.candidates(["OST_Walls"]))
+    assert columns == [3, 4711685]
+    assert walls == [1, 2, 4]  # the pylon is a Column now; a rejected mapping does not reclassify
+    assert ctx.category_of[4711685] in ("OST_StructuralColumns", "OST_Columns")
+    assert ctx.category_of[1] == "OST_Walls"

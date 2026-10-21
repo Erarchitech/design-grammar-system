@@ -27,10 +27,30 @@ TOL_FT = 1.0 / FEET_TO_MM  # 1 mm
 BOX_CLASS_IRI = "$box_class_iri"
 BOX_CLASS_LABEL = "$box_class_label"
 PROPERTIES = $property_table
+# The DG class behind each Revit category a calculator reads (catalogue categoryClasses). The DG mapping outranks the
+# category (live 2026-10-21: column 4711685 is modelled as a wall but mapped DG_Class = Column).
+CATEGORY_CLASSES = $category_classes
+CATALOGUE_CLASSES = set(v.lower() for v in CATEGORY_CLASSES.values())
+DG_CLASS_PARAMETER = "DG_Class"
+DG_STATE_PARAMETER = "DG_MappingState"
 
 
 def _bic(name):
     return getattr(DB.BuiltInCategory, name)
+
+
+def _text_parameter(element, name):
+    p = element.LookupParameter(name)
+    if p is None or p.StorageType != DB.StorageType.String:
+        return ""
+    return (p.AsString() or "").strip()
+
+
+def dg_classes(element):
+    """Lower-case class labels the DG mapping wrote to the element (DG_Class, ';'-joined); none when rejected."""
+    if _text_parameter(element, DG_STATE_PARAMETER).lower() == "rejected":
+        return set()
+    return set(c.strip().lower() for c in _text_parameter(element, DG_CLASS_PARAMETER).split(";") if c.strip())
 
 
 _OPTIONS = DB.Options()
@@ -78,6 +98,25 @@ class ModelContext(object):
         self._candidates = {}
         self._walls = {}
         self._openings = {}
+        self._mapped = None
+        self.category_of = {}  # element id -> the category it is read as: its own, or one behind its DG class
+
+    def mapped(self):
+        """{class label (lower case): [element]} of every element the DG mapping classified, read once per run from
+        the categories DG_Class is bound to."""
+        if self._mapped is None:
+            self._mapped = {}
+            bound = []
+            it = self.doc.ParameterBindings.ForwardIterator()
+            while it.MoveNext():
+                if it.Key is not None and it.Key.Name == DG_CLASS_PARAMETER:
+                    bound = list(getattr(it.Current, "Categories", None) or [])
+                    break
+            for category in bound:
+                for e in DB.FilteredElementCollector(self.doc).OfCategoryId(category.Id).WhereElementIsNotElementType():
+                    for c in dg_classes(e):
+                        self._mapped.setdefault(c, []).append(e)
+        return self._mapped
 
     def solids(self, box):
         key = box.Id.IntegerValue
@@ -88,21 +127,37 @@ class ModelContext(object):
     def candidates(self, categories):
         """(element, (min, max)) of every instance of these categories, read once per run. OfCategory per category
         and plain Python bounding boxes: no ElementFilter objects, which Rhino.Inside.Revit's pythonnet passed to
-        WherePasses as null (live 2026-10-20: every intersection failed)."""
+        WherePasses as null (live 2026-10-20: every intersection failed).
+
+        The DG mapping outranks the category: an element mapped to the class behind these categories is read whatever
+        its category, and one mapped to another catalogue class leaves them (a pylon modelled as a wall but mapped
+        Column is a column, not a wall)."""
         key = tuple(sorted(categories))
         if key not in self._candidates:
             rows = []
             seen = set()
+            wanted = dict((CATEGORY_CLASSES[n].lower(), n) for n in reversed(key) if n in CATEGORY_CLASSES)
+
+            def add(e, name):
+                eid = e.Id.IntegerValue
+                if eid in seen:
+                    return
+                seen.add(eid)
+                bb = e.get_BoundingBox(None)
+                if bb is not None:
+                    rows.append((e, (bb.Min.X, bb.Min.Y, bb.Min.Z), (bb.Max.X, bb.Max.Y, bb.Max.Z)))
+                    self.category_of.setdefault(eid, name)
+
             for name in key:
                 for e in (DB.FilteredElementCollector(self.doc).OfCategory(_bic(name))
                           .WhereElementIsNotElementType()):
-                    eid = e.Id.IntegerValue
-                    if eid in seen:
+                    mine = dg_classes(e)
+                    if mine & CATALOGUE_CLASSES and not (mine & set(wanted)):
                         continue
-                    seen.add(eid)
-                    bb = e.get_BoundingBox(None)
-                    if bb is not None:
-                        rows.append((e, (bb.Min.X, bb.Min.Y, bb.Min.Z), (bb.Max.X, bb.Max.Y, bb.Max.Z)))
+                    add(e, name)
+            for label, name in sorted(wanted.items()):
+                for e in self.mapped().get(label, []):
+                    add(e, name)
             self._candidates[key] = rows
         return self._candidates[key]
 
@@ -233,7 +288,7 @@ INVENTORY_CATEGORIES = ["OST_GenericModel", "OST_StructuralFraming", "OST_Struct
                         "OST_Walls", "OST_Floors", "OST_Doors", "OST_Windows", "OST_SWallRectOpening"]
 
 
-def inventory(doc):
+def inventory(doc, ctx=None):
     """Model counts for the report: instances per category and the Generic Model families (to pick BoxFamilyFilter)."""
     lines = []
     for name in INVENTORY_CATEGORIES:
@@ -247,6 +302,9 @@ def inventory(doc):
             families[key] = families.get(key, 0) + 1
     for key in sorted(families, key=lambda k: (-families[k], k))[:40]:
         lines.append("generic model family: %s x%d" % (key, families[key]))
+    if ctx is not None:
+        for label, elements in sorted(ctx.mapped().items()):
+            lines.append("inventory DG_Class %s: %d" % (label, len(elements)))
     return lines
 
 
@@ -358,15 +416,13 @@ def context_elements(ctx):
     seen = set()
     out = []
     for key in sorted(ctx._candidates):
-        ids = dict((int(_bic(name)), name) for name in key)
         for element, _lo, _hi in ctx._candidates[key]:
             eid = element.Id.IntegerValue
             if eid in seen:
                 continue
             seen.add(eid)
-            cat = element.Category
-            name = ids.get(cat.Id.IntegerValue) if cat is not None else None
-            out.append((element, name or (key[0] if key else "OST_Unknown")))
+            # the category it was read as: a wall mapped Column is shown with the column rule
+            out.append((element, ctx.category_of.get(eid) or (key[0] if key else "OST_Unknown")))
     return out[:CONTEXT_LIMIT]
 
 
@@ -411,4 +467,4 @@ $output_assignments
                 _prop["dataPropertyLabel"], _prop["ruleId"], len(_col),
                 min(_col) if _col else "-", max(_col) if _col else "-"))
         Report.extend(_errors)
-        Report.extend(inventory(_doc))
+        Report.extend(inventory(_doc, _ctx))
