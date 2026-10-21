@@ -9,6 +9,11 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-21 Phase 1303-15 MEP opening boxes checked in Revit through Rhino.Inside and VALIDATOR|Phase 1303-15 session — MEP opening boxes checked in Revit through Rhino.Inside and VALIDATOR, started from DeGram; per-rule context and source model in the Model Viewer]] (2026-10-21)
+- [[knowledge/decisions/Property calculators read elements by their DG mapping, not only by Revit category (Phase 1303-15)|Decision: property calculators read elements by their DG mapping, not only by Revit category]] (2026-10-21)
+- [[knowledge/debugging/A property check was started again while VALIDATOR was still uploading its runs|Debugging: check restarted during the asynchronous VALIDATOR upload (502, no context)]] (2026-10-21)
+- [[knowledge/debugging/Highlighter Revit writes re-solved Rhino.Inside and VALIDATOR republished in a loop|Debugging: highlighter/republish loop in Rhino.Inside (148 runs)]] (2026-10-21)
+- [[knowledge/debugging/DG.gha in Rhino.Inside.Revit failed on IAsyncDisposable from a second AsyncInterfaces copy|Debugging: DG.gha in Rhino.Inside — net48, assembly resolver, IAsyncDisposable]] (2026-10-21)
 - [[sessions/2026-10-18 Phase 1303 proposal cards, DeGram mapping sub-tab and live rehearsal through V2|Phase 1303 session — proposal cards with per-answer undo, canvas tags, DeGram «Меппинг» sub-tab; live rehearsal in DeGram through placement, VALIDATOR V1 11/11 and V2; profiles retired for the demo]] (2026-10-18)
 - [[sessions/2026-10-18 Phase 1303 automatic mapping in CONNECTOR with LLM proposal and placement up to VALIDATOR|Phase 1303 session — automatic mapping in CONNECTOR, background LLM proposal, DG components placed by identity; owner run on the clean copy open]] (2026-10-18)
 - [[sessions/2026-10-17 Phase 1303 mapping MVP built and deployed locally, rehearsal guide ready|Phase 1303 session — GH/Revit mapping MVP built, deployed locally from worktree `dg-mapping`, rehearsal guide ready; live acts open]] (2026-10-17)
