@@ -2102,7 +2102,9 @@ _PLACED_PLAN_SHA: dict[str, str] = {}
 
 
 def _plan_sha(generated: dict) -> str:
-    return hashlib.sha256(json.dumps(generated["placement"], sort_keys=True).encode("utf-8")).hexdigest()
+    # the highlighter's source counts too: a highlighter fix must reach the canvas (live 2026-10-21)
+    return hashlib.sha256(json.dumps([generated["placement"], generated["highlighter"]["sha256"]],
+                                     sort_keys=True).encode("utf-8")).hexdigest()
 
 
 def _place_property_scripts(project: str, generated: dict) -> dict:

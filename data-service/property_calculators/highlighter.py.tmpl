@@ -85,45 +85,67 @@ else:
     elif not uids:
         Report = ["No boxes to colour: the calculator returned none (see its Report)"]
     else:
-        # No "with": inside Rhino.Inside.Revit pythonnet does not expose Transaction as a context manager
-        # ("__enter__", live 2026-10-20). Explicit Start/Commit, RollBack on any error.
-        t = DB.Transaction(doc, "DG: check openings" if Run else "DG: clear opening colours")
-        t.Start()
-        try:
-            if Clear:
-                for e in elements:
-                    if e is not None:
-                        view.SetElementOverrides(e.Id, DB.OverrideGraphicSettings())
+        # Live 2026-10-21: every write here is a Revit document change, which makes Rhino.Inside re-solve the canvas;
+        # with the same result painted again each time that was an endless publish/paint loop. The verdict is
+        # computed first and Revit is written only when it differs from what this view last received (digest kept in
+        # the AppDomain, shared by every script engine).
+        import System
+
+        digest_key = "DG.Highlighter.LastDigest"
+        broken_by = []
+        if not Clear:
+            branches = branches_in_rule_order(ValidStatus)
+            if len(branches) != len(rule_ids):
+                raise ValueError("ValidStatus has %d branches but %d rules" % (len(branches), len(rule_ids)))
+            for i, e in enumerate(elements):
+                broken_by.append([rule_ids[k] for k, branch in enumerate(branches) if i < len(branch) and not branch[i]])
+        digest = "%s|%s|%s" % (doc.Title, view.Id.IntegerValue, "clear" if Clear else ";".join(
+            "%s=%s" % (uids[i], ",".join(broken_by[i])) for i in range(len(uids))))
+        unchanged = System.AppDomain.CurrentDomain.GetData(digest_key) == digest
+        failed = 0
+        for i, e in enumerate(elements):
+            if Clear or e is None:
+                continue
+            if broken_by[i]:
+                failed += 1
+                Violations.append("%s [%d]: %s" % (e.Name, e.Id.IntegerValue, ", ".join(broken_by[i])))
+        if unchanged:
+            Report = ["unchanged since the last paint of view %s: nothing written (%d with violations)" % (view.Name, failed)]
+        else:
+            # No "with": inside Rhino.Inside.Revit pythonnet does not expose Transaction as a context manager
+            # ("__enter__", live 2026-10-20). Explicit Start/Commit, RollBack on any error.
+            t = DB.Transaction(doc, "DG: check openings" if Run else "DG: clear opening colours")
+            t.Start()
+            try:
+                if Clear:
+                    for e in elements:
+                        if e is not None:
+                            view.SetElementOverrides(e.Id, DB.OverrideGraphicSettings())
+                            p = e.LookupParameter(PARAM_NAME)
+                            if p is not None and not p.IsReadOnly:
+                                p.Set("")
+                    Report = ["cleared %d boxes in view %s" % (len(elements), view.Name)]
+                else:
+                    first = next((e for e in elements if e is not None), None)
+                    if first is not None and first.LookupParameter(PARAM_NAME) is None:
+                        ensure_parameter(doc, first.Category)
+                    fill_id = solid_fill_id(doc)
+                    red = override(RED, fill_id)
+                    green = override(GREEN, fill_id)
+                    for i, e in enumerate(elements):
+                        if e is None:
+                            Report.append("missing element %s" % uids[i])
+                            continue
+                        broken = broken_by[i]
+                        view.SetElementOverrides(e.Id, red if broken else green)
                         p = e.LookupParameter(PARAM_NAME)
                         if p is not None and not p.IsReadOnly:
-                            p.Set("")
-                Report = ["cleared %d boxes in view %s" % (len(elements), view.Name)]
-            else:
-                branches = branches_in_rule_order(ValidStatus)
-                if len(branches) != len(rule_ids):
-                    raise ValueError("ValidStatus has %d branches but %d rules" % (len(branches), len(rule_ids)))
-                first = next((e for e in elements if e is not None), None)
-                if first is not None and first.LookupParameter(PARAM_NAME) is None:
-                    ensure_parameter(doc, first.Category)
-                fill_id = solid_fill_id(doc)
-                red = override(RED, fill_id)
-                green = override(GREEN, fill_id)
-                failed = 0
-                for i, e in enumerate(elements):
-                    if e is None:
-                        Report.append("missing element %s" % uids[i])
-                        continue
-                    broken = [rule_ids[k] for k, branch in enumerate(branches) if i < len(branch) and not branch[i]]
-                    view.SetElementOverrides(e.Id, red if broken else green)
-                    p = e.LookupParameter(PARAM_NAME)
-                    if p is not None and not p.IsReadOnly:
-                        p.Set(";".join(broken))
-                    if broken:
-                        failed += 1
-                        Violations.append("%s [%d]: %s" % (e.Name, e.Id.IntegerValue, ", ".join(broken)))
-                Report.insert(0, "view %s: %d boxes, %d with violations, %d pass" % (view.Name, len(elements), failed, len(elements) - failed))
-            t.Commit()
-        except Exception:
-            if t.HasStarted() and not t.HasEnded():
-                t.RollBack()
-            raise
+                            p.Set(";".join(broken))
+                    Report.insert(0, "view %s: %d boxes, %d with violations, %d pass" % (
+                        view.Name, len(elements), failed, len(elements) - failed))
+                t.Commit()
+                System.AppDomain.CurrentDomain.SetData(digest_key, digest)
+            except Exception:
+                if t.HasStarted() and not t.HasEnded():
+                    t.RollBack()
+                raise

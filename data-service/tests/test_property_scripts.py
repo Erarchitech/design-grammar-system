@@ -449,3 +449,11 @@ def test_toggles_are_reset_even_when_the_run_fails(monkeypatch):
         assert exc.status_code == 502
     resets = [c for c in calls if not c["send"] and not c["paint"]]
     assert len(resets) == 2 and resets[-1] == {"project": "p", "paint": False, "clear": False, "send": False}
+
+
+def test_highlighter_writes_revit_only_when_the_verdict_changed(catalogue):
+    """Live 2026-10-21: each Revit write made Rhino.Inside re-solve, so repainting the same result looped forever."""
+    out = ps.assemble(PROJECT, ps.resolve(ps.rules_from_rows(_rows()), catalogue), catalogue)
+    src = out["highlighter"]["source"]
+    assert "DG.Highlighter.LastDigest" in src and "if unchanged:" in src
+    assert src.index("if unchanged:") < src.index("t.Start()")
