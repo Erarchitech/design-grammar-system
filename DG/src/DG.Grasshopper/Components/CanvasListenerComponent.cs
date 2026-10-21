@@ -718,41 +718,47 @@ public sealed class CanvasListenerComponent : GH_Component
                 _solutionCounterDoc = doc;
             }
 
+            // Expiring while Rhino.Inside is solving stops Grasshopper ("object expired during a solution", live
+            // 2026-10-21); doing it inside a ScheduleSolution callback instead left the toggles out of the solution (no
+            // publish, highlighter "Run = False"). So toggles and expiry are set directly, and only when no solution
+            // is running; otherwise (this delegate was pumped from inside a solution) the run answers BUSY and the
+            // caller retries.
+            if (doc.SolutionState == GH_ProcessStep.Process)
+            {
+                throw new CanvasBusyException("A Grasshopper solution is running; retry the check in a moment.");
+            }
+
             before = Interlocked.Read(ref _solutionsEnded);
 
-            // Toggles and expiry go into the scheduled callback, which Grasshopper runs between solutions: expiring
-            // while Rhino.Inside was already solving stopped Grasshopper ("object expired during a solution").
-            doc.ScheduleSolution(5, d =>
+            // SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again, so the listener turns
+            // them off after this run's solution. Armed only now, with no solution running, so the next solution end
+            // is this run's own (armed earlier, a running solution's end reset SendValid before it could publish).
+            _oneShotDoc = (send || paint) && !clear ? doc : null;
+            _oneShotAfter = before;
+
+            foreach (var toggle in members.OfType<GH_BooleanToggle>())
             {
-                // Live 2026-10-21: SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again,
-                // so the listener turns them off after THIS run's solution. Armed here, inside the callback: armed
-                // earlier, the end of a solution already running reset SendValid before the run's own solution and
-                // nothing was published.
-                _oneShotDoc = (send || paint) && !clear ? d : null;
-                _oneShotAfter = Interlocked.Read(ref _solutionsEnded);
-
-                foreach (var toggle in members.OfType<GH_BooleanToggle>())
+                bool? value = toggle.NickName switch
                 {
-                    bool? value = toggle.NickName switch
-                    {
-                        "Run" => true,
-                        "Paint" => paint,
-                        "Clear" => clear,
-                        "SendValid" => send,
-                        _ => null,
-                    };
-                    if (value is { } v && toggle.Value != v)
-                    {
-                        toggle.Value = v;
-                        toggle.ExpireSolution(false);
-                    }
-                }
-
-                foreach (var calculator in members.OfType<IGH_Component>().Where(c => c.NickName == CalculatorNickName || c.NickName == HighlighterNickName))
+                    "Run" => true,
+                    "Paint" => paint,
+                    "Clear" => clear,
+                    "SendValid" => send,
+                    _ => null,
+                };
+                if (value is { } v && toggle.Value != v)
                 {
-                    calculator.ExpireSolution(false);
+                    toggle.Value = v;
+                    toggle.ExpireSolution(false);
                 }
-            });
+            }
+
+            foreach (var calculator in members.OfType<IGH_Component>().Where(c => c.NickName == CalculatorNickName || c.NickName == HighlighterNickName))
+            {
+                calculator.ExpireSolution(false);
+            }
+
+            doc.ScheduleSolution(5);
             return null;
         });
 

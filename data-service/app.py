@@ -2175,7 +2175,7 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
                 or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
     started_at = datetime.now(timezone.utc).isoformat()
-    result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
+    result = _run_check_retrying_busy(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
         result["refreshed"] = refreshed
         if payload.send and not payload.clear:
@@ -2185,7 +2185,7 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
             if _send_reset_before_publish(payload.project, started_at):
                 # DG.gha before 588f740 arms its one-shot reset too early: the end of a solution already running
                 # switched SendValid off before the run's own solution (live 2026-10-21, nothing published).
-                result = gh_bridge.run_property_check(payload.model_dump(exclude={"refresh"}))
+                result = _run_check_retrying_busy(payload.model_dump(exclude={"refresh"}))
                 result["refreshed"] = refreshed
                 result["retriedAfterEarlyReset"] = True
             published = _wait_for_published_runs(payload.project, started_at, result)
@@ -2304,6 +2304,24 @@ def _publish_check_context(project: str, run_ids: list[str]) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.exception("context publish for %s failed", project)
         return {"published": False, "reason": str(exc)[:300]}
+
+
+BUSY_ATTEMPTS = 8
+BUSY_PAUSE_S = 4.0
+
+
+def _run_check_retrying_busy(params: dict) -> dict:
+    """The listener refuses a run while a Grasshopper solution is running (BUSY) instead of expiring components in
+    the middle of it; retry for up to ~30 s."""
+    for attempt in range(BUSY_ATTEMPTS):
+        try:
+            return gh_bridge.run_property_check(params)
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else {}
+            if detail.get("code") != "BUSY" or attempt == BUSY_ATTEMPTS - 1:
+                raise
+        time.sleep(BUSY_PAUSE_S)
+    raise RuntimeError("unreachable")
 
 
 def _send_reset_before_publish(project: str, since: str) -> bool:
