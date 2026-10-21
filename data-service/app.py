@@ -917,7 +917,9 @@ def get_validation_run(project: str, run_id: str | None = None) -> dict[str, Any
             run.createdAt AS createdAt,
             run.shaclReportJson AS shaclReportJson,
             run.evidenceEnvelopeJson AS evidenceEnvelopeJson,
-            run.statePayloadJson AS statePayloadJson
+            run.statePayloadJson AS statePayloadJson,
+            run.sourceModel AS sourceModel,
+            run.sourcePlatform AS sourcePlatform
         ORDER BY run.createdAt DESC
         LIMIT 1
     """
@@ -1287,6 +1289,27 @@ def _compute_canonical_state_hash(state_payload_json: str | None) -> str | None:
         return None
 
 
+_NATIVE_ID_IN_LABEL = re.compile(r"\[(\d+)\]\s*$")
+
+
+def native_ids_from_state(state_payload_json: str | None) -> dict[str, str]:
+    """{objectRef: element id in the source model} from the ObjState labels of a run's Design State ("Family : Type
+    [4861053]", the Revit property calculator). Owner 2026-10-21: the Model Viewer shows which model an element came
+    from and its id there. Absent or malformed payloads give an empty map, never an error."""
+    try:
+        payload = json.loads(state_payload_json) if state_payload_json else {}
+    except (TypeError, ValueError, RecursionError):
+        return {}
+    out: dict[str, str] = {}
+    for state in (payload.get("objStates") if isinstance(payload, dict) else None) or []:
+        if not isinstance(state, dict):
+            continue
+        match = _NATIVE_ID_IN_LABEL.search(str(state.get("label") or ""))
+        if match and state.get("objectRef"):
+            out[str(state["objectRef"])] = match.group(1)
+    return out
+
+
 def build_view_payload(
     project: str,
     run: dict[str, Any],
@@ -1329,6 +1352,9 @@ def build_view_payload(
         "evidenceEnvelope": parse_evidence_envelope(run.get("evidenceEnvelopeJson")),
         "canonicalStateHash": _compute_canonical_state_hash(run.get("statePayloadJson")),
         "canonicalizationVersion": canonical_json.CANONICALIZATION_VERSION if run.get("statePayloadJson") else None,
+        # Where the checked elements came from (absent on runs not made by the property check)
+        "source": {"model": run.get("sourceModel"), "platform": run.get("sourcePlatform")},
+        "nativeIds": native_ids_from_state(run.get("statePayloadJson")),
     }
     if viewer_resources_error:
         payload["viewerResourcesError"] = viewer_resources_error
@@ -2195,6 +2221,7 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
                 status = result.setdefault("status", {})
                 status["validationRunId"] = published
                 result["finished"] = True
+                _record_check_source(payload.project, published, status.get("calculatorReport"))
         result["summary"] = property_check_summary(result)
         if result["summary"]["ok"] and payload.send and not payload.clear:
             # Live 2026-10-21: publishing the context into every run's Speckle version took longer than the 60 s
@@ -2329,6 +2356,27 @@ def _run_check_retrying_busy(params: dict) -> dict:
                 raise
         time.sleep(BUSY_PAUSE_S)
     raise RuntimeError("unreachable")
+
+
+def source_model_of(calculator_report: list[str] | None) -> str | None:
+    """The Revit document the property calculator read ("document: <title>", first report line)."""
+    for line in calculator_report or []:
+        if str(line).startswith("document: "):
+            return str(line)[len("document: "):].strip() or None
+    return None
+
+
+def _record_check_source(project: str, run_ids: list[str], calculator_report: list[str] | None) -> None:
+    """Owner 2026-10-21: the Model Viewer names the model a checked element came from. Never fails the check."""
+    model = source_model_of(calculator_report)
+    if not model or not run_ids:
+        return
+    try:
+        write_query("MATCH (run:ValidationRun {project: $project}) WHERE run.runId IN $runIds "
+                    "SET run.sourceModel = $model, run.sourcePlatform = 'Revit'",
+                    {"project": project, "runIds": list(run_ids), "model": model})
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).exception("recording the source model of %s failed", project)
 
 
 def load_rule_ids(project: str) -> list[str]:

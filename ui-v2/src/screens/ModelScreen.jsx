@@ -76,6 +76,9 @@ const TILE_PROPS_KEY = "dgv2_tile_props_v2";
 const LEGACY_TILE_PROPS_KEY = "dgv2_tile_props";
 const DEFAULT_TILE_PROP_COUNT = 3;
 const CAMERA_KEY = "dgv2_model_camera"; // { [project]: { position, target } }
+// Model context of a check (walls, columns, beams of the rule's classes): neutral and see-through by default.
+const DEFAULT_CONTEXT_COLOR = "#a3a3a3";
+const DEFAULT_CONTEXT_OPACITY = 35;
 
 // "ex:hasTotalHeightM" → "Total Height M": local name, a leading "has" dropped,
 // camelCase split. The full iri stays visible in the tile-properties menu.
@@ -234,6 +237,8 @@ export default function ModelScreen({ active, onBack, project }) {
   const [aPass, setAPass] = React.useState(55);
   const [failColor, setFailColor] = React.useState("#e7000b");
   const [passColor, setPassColor] = React.useState("#737373");
+  const [contextColor, setContextColor] = React.useState(DEFAULT_CONTEXT_COLOR);
+  const [aContext, setAContext] = React.useState(DEFAULT_CONTEXT_OPACITY);
   const [failOpen, setFailOpen] = React.useState(true);
   const [passOpen, setPassOpen] = React.useState(false);
   const [shaclViolationOpen, setShaclViolationOpen] = React.useState(true);
@@ -306,6 +311,8 @@ export default function ModelScreen({ active, onBack, project }) {
     setAPass(saved.aPass);
     setFailColor(saved.failColor);
     setPassColor(saved.passColor);
+    setContextColor(saved.contextColor ?? DEFAULT_CONTEXT_COLOR); // runs saved before the context control
+    setAContext(saved.aContext ?? DEFAULT_CONTEXT_OPACITY);
     // The Design State filter is navigation, not a run setting: restoring a
     // run's stale saved filter jumped the selection to another Design State.
     if (saved.ruleId !== undefined) setRuleId(saved.ruleId);
@@ -317,9 +324,12 @@ export default function ModelScreen({ active, onBack, project }) {
       skipGfxSaveRef.current = false;
       return;
     }
-    setRunGfx((prev) => ({ ...prev, [runId]: { mvFail, mvPass, aFail, aPass, failColor, passColor, ruleId } }));
+    setRunGfx((prev) => ({
+      ...prev,
+      [runId]: { mvFail, mvPass, aFail, aPass, failColor, passColor, contextColor, aContext, ruleId }
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mvFail, mvPass, aFail, aPass, failColor, passColor, ruleId]);
+  }, [mvFail, mvPass, aFail, aPass, failColor, passColor, contextColor, aContext, ruleId]);
 
   // The thumbnail is filed under the run the scene actually shows (not the run
   // just clicked, whose geometry may still be loading).
@@ -834,6 +844,8 @@ export default function ModelScreen({ active, onBack, project }) {
           <Slider label={t("Fail α")} value={aFail} onChange={setAFail} style={{ width: 150 }} />
           <ColorSwatch label={t("Pass")} color={passColor} onChange={setPassColor} />
           <Slider label={t("Pass α")} value={aPass} onChange={setAPass} style={{ width: 150 }} />
+          <ColorSwatch label={t("Context")} color={contextColor} onChange={setContextColor} />
+          <Slider label={t("Context α")} value={aContext} onChange={setAContext} style={{ width: 150 }} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <SearchField
             placeholder={t("Select by Id…")}
@@ -884,6 +896,8 @@ export default function ModelScreen({ active, onBack, project }) {
               passColor={passColor}
               failOpacity={aFail}
               passOpacity={aPass}
+              contextColor={contextColor}
+              contextOpacity={aContext}
               hiddenIds={hidden}
               isolateEntityId={isolate && picked ? picked : null}
               onEntityClick={pick}
@@ -1279,6 +1293,9 @@ export default function ModelScreen({ active, onBack, project }) {
             <Panel title={t("Instance properties")}>
               <KVRow label={t("Id")} value={picked || "—"} />
               <KVRow label={t("Display name")} value={pickedEntity?.displayName || picked || "—"} />
+              <KVRow label={t("Source model")} value={view?.source?.model || "—"} />
+              <KVRow label={t("Platform")} value={view?.source?.platform || "—"} />
+              <KVRow label={t("Id in model")} value={(picked && view?.nativeIds?.[picked]) || "—"} />
               <KVRow label={t("Run")} value={view?.runId || "—"} />
             </Panel>
             <Panel title={t("Validation")}>

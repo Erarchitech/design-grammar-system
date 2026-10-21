@@ -617,3 +617,42 @@ def test_a_check_whose_runs_are_still_uploading_is_not_started_again(monkeypatch
     assert len(calls) == 1  # never started a second time
     assert out["summary"]["validationRunIds"] == ["VR-0", "VR-1", "VR-2", "VR-3"]
     assert started == [("p", ["VR-0", "VR-1", "VR-2", "VR-3"])]
+
+
+def test_the_view_names_the_source_model_and_the_element_id_in_it():
+    """Owner 2026-10-21: a picked element shows the model it was exported from and its id in that model."""
+    import app as app_module
+
+    state = json.dumps({"objStates": [
+        {"objectRef": "56b4bc31-e76d-4242-9a3b-fb0a9f62b0f5-004a2c7d", "label": "BoxСтена : BoxСтена [4861053]"},
+        {"objectRef": "no-id", "label": "free text"},
+        "not a state"]})
+    assert app_module.native_ids_from_state(state) == {"56b4bc31-e76d-4242-9a3b-fb0a9f62b0f5-004a2c7d": "4861053"}
+    assert app_module.native_ids_from_state(None) == {} and app_module.native_ids_from_state("{bad") == {}
+    report = ["document: Likino_KR_GP_R24_CH10-dg-openings", "boxes: 313"]
+    assert app_module.source_model_of(report) == "Likino_KR_GP_R24_CH10-dg-openings"
+    assert app_module.source_model_of(["boxes: 1"]) is None
+
+
+def test_a_published_check_records_the_source_model_on_its_runs(monkeypatch):
+    import app as app_module
+    import gh_bridge
+
+    monkeypatch.setattr(gh_bridge, "run_property_check", lambda params: {
+        "finished": True, "send": True, "clear": False, "paint": True,
+        "status": {"boxes": 2, "violations": [], "validationRunId": [""], "messages": [], "ruleNames": ["R1"],
+                   "calculatorReport": ["document: Likino", "boxes: 2"]}})
+    monkeypatch.setattr(app_module, "read_many", lambda q, p=None: [{"runId": "VR-1"}])
+    writes = []
+    monkeypatch.setattr(app_module, "write_query", lambda q, p=None: writes.append(p))
+
+    class NoThread:
+        def __init__(self, target, args, daemon):
+            pass
+
+        def start(self):
+            pass
+
+    monkeypatch.setattr(app_module.threading, "Thread", NoThread)
+    app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", refresh=False), request=None)
+    assert {"project": "p", "runIds": ["VR-1"], "model": "Likino"} in writes

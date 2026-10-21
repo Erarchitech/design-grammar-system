@@ -103,9 +103,18 @@ function collectValidationObjects(worldTree, runId, project) {
     console.log("[DG-Debug] Sample entity:", first[0], "→", first[1].length, "objectIds:", first[1].slice(0, 3));
   }
 
+  // Phase 1303-15: the model context of a check (walls, columns, beams of the rule's classes) ships in the
+  // validation version as neutral dgContext objects, never coloured as passed or failed.
+  const contextObjectIds = [];
+  for (const node of worldTree.findAll((n) => n.model?.raw?.dgContext === true)) {
+    const ids = collectAllDescendantIds(node);
+    contextObjectIds.push(...(ids.length > 0 ? ids : [node.model.id]));
+  }
+
   return {
     entityMap,
-    allValidationObjectIds: Array.from(new Set(allValidationObjectIds))
+    allValidationObjectIds: Array.from(new Set(allValidationObjectIds)),
+    contextObjectIds: Array.from(new Set(contextObjectIds))
   };
 }
 
@@ -125,6 +134,7 @@ function collectValidationObjects(worldTree, runId, project) {
  *   showFailed / showPassed — visibility toggles (toolbar checkboxes)
  *   failColor / passColor — hex colors for the validation overlay
  *   failOpacity / passOpacity — 0..100 opacity for each group
+ *   contextColor / contextOpacity — color and 0..100 opacity of the model context (dgContext objects)
  *   hiddenIds       — dgEntityIds hidden via the Hide button
  *   isolateEntityId — when set, isolates that single entity
  *   viewMode        — "3d" (perspective orbit) or "map" (top-down orthographic)
@@ -152,6 +162,8 @@ export default function SpeckleViewport({
   passColor = "#737373",
   failOpacity = 85,
   passOpacity = 55,
+  contextColor = "#a3a3a3",
+  contextOpacity = 35,
   hiddenIds,
   isolateEntityId = null,
   viewMode = "3d",
@@ -169,6 +181,7 @@ export default function SpeckleViewport({
   const filteringRef = React.useRef(null);
   const entityMapRef = React.useRef(new Map());
   const allValidationObjectIdsRef = React.useRef([]);
+  const contextObjectIdsRef = React.useRef([]);
   const loadedUrlsRef = React.useRef([]); // resource URLs currently in the scene
   const hasLoadedRef = React.useRef(false); // this viewer has loaded geometry before
   const syncQueueRef = React.useRef(Promise.resolve()); // serialises load/unload jobs
@@ -307,6 +320,7 @@ export default function SpeckleViewport({
       filteringRef.current = null;
       entityMapRef.current = new Map();
       allValidationObjectIdsRef.current = [];
+      contextObjectIdsRef.current = [];
       loadedUrlsRef.current = [];
       hasLoadedRef.current = false;
       sceneRunIdRef.current = null;
@@ -368,6 +382,7 @@ export default function SpeckleViewport({
       const collected = collectValidationObjects(worldTree, runId, project);
       entityMapRef.current = collected.entityMap;
       allValidationObjectIdsRef.current = collected.allValidationObjectIds;
+      contextObjectIdsRef.current = collected.contextObjectIds;
 
       // Debug handle for live world-tree inspection (harmless in production)
       window.__dgSpeckleDebug = { viewer, worldTree, runId, project, entityMap: collected.entityMap };
@@ -439,9 +454,11 @@ export default function SpeckleViewport({
     const overlayVisible = (id) => !hideButtonIds.has(id) && (!isoSet || isoSet.has(id));
     const failedVisibleIds = failedObjectIds.filter(overlayVisible);
     const passedVisibleIds = passedObjectIds.filter(overlayVisible);
+    const contextVisibleIds = contextObjectIdsRef.current.filter(overlayVisible);
     const colorGroups = [];
     if (failedVisibleIds.length > 0) colorGroups.push({ objectIds: failedVisibleIds, color: failColor });
     if (passedVisibleIds.length > 0) colorGroups.push({ objectIds: passedVisibleIds, color: passColor });
+    if (contextVisibleIds.length > 0) colorGroups.push({ objectIds: contextVisibleIds, color: contextColor });
     if (colorGroups.length > 0) {
       filtering.setUserObjectColors(colorGroups);
     }
@@ -482,6 +499,7 @@ export default function SpeckleViewport({
 
       applyGroupMaterial(failedVisibleIds, failColor, failOpacity);
       applyGroupMaterial(passedVisibleIds, passColor, passOpacity);
+      applyGroupMaterial(contextVisibleIds, contextColor, contextOpacity);
     } catch {
       // renderer material override unavailable — color groups still applied
     }
@@ -497,6 +515,8 @@ export default function SpeckleViewport({
     passColor,
     failOpacity,
     passOpacity,
+    contextColor,
+    contextOpacity,
     hiddenIds,
     isolateEntityId
   ]);
