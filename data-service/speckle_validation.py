@@ -139,6 +139,52 @@ def publish_validation_version(
     }
 
 
+def context_nodes(elements: list[dict[str, Any]]) -> list[Base]:
+    """Neutral context objects (walls, columns, beams, doors, windows): no dgEntityId, so the viewer never colours
+    them as passed or failed."""
+    nodes = []
+    for element in elements:
+        node = Base()
+        node["name"] = element.get("label") or "context"
+        node["dgContext"] = True
+        node["displayValue"] = build_display_value(element.get("geometry"))
+        if node["displayValue"]:
+            nodes.append(node)
+    return nodes
+
+
+def add_context_to_validation_version(
+    settings: SpeckleConnectionSettings,
+    *,
+    speckle_project_id: str,
+    validation_model_id: str,
+    validation_version_id: str,
+    nodes: list[Base],
+    run_id: str,
+) -> str:
+    """Phase 1303-15: the Model Viewer loads only a run's validation version (never the base model), so the model
+    context of a check is appended to it: the run's version is read, the context nodes are appended to
+    ``elements`` (replacing context from an earlier pass), and a new version of the validation model is created. Returns its id."""
+    client = build_client(settings.internal_url, settings.write_token)
+    transport = ServerTransport(speckle_project_id, client=client)
+    version = client.version.get(validation_version_id, speckle_project_id)
+    root = operations.receive(version.referenced_object, transport)
+    existing = [e for e in (getattr(root, "elements", None) or []) if not getattr(e, "dgContext", False)]
+    root["elements"] = existing + list(nodes)  # rendered like the entities; no dgEntityId, so never coloured
+    object_id = operations.send(root, [transport])
+    created = client.version.create(
+        CreateVersionInput(
+            objectId=object_id,
+            modelId=validation_model_id,
+            projectId=speckle_project_id,
+            message=f"DG validation run {run_id} with model context",
+            sourceApplication="design-grammars",
+            totalChildrenCount=len(root["elements"]),
+        )
+    )
+    return created.id
+
+
 def delete_validation_version(
     settings: SpeckleConnectionSettings,
     *,

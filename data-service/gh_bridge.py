@@ -134,6 +134,12 @@ def get_preview_status() -> dict:
     return _call("get_preview_status", {})
 
 
+def get_property_check_context(project: str) -> dict:
+    """The model context the property check read (walls, columns, beams, doors, windows) as meshes:
+    `{count, skipped, elements: [{label, geometry: {units, items}}]}` (Phase 1303-15)."""
+    return _call("get_property_check_context", {"project": project})
+
+
 def place_property_script(payload: dict) -> dict:
     """Place a generated property-checking chain (calculator script, DG components,
     highlighter script) on the canvas under one undo record (Phase 1303-15,

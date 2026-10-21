@@ -35,6 +35,8 @@ from speckle_validation import (
     normalize_url,
     publish_validation_version,
 )
+import speckle_validation
+from speckle_validation import build_model_version_url
 
 from llm_gateway import (
     LLMSettingsPayload,
@@ -2174,6 +2176,8 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
     if isinstance(result, dict):
         result["refreshed"] = refreshed
         result["summary"] = property_check_summary(result)
+        if result["summary"]["ok"] and payload.send and not payload.clear:
+            result["context"] = _publish_check_context(payload.project, result["summary"]["validationRunIds"])
         if not result["summary"]["ok"]:
             # Owner 2026-10-20: DeGram twice reported "no violations" for a chain whose VALIDATOR had no rules.
             # A failed check is an error response, so no caller can present it as a clean model.
@@ -2187,6 +2191,45 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
                 "upstream": (result.get("status") or {}).get("upstream"),
             })
     return result
+
+
+def _publish_check_context(project: str, run_ids: list[str]) -> dict:
+    """Owner 2026-10-21: walls, columns and beams are checked against but were missing from the Model Viewer, which
+    loads only a run's validation version. The context the calculator read is added to the validation version of
+    every run of this check (a new version, the run points at it). Never fails the check; the outcome is reported."""
+    log = logging.getLogger(__name__)
+    try:
+        context = gh_bridge.get_property_check_context(project)
+        elements = list(context.get("elements") or [])
+        if not elements or not run_ids:
+            return {"published": False, "reason": "no context geometry or no runs", "skipped": context.get("skipped")}
+        settings = get_speckle_settings()
+        if not settings.write_token:
+            return {"published": False, "reason": "no Speckle write token"}
+        nodes = speckle_validation.context_nodes(elements)
+        runs = read_many(
+            "MATCH (run:ValidationRun {project: $project}) WHERE run.runId IN $runIds "
+            "RETURN run.runId AS runId, run.speckleProjectId AS speckleProjectId, "
+            "run.validationModelId AS validationModelId, run.validationVersionId AS validationVersionId",
+            {"project": project, "runIds": run_ids})
+        updated = []
+        for run in runs:
+            if not (run.get("speckleProjectId") and run.get("validationModelId") and run.get("validationVersionId")):
+                continue
+            version_id = speckle_validation.add_context_to_validation_version(
+                settings, speckle_project_id=run["speckleProjectId"], validation_model_id=run["validationModelId"],
+                validation_version_id=run["validationVersionId"], nodes=nodes, run_id=run["runId"])
+            write_query(
+                "MATCH (run:ValidationRun {project: $project, runId: $runId}) "
+                "SET run.validationVersionId = $versionId, run.validationResourceUrl = $url",
+                {"project": project, "runId": run["runId"], "versionId": version_id,
+                 "url": build_model_version_url(settings.base_url, run["speckleProjectId"], run["validationModelId"],
+                                                version_id)})
+            updated.append(run["runId"])
+        return {"published": bool(updated), "elements": len(nodes), "skipped": context.get("skipped"), "runs": updated}
+    except Exception as exc:  # noqa: BLE001
+        log.exception("context publish for %s failed", project)
+        return {"published": False, "reason": str(exc)[:300]}
 
 
 def property_check_summary(result: dict) -> dict:

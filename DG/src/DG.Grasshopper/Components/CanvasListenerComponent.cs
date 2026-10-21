@@ -154,6 +154,7 @@ public sealed class CanvasListenerComponent : GH_Component
             [CanvasBridgeCommands.PlacePropertyScript] = HandlePlacePropertyScript,
             [CanvasBridgeCommands.RunPropertyCheck] = HandleRunPropertyCheck,
             [CanvasBridgeCommands.GetPropertyCheckStatus] = HandleGetPropertyCheckStatus,
+            [CanvasBridgeCommands.GetPropertyCheckContext] = HandleGetPropertyCheckContext,
         };
 
         return new CanvasCommandDispatcher(handlers);
@@ -761,6 +762,48 @@ public sealed class CanvasListenerComponent : GH_Component
     }
 
     private void OnPropertyCheckSolutionEnd(object sender, GH_SolutionEventArgs e) => Interlocked.Increment(ref _solutionsEnded);
+
+    /// <summary>
+    /// Phase 1303-15 (owner 2026-10-21: walls, columns and beams are checked against but were not in the Model Viewer):
+    /// the calculator's Context / ContextLabels outputs serialized as validation geometry (meshes in model units).
+    /// </summary>
+    private object? HandleGetPropertyCheckContext(CanvasCommandRequest request)
+    {
+        var project = request.TryGetString("project");
+        return InvokeOnCanvas(() =>
+        {
+            var doc = OnPingDocument() ?? throw new InvalidOperationException("No active document.");
+            var members = PropertyCheckMembers(doc, project)
+                ?? throw new InvalidOperationException("No DG property check on this canvas: generate it first.");
+            var calculator = members.OfType<IGH_Component>().FirstOrDefault(c => c.NickName == CalculatorNickName)
+                ?? throw new InvalidOperationException("The property check has no calculator.");
+            var geometry = calculator.Params.Output.FirstOrDefault(p => p.Name == "Context")?.VolatileData.AllData(true).ToList()
+                ?? new List<global::Grasshopper.Kernel.Types.IGH_Goo>();
+            var labels = calculator.Params.Output.FirstOrDefault(p => p.Name == "ContextLabels")?.VolatileData.AllData(true)
+                .Select(g => g?.ToString() ?? string.Empty).ToList() ?? new List<string>();
+            var elements = new List<object>();
+            for (var i = 0; i < geometry.Count; i++)
+            {
+                var payload = DG.Grasshopper.Validation.ValidationGeometryPayloadSerializer.Serialize(geometry[i]?.ScriptVariable());
+                if (payload is null)
+                {
+                    continue;
+                }
+
+                elements.Add(new
+                {
+                    label = i < labels.Count ? labels[i] : $"context {i}",
+                    geometry = new
+                    {
+                        units = payload.Units,
+                        items = payload.Items.Select(it => new { kind = it.Kind, vertices = it.Vertices, faces = it.Faces }),
+                    },
+                });
+            }
+
+            return (object?)new { count = elements.Count, skipped = geometry.Count - elements.Count, elements };
+        });
+    }
 
     private object? HandleGetPropertyCheckStatus(CanvasCommandRequest request)
     {

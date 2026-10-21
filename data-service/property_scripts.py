@@ -327,7 +327,7 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
         "source": calculator_source,
         "inputs": [{"name": "Run", "access": "item", "hint": "bool"},
                    {"name": "BoxFamilyFilter", "access": "item", "hint": "str"}],
-        "outputs": ["Objects", "Geometry", "Labels", "UniqueIds", "RuleIds", "Report"]
+        "outputs": ["Objects", "Geometry", "Labels", "UniqueIds", "RuleIds", "Report", "Context", "ContextLabels"]
                    + [f"{p}{k}" for k in range(1, n + 1) for p in ("R", "D", "P")],
     }
     highlighter = {

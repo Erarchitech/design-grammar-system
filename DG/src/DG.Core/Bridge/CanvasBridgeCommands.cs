@@ -46,6 +46,10 @@ public static class CanvasBridgeCommands
     /// <summary>Phase 1303-15: the reports, violations and runtime messages of the placed property check (read only).</summary>
     public const string GetPropertyCheckStatus = "get_property_check_status";
 
+    /// <summary>Phase 1303-15: the model context the property check read (walls, columns, beams, doors, windows) as
+    /// meshes, so data-service can publish it to the Model Viewer's base model next to the checked elements.</summary>
+    public const string GetPropertyCheckContext = "get_property_check_context";
+
     public static IReadOnlyList<string> All { get; } = new[]
     {
         GetCanvasContext,
@@ -60,6 +64,7 @@ public static class CanvasBridgeCommands
         PlacePropertyScript,
         RunPropertyCheck,
         GetPropertyCheckStatus,
+        GetPropertyCheckContext,
     };
 
     /// <summary>

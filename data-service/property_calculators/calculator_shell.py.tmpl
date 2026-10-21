@@ -345,7 +345,25 @@ def run_calculator(doc, family_filter):
                 column.append(None)
                 errors.append("%s %s: %s" % (prop["dataPropertyLabel"], box.UniqueId, exc))
         values.append(column)
-    return boxes, values, errors, scale
+    return boxes, values, errors, scale, ctx
+
+
+# The model context the rules depend on (walls, columns, beams, doors, windows: every category a calculator read in
+# this run) is published to the Model Viewer's base model next to the checked boxes (owner 2026-10-21).
+CONTEXT_LIMIT = 4000
+
+
+def context_elements(ctx):
+    seen = set()
+    out = []
+    for key in sorted(ctx._candidates):
+        for element, _lo, _hi in ctx._candidates[key]:
+            eid = element.Id.IntegerValue
+            if eid in seen:
+                continue
+            seen.add(eid)
+            out.append(element)
+    return out[:CONTEXT_LIMIT]
 
 
 Objects = []
@@ -357,6 +375,8 @@ for _p in PROPERTIES:
     if _p["ruleId"] not in RuleIds:
         RuleIds.append(_p["ruleId"])
 Report = []
+Context = []
+ContextLabels = []
 $output_defaults
 
 if not Run:
@@ -366,7 +386,13 @@ else:
     if _doc is None:
         Report = ["No active Revit document"]
     else:
-        _boxes, _values, _errors, _scale = run_calculator(_doc, BoxFamilyFilter)
+        _boxes, _values, _errors, _scale, _ctx = run_calculator(_doc, BoxFamilyFilter)
+        for _el in context_elements(_ctx):
+            _geo = _decoded_geometry(_el)
+            if _geo is not None:
+                Context.append(_geo)
+                _cat = _el.Category.Name if _el.Category is not None else "?"
+                ContextLabels.append("%s : %s [%d]" % (_cat, _el.Name, _el.Id.IntegerValue))
         for _box in _boxes:
             Objects.append(object_reference(_box.UniqueId))
             Geometry.append(box_geometry(_box, _scale))

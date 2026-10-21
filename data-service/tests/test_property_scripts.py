@@ -355,3 +355,28 @@ def test_bare_variable_names_get_the_question_mark_prefix():
     assert "SET v.name = '?' + v.name" in app_module.VAR_RENAME
     assert "NOT v.name STARTS WITH '?'" in app_module.VAR_RENAME and "project:$project" in app_module.VAR_RENAME
     assert "name: '?' + v.name" in app_module.VAR_MERGE_INTO_TWIN and "DELETE g" in app_module.VAR_MERGE_INTO_TWIN
+
+
+def test_context_is_added_to_each_runs_validation_version(monkeypatch):
+    import app as app_module
+    import gh_bridge
+    import speckle_validation
+
+    monkeypatch.setattr(gh_bridge, "get_property_check_context", lambda project: {
+        "count": 1, "skipped": 0,
+        "elements": [{"label": "Стены : Wall [1]", "geometry": {"units": "mm", "items": [
+            {"kind": "mesh", "vertices": [0, 0, 0, 1, 0, 0, 0, 1, 0], "faces": [[0, 1, 2]]}]}}]})
+    monkeypatch.setattr(app_module, "get_speckle_settings", lambda: speckle_validation.SpeckleConnectionSettings(
+        base_url="http://s", internal_url="http://s", write_token="w", read_token="r", dg_base_url="http://dg"))
+    monkeypatch.setattr(app_module, "read_many", lambda q, p=None: [
+        {"runId": r, "speckleProjectId": "p1", "validationModelId": "vm", "validationVersionId": "old-" + r}
+        for r in p["runIds"]])
+    calls = []
+    monkeypatch.setattr(speckle_validation, "add_context_to_validation_version",
+                        lambda settings, **kw: calls.append(kw) or "new-" + kw["run_id"])
+    writes = []
+    monkeypatch.setattr(app_module, "write_query", lambda q, p=None: writes.append(p))
+    out = app_module._publish_check_context("str-openings-01", ["run-a", "run-b"])
+    assert out["published"] is True and out["runs"] == ["run-a", "run-b"] and out["elements"] == 1
+    assert [c["validation_version_id"] for c in calls] == ["old-run-a", "old-run-b"]
+    assert [w["versionId"] for w in writes] == ["new-run-a", "new-run-b"]
