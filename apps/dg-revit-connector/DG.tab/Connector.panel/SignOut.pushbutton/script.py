@@ -3,7 +3,8 @@
 
 Deletes the connector session in DG (best effort: a failure is reported, not
 raised) and clears the local token, user, project and open session. The DG URL
-stays, so the next sign-in prefills it.
+stays, so the next sign-in prefills it. A remembered password is forgotten
+(URL, user and project stay remembered).
 """
 
 import os
@@ -28,6 +29,7 @@ def main():
     ensure_lib()
     try:
         from dg_connector import dg_client
+        from dg_connector import remember
         from dg_connector import state as connector_state
     except Exception as error:
         forms.alert("DG connector library failed to load:\n{}".format(error), title="DG")
@@ -42,6 +44,10 @@ def main():
         except Exception:
             confirmed = False
     store.sign_out()
+    try:
+        remember.forget_password()
+    except Exception:
+        pass
     store.set("message", "Signed out of DG")
     if confirmed:
         forms.alert("Signed out of DG.", title="DG")

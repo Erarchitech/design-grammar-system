@@ -178,6 +178,7 @@ Supersede D-10 and D-20 (Revit read-only), D-27 (no geometry from Revit), the Re
   - As the connector principal it creates, reads and applies mapping sessions, so the route policy for create and apply does not change.
   - DeGram starts a Revit mapping through a connector command (MCP tool → connector route, the analogue of GH `start_mapping`), reads its status the same way, and answers or undoes answers with its delegated token as now (D-41).
   - After the last answer the connector applies the session itself, with a 10 s grace for undo (D-40 analogue).
+  - *Amendment 2026-10-21 (owner):* the last DG URL, user and project are remembered across Revit sessions in `%APPDATA%\DGevit-connector.json`; the password too when «Запомнить пароль» is ticked, stored only DPAPI-encrypted for the current Windows user (`lib/dg_connector/remember.py`), never in clear text or a log. «Выход» forgets the password.
 - **D-48: What the connector reads.**
   - Scope: the selection when it is not empty, otherwise every model element instance visible in the active view (no annotations, views or types), at most 5000 (`max_elements`).
   - A session is created on command only («Меппинг DG» or DeGram «Запустить меппинг»), never on `DocumentChanged`.
