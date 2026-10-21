@@ -5935,9 +5935,15 @@ def is_protected_node_key(key: str) -> bool:
     return key.lower() in PROTECTED_NODE_KEYS_CI or bool(PROTECTED_NODE_KEY_PATTERN.search(key))
 NODE_KEY_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 
+# Validation records sort after the ontology, rules and Computgraph here too: a
+# project with a long validation history (tens of thousands of ValidationEntity
+# nodes) would otherwise fill the 2,000-node cap in id order and hide every rule
+# ingested after the history began.
 GRAPH_NODES_QUERY = (
     "MATCH (n) WHERE n.project = $project "
-    "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS props LIMIT 2000"
+    "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS props "
+    "ORDER BY CASE WHEN any(l IN labels(n) WHERE l IN $validation_labels) THEN 1 ELSE 0 END, id(n) "
+    "LIMIT 2000"
 )
 # Phase 1301 gap G-1: the DeGram agent's compact read. Validation records sort
 # after the ontology, rules and Computgraph, so the 2,000-node cap is not filled by
@@ -5958,7 +5964,9 @@ GRAPH_COMPACT_VALIDATION_LABELS = [
 GRAPH_COMPACT_PROP_MAX_BYTES = 2048
 GRAPH_RELS_QUERY = (
     "MATCH (a)-[r]->(b) WHERE a.project = $project AND b.project = $project "
-    "RETURN id(a) AS source, type(r) AS type, id(b) AS target LIMIT 8000"
+    "RETURN id(a) AS source, type(r) AS type, id(b) AS target "
+    "ORDER BY CASE WHEN any(l IN labels(a) + labels(b) WHERE l IN $validation_labels) THEN 1 ELSE 0 END, id(r) "
+    "LIMIT 8000"
 )
 # The D-06 carve-out (spec'd by 1205-16): only nodes with NO project are moved,
 # and never a node of a named project (default-project included).
@@ -6043,8 +6051,14 @@ def get_project_graph(project: str, compact: bool = False):
             {"project": project, "validation_labels": GRAPH_COMPACT_VALIDATION_LABELS},
         )
     else:
-        node_rows = read_many(GRAPH_NODES_QUERY, {"project": project})
-    rel_rows = read_many(GRAPH_RELS_QUERY, {"project": project})
+        node_rows = read_many(
+            GRAPH_NODES_QUERY,
+            {"project": project, "validation_labels": GRAPH_COMPACT_VALIDATION_LABELS},
+        )
+    rel_rows = read_many(
+        GRAPH_RELS_QUERY,
+        {"project": project, "validation_labels": GRAPH_COMPACT_VALIDATION_LABELS},
+    )
     omitted = [0]
     nodes = []
     for row in node_rows:

@@ -106,7 +106,12 @@ class TestGraph:
         assert "n.project = $project" in node_query and "LIMIT 2000" in node_query
         assert "a.project = $project" in rel_query and "b.project = $project" in rel_query
         assert "LIMIT 8000" in rel_query
-        assert node_params == {"project": PROJECT} and rel_params == {"project": PROJECT}
+        # A long validation history must not fill either cap ahead of rules and ontology.
+        assert "ORDER BY" in node_query and "$validation_labels" in node_query
+        assert "ORDER BY" in rel_query and "$validation_labels" in rel_query
+        for params in (node_params, rel_params):
+            assert params["project"] == PROJECT
+            assert set(params["validation_labels"]) >= {"ValidationEntity", "ValidationRun"}
 
     def test_driver_only_property_types_are_serialised(self, client, db):
         class FakeDate:
