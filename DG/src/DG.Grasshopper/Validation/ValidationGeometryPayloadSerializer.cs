@@ -118,6 +118,48 @@ internal static class ValidationGeometryPayloadSerializer
                     yield return serialized;
                 }
             }
+
+            yield break;
+        }
+
+        // Phase 1303-15 (live 2026-10-21): inside Rhino.Inside.Revit a Python 3 script sees a second RhinoCommon, so a
+        // Brep it builds is not this assembly's Brep and every check above fails; the published boxes had no geometry.
+        // Any foreign geometry with GetBoundingBox(bool) is published as its bounding box.
+        if (TryForeignBoundingBox(geometry, out var box))
+        {
+            var boxMesh = Mesh.CreateFromBox(box, 1, 1, 1);
+            if (boxMesh is not null)
+            {
+                yield return SerializeMesh(boxMesh);
+            }
+        }
+    }
+
+    private static bool TryForeignBoundingBox(object geometry, out BoundingBox box)
+    {
+        box = BoundingBox.Empty;
+        try
+        {
+            var method = geometry.GetType().GetMethod("GetBoundingBox", new[] { typeof(bool) });
+            var bb = method?.Invoke(geometry, new object[] { true });
+            if (bb is null)
+            {
+                return false;
+            }
+
+            static Point3d Corner(object bb, string name)
+            {
+                var p = bb.GetType().GetProperty(name)!.GetValue(bb)!;
+                double C(string axis) => Convert.ToDouble(p.GetType().GetProperty(axis)!.GetValue(p));
+                return new Point3d(C("X"), C("Y"), C("Z"));
+            }
+
+            box = new BoundingBox(Corner(bb, "Min"), Corner(bb, "Max"));
+            return box.IsValid;
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
 

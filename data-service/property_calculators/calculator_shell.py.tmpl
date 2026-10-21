@@ -250,18 +250,31 @@ def inventory(doc):
     return lines
 
 
+# Rhino.Inside.Revit gives Python 3 a second RhinoCommon (live 2026-10-21: "Rhino.UnitSystem cannot be converted to
+# Rhino.UnitSystem"; boxes built with `Rhino.Geometry` reached VALIDATOR as foreign objects and were published without
+# geometry). Boxes are therefore built with the RhinoCommon Grasshopper itself uses, found through GH_Brep.Value.
+import System
+import Grasshopper
+_GH_RC = clr.GetClrType(Grasshopper.Kernel.Types.GH_Brep).GetProperty("Value").PropertyType.Assembly
+_P3 = _GH_RC.GetType("Rhino.Geometry.Point3d")
+_BB = _GH_RC.GetType("Rhino.Geometry.BoundingBox")
+
+
+def _gh_point(x, y, z):
+    return System.Activator.CreateInstance(_P3, System.Array[System.Object]([float(x), float(y), float(z)]))
+
+
 def box_geometry(box, scale):
     bb = box.get_BoundingBox(None)
     if bb is None:
         return None
-    t = bb.Transform
-    origin = rg.Point3d(t.Origin.X * scale, t.Origin.Y * scale, t.Origin.Z * scale)
-    plane = rg.Plane(origin, rg.Vector3d(t.BasisX.X, t.BasisX.Y, t.BasisX.Z), rg.Vector3d(t.BasisY.X, t.BasisY.Y, t.BasisY.Z))
-    box3 = rg.Box(plane,
-                  rg.Interval(bb.Min.X * scale, bb.Max.X * scale),
-                  rg.Interval(bb.Min.Y * scale, bb.Max.Y * scale),
-                  rg.Interval(bb.Min.Z * scale, bb.Max.Z * scale))
-    return box3.ToBrep()
+    lo = bb.Transform.OfPoint(bb.Min)
+    hi = bb.Transform.OfPoint(bb.Max)
+    pmin = _gh_point(min(lo.X, hi.X) * scale, min(lo.Y, hi.Y) * scale, min(lo.Z, hi.Z) * scale)
+    pmax = _gh_point(max(lo.X, hi.X) * scale, max(lo.Y, hi.Y) * scale, max(lo.Z, hi.Z) * scale)
+    bbox = System.Activator.CreateInstance(_BB, System.Array[System.Object]([pmin, pmax]))
+    brep = _BB.GetMethod("ToBrep").Invoke(bbox, None)
+    return Grasshopper.Kernel.Types.GH_Brep(brep) if brep is not None else None
 
 
 def object_reference(unique_id):
