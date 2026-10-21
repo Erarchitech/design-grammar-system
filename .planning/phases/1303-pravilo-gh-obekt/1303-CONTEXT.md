@@ -219,6 +219,28 @@ Supersede D-10 and D-20 (Revit read-only), D-27 (no geometry from Revit), the Re
     4. A rejected calculator is retired (`status: rejected`) and the property is regenerated or marked unsupported.
     5. The file catalogue stays the vetted seed; the Neo4j catalogue extends it. Resolution order: file catalogue, shared catalogue, project-stored, LLM generation.
   - Not yet built. To be planned and executed in the next session (todo `2026-10-20-promote-confirmed-generated-calculators-to-catalogue.md`).
+
+### Calculator promotion details (plan 1303-16, owner answers 2026-10-20 after research)
+
+Open questions from `1303-RESEARCH.md`; the owner chose the recommended option each time.
+
+- **D-55: D-54 is tracked as new requirement DGOPN-05.**
+  - DGOPN-01..04 stay unchanged; `REQUIREMENTS.md` gains DGOPN-05 (confirmed calculator promoted to the shared catalogue and reused without the LLM).
+- **D-56: The shared calculator catalogue is company-scoped.**
+  - An entry is visible to and resolved for projects of the same company only. It carries the company key and `sourceProject`, never the `project` property, so project isolation and `claim-untagged` do not capture it.
+  - Company governance itself stays with Phase 1302; plan 16 reads the existing company attribute and does not build company management.
+- **D-57: The DeGram agent lists calculator candidates but never confirms or rejects them.**
+  - Confirm and reject are human clicks in the Web UI Mapping panel. This narrows D-54 step 1 ("Web UI, DeGram tool"): the DeGram tool is read-only for candidates.
+  - A DeGram component change is optional and owner-gated; plan 16 does not require it.
+- **D-58: A confirmation is accepted only with a matching runId, sha256 and run time.**
+  - The run must belong to the project, be newer than the calculator, and the confirmed sha256 must equal the shown source. This is a heuristic binding; a run-side sha256 written by DG.gha is out of scope (D-53).
+- **D-59: An owner of any project in the company may retire a catalogue entry.**
+  - Owner answer 2026-10-21 after plan check, confirming the planner default. Retire cascades to the project copies, deletes nothing and keeps history; a retired calculator may be confirmed again later.
+- **D-60: Only an owner may confirm a retired calculator again.**
+  - Owner answer 2026-10-21 after the final plan check. Re-confirming a retired entry needs the same authority as retiring it (D-59), so an editor cannot undo an owner's retirement. A first confirm of a pending calculator stays at editor.
+  - A retired copy must not be offered for regeneration: regenerate would turn a pause into a permanent rejection.
+  - Owner answer 2026-10-21: reject is refused (409 `CALCULATOR_IN_CATALOGUE`) for every catalogue copy, active or retired. A catalogue calculator leaves use only through retire (D-59), so its hash never becomes "rejected".
+- Planner default taken from the research recommendation (Claude's discretion, not an owner decision): one active entry per property name per company, a second confirm for a taken name returns 409.
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
