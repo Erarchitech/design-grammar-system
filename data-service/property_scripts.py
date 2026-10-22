@@ -313,6 +313,129 @@ def context_classes(entry: dict, catalogue: dict, iri_prefix: str) -> list[dict]
             for label, cats in sorted(by_label.items())]
 
 
+def _same_class(a: str, b: str) -> bool:
+    """Two class labels name one concept (Slab ~ Floor): equal ignoring case, or class_duplicates calls them the same
+    concept. The same fold save_context_classes applies, so a participant never gets a second class."""
+    import class_duplicates
+
+    return a.lower() == b.lower() or (class_duplicates.class_reason(a, b) or "").startswith("same concept")
+
+
+def participant_classes(rule: dict, catalogue: dict, project_classes: dict[str, list[str]] | None = None) -> list[dict]:
+    """The context participants of ``rule`` as calculator classes [{label, iri, revitCategories, relation,
+    relatedTo}] (D-62, top-down). The Revit categories of a participant come from the class side: the inverse of the
+    catalogue's categoryClasses (same-concept folding applies, Slab ~ Floor -> OST_Floors) and the categories stored
+    on the project's class of that concept; never from what a script reads."""
+    by_label: dict[str, set[str]] = {}
+    for category, label in (catalogue.get("categoryClasses") or {}).items():
+        by_label.setdefault(label, set()).add(category)
+    classes: list[dict] = []
+    for participant in rule.get("participants") or []:
+        label = local_name(participant["label"])
+        categories: set[str] = set()
+        for known, found in by_label.items():
+            if _same_class(label, known):
+                categories |= found
+        for known, stored in (project_classes or {}).items():
+            if _same_class(label, known):
+                categories |= set(stored or [])
+        classes.append({"label": label, "iri": participant["iri"], "revitCategories": sorted(categories),
+                        "relation": participant.get("relation"), "relatedTo": participant.get("relatedTo")})
+    return classes
+
+
+def merge_participants(rules: list[dict], catalogue: dict, project_classes: dict[str, list[str]] | None = None
+                       ) -> list[dict]:
+    """The union of the participants of several rules over one DataProperty, in order of first appearance: the
+    first relation of a class wins, its Revit categories are united."""
+    merged: dict[str, dict] = {}
+    for rule in rules:
+        for c in participant_classes(rule, catalogue, project_classes):
+            have = merged.get(c["label"])
+            if have is None:
+                merged[c["label"]] = dict(c)
+            else:
+                have["revitCategories"] = sorted(set(have["revitCategories"]) | set(c["revitCategories"]))
+    return list(merged.values())
+
+
+def _rules_by_dp(rules: list[dict]) -> dict[str, list[dict]]:
+    by_dp: dict[str, list[dict]] = {}
+    for rule in rules:
+        for dp in rule["dataProperties"]:
+            by_dp.setdefault(dp["iri"], []).append(rule)
+    return by_dp
+
+
+def _unique(warnings: Iterable[Any]) -> list[Any]:
+    """The warnings without repeats, order kept; a warning is a string or a structured dict."""
+    seen: set[str] = set()
+    out: list[Any] = []
+    for warning in warnings:
+        key = json.dumps(warning, sort_keys=True, ensure_ascii=False)
+        if key not in seen:
+            seen.add(key)
+            out.append(warning)
+    return out
+
+
+def participant_mismatch(entry: dict, rule: dict, catalogue: dict) -> dict | None:
+    """Warning when the categories the bound calculator reads name other classes than the rule's participants
+    (D-62): ``extra`` are classes it reads that the rule does not name (the subject and the Generic Model box are
+    not extra), ``missing`` are participants it does not read. None when they agree. Nothing is regenerated or
+    relinked: regeneration stays the confirmed, paid flow of plan 1303-17."""
+    class_of = catalogue.get("categoryClasses") or {}
+    read = sorted({class_of[c] for c in read_categories(entry, catalogue) if c in class_of})
+    named = [local_name(p["label"]) for p in rule.get("participants") or []]
+    subject = local_name((rule.get("subject") or {}).get("label") or "")
+    extra = sorted(label for label in read
+                   if label != "GenericModel" and not (subject and _same_class(label, subject))
+                   and not any(_same_class(label, n) for n in named))
+    missing = sorted(n for n in named if not any(_same_class(n, label) for label in read))
+    if not extra and not missing:
+        return None
+    return {"code": "CALCULATOR_PARTICIPANT_MISMATCH", "ruleId": entry["ruleId"],
+            "dataPropertyIri": entry["dataPropertyIri"], "extra": extra, "missing": missing}
+
+
+def assign_context_classes(resolved: list[dict], rules: list[dict], catalogue: dict, prefix: str,
+                           project_classes: dict[str, list[str]] | None, warnings: list[Any]) -> dict[str, list[dict]]:
+    """Set ``contextClasses`` on every resolved entry and return the classes each calculator reads, by DataProperty.
+
+    A rule with participants is top-down (D-62): its participants are the classes, and a script that reads other
+    categories only earns a CALCULATOR_PARTICIPANT_MISMATCH warning. A rule without participants keeps the
+    bottom-up derivation from the categories the script reads. Several rules with participants over one DataProperty
+    give the union as the calculator's classes and a CALCULATOR_PARTICIPANTS_DIFFER warning when they differ."""
+    rule_by_id = {r["ruleId"]: r for r in rules}
+    rules_of = _rules_by_dp(rules)
+    classes_of: dict[str, list[dict]] = {}
+    for entry in resolved:
+        iri = entry["dataPropertyIri"]
+        rule = rule_by_id.get(entry["ruleId"]) or {}
+        if rule.get("participants"):
+            entry["contextClasses"] = participant_classes(rule, catalogue, project_classes)
+            mismatch = participant_mismatch(entry, rule, catalogue)
+            if mismatch:
+                warnings.append(mismatch)
+        else:
+            entry["contextClasses"] = context_classes(entry, catalogue, prefix)
+        if iri in classes_of:
+            continue
+        with_participants = [r for r in rules_of.get(iri, []) if r.get("participants")]
+        if not with_participants:
+            classes_of[iri] = entry["contextClasses"]
+            continue
+        classes_of[iri] = merge_participants(with_participants, catalogue, project_classes)
+        label_sets = {r["ruleId"]: {local_name(p["label"]) for p in r["participants"]} for r in with_participants}
+        if len({frozenset(s) for s in label_sets.values()}) > 1:
+            everywhere = set.intersection(*label_sets.values())
+            union = set.union(*label_sets.values())
+            warnings.append({"code": "CALCULATOR_PARTICIPANTS_DIFFER", "dataPropertyIri": iri,
+                             "ruleIds": sorted(label_sets), "union": sorted(union),
+                             "difference": sorted(union - everywhere)})
+    return classes_of
+
+
 def iri_prefix_of(iri: str) -> str:
     name = local_name(iri)
     return iri[: len(iri) - len(name)] if name and iri.endswith(name) else "ex:"
@@ -648,7 +771,8 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
     company = property_calculator_store.company_of(project)
     shared = property_calculator_store.load_catalogue(session, company)
     blocked = property_calculator_store.load_blocked(session, project)
-    warnings: list[str] = []
+    project_classes = property_calculator_store.load_class_categories(session, project)
+    warnings: list[Any] = []
     by_class: dict[tuple, list[dict]] = {}
     created: list[dict] = []
     unsupported: list[dict] = []
@@ -666,12 +790,13 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
                              blocked=blocked)
         warnings.extend(resolution["warnings"])
         prefix = iri_prefix_of(class_iri)
+        classes_of = assign_context_classes(resolution["resolved"], group, catalogue, prefix, project_classes, warnings)
         done = set()
         for entry in resolution["resolved"]:
             if entry["dataPropertyIri"] in done:
                 continue
             done.add(entry["dataPropertyIri"])
-            classes = context_classes(entry, catalogue, prefix)
+            classes = classes_of[entry["dataPropertyIri"]]
             if entry.get("new"):
                 if _saved(property_calculator_store.save(session, project, entry, actor), entry, warnings):
                     stored[entry["dataPropertyIri"]] = entry
@@ -684,7 +809,7 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
 
     return {"project": project, "linked": created, "unsupported": unsupported, "prunedClasses": pruned,
             "duplicateCandidates": class_duplicates.find(session, project),
-            "warnings": list(dict.fromkeys(warnings))}
+            "warnings": _unique(warnings)}
 
 
 def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Chooser | None = None,
@@ -700,14 +825,14 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
     company = property_calculator_store.company_of(project)
     shared = property_calculator_store.load_catalogue(session, company)
     blocked = property_calculator_store.load_blocked(session, project)
+    project_classes = property_calculator_store.load_class_categories(session, project)
     resolution = resolve(rules, catalogue, chooser, stored=stored, generator=generator, shared=shared,
                          blocked=blocked)
-    warnings = list(resolution["warnings"])
+    warnings: list[Any] = list(resolution["warnings"])
     if resolution["unsupported"] and not resolution["resolved"]:
         raise PropertyScriptError("NOTHING_TO_COMPUTE", "No rule DataProperty resolved to a catalogue calculator")
     prefix = iri_prefix_of(resolution["boxClass"]["iri"])
-    for entry in resolution["resolved"]:
-        entry["contextClasses"] = context_classes(entry, catalogue, prefix)
+    classes_of = assign_context_classes(resolution["resolved"], rules, catalogue, prefix, project_classes, warnings)
     if store:
         saved = set()
         for entry in resolution["resolved"]:
@@ -716,7 +841,7 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
             if entry.get("new"):
                 _saved(property_calculator_store.save(session, project, entry, actor), entry, warnings)
             property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
-                                                           entry["contextClasses"])
+                                                           classes_of[entry["dataPropertyIri"]])
             saved.add(entry["dataPropertyIri"])
         property_calculator_store.prune_context_classes(session, project)
     for entry in resolution["resolved"]:
@@ -728,6 +853,6 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
         "boxClass": resolution["boxClass"],
         "resolved": resolution["resolved"],
         "unsupported": resolution["unsupported"],
-        "warnings": list(dict.fromkeys(warnings)),
+        "warnings": _unique(warnings),
         **scripts,
     }

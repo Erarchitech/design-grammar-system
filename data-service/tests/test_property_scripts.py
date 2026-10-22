@@ -216,12 +216,12 @@ class _Session:
         self.calls.append((query, params))
         # Phase 1303-16 marker contract: the save-state read carries `reviewLock`; it also names
         # `rejectedSha256Json` and starts with MERGE, so it is answered before every other branch.
-        if "coalesce(k.label, k.iri) AS label" in query:  # save_context_classes: classes the project already has
-            return _Result([{"label": label} for label in self.existing_classes])
         if "HAS_HEAD" in query:  # the structure read of plan 1303-22: atoms of the rule with their arguments
             return _Result(self.structure)
         if "revitCategories AS revitCategories" in query:  # classes of the project with their stored categories
             return _Result(self.project_classes)
+        if "coalesce(k.label, k.iri) AS label" in query:  # save_context_classes: classes the project already has
+            return _Result([{"label": label} for label in self.existing_classes])
         if "reviewLock" in query:
             iri = params.get("dataPropertyIri")
             return _Result([r for r in self.stored if r.get("dataPropertyIri") == iri])

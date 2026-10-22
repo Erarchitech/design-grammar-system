@@ -107,8 +107,27 @@ CONTEXT_CLASS_QUERY = (
     "SET k.revitCategories = [x IN coalesce(k.revitCategories, []) WHERE NOT x IN $categories] + $categories "
     "WITH k "
     "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
-    "MERGE (pc)-[r:READS_CLASS]->(k) SET r.revitCategories = $categories "
+    "MERGE (pc)-[r:READS_CLASS]->(k) SET r.revitCategories = $categories REMOVE r.relation, r.relatedTo "
     "RETURN k.iri AS iri"
+)
+
+# A participant of a rule (Phase 1303-22, D-62) is linked with the relation that ties it to the subject or to another
+# participant (hostedBy, projectsOnto) and the class it is related to; same class matching as CONTEXT_CLASS_QUERY.
+PARTICIPANT_CLASS_QUERY = (
+    "MERGE (k:Class {project:$project, label:$label}) "
+    "ON CREATE SET k.iri = $iri, k.graph = 'OntoGraph', k.source = 'property_scripts' "
+    "SET k.revitCategories = [x IN coalesce(k.revitCategories, []) WHERE NOT x IN $categories] + $categories "
+    "WITH k "
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
+    "MERGE (pc)-[r:READS_CLASS]->(k) "
+    "SET r.revitCategories = $categories, r.relation = $relation, r.relatedTo = $relatedTo "
+    "RETURN k.iri AS iri"
+)
+
+# The classes of a project with the Revit categories they stand for, read before participants are resolved.
+CLASS_CATEGORIES_QUERY = (
+    "MATCH (k:Class {project:$project}) "
+    "RETURN coalesce(k.label, k.iri) AS label, k.revitCategories AS revitCategories ORDER BY label"
 )
 
 
@@ -123,27 +142,44 @@ PRUNE_QUERY = (
 )
 
 
+def load_class_categories(session: Any, project: str) -> dict[str, list[str]]:
+    """{class label: stored Revit categories} of the project's classes (empty list when none are stored)."""
+    return {r["label"]: list(r.get("revitCategories") or [])
+            for r in session.run(CLASS_CATEGORIES_QUERY, project=project).data() if r.get("label")}
+
+
 def save_context_classes(session: Any, project: str, data_property_iri: str, classes: list[dict]) -> None:
     """Link the calculator to exactly ``classes``: stale READS_CLASS edges (a catalogue fix dropped a category)
-    are removed first, then the current classes are matched or created and linked."""
+    are removed first, then the current classes are matched or created and linked. A class that carries a
+    ``relation`` (a participant of a rule, D-62) is linked with ``relation`` and ``relatedTo`` on the edge."""
     import class_duplicates
 
     # A class of the same concept that the project already has (Slab for Floor, Hole for Opening) is used instead
-    # of a new one: DG never adds a duplicate itself.
+    # of a new one: DG never adds a duplicate itself. A class whose exact label exists is that class, never folded.
     existing = [r["label"] for r in session.run(
         "MATCH (k:Class {project:$project}) RETURN coalesce(k.label, k.iri) AS label ORDER BY label",
         project=project).data()]
     reused = []
+    folded: dict[str, str] = {}
     for c in classes:
-        same = next((e for e in existing if e != c["label"]
-                     and (class_duplicates.class_reason(c["label"], e) or "").startswith("same concept")), None)
+        same = None if c["label"] in existing else next(
+            (e for e in existing
+             if (class_duplicates.class_reason(c["label"], e) or "").startswith("same concept")), None)
+        if same:
+            folded[c["label"]] = same
         reused.append({**c, "label": same} if same else c)
     classes = reused
     session.run(UNLINK_QUERY, project=project, dataPropertyIri=data_property_iri,
                 keep=[c["label"] for c in classes]).consume()
     for c in classes:
-        session.run(CONTEXT_CLASS_QUERY, project=project, label=c["label"], iri=c["iri"],
-                    categories=list(c["revitCategories"]), dataPropertyIri=data_property_iri).consume()
+        if "relation" in c:
+            related = c.get("relatedTo")
+            session.run(PARTICIPANT_CLASS_QUERY, project=project, label=c["label"], iri=c["iri"],
+                        categories=list(c["revitCategories"]), dataPropertyIri=data_property_iri,
+                        relation=c.get("relation"), relatedTo=folded.get(related, related)).consume()
+        else:
+            session.run(CONTEXT_CLASS_QUERY, project=project, label=c["label"], iri=c["iri"],
+                        categories=list(c["revitCategories"]), dataPropertyIri=data_property_iri).consume()
 
 
 def prune_context_classes(session: Any, project: str) -> list[str]:
