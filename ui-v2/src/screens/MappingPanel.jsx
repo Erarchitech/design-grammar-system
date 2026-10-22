@@ -1,5 +1,5 @@
 import React from "react";
-import { Badge, Button, Checkbox, Chip, Panel, Select } from "../components/index.js";
+import { Badge, Button, Callout, Checkbox, Chip, CodeBlock, Input, Panel, Select } from "../components/index.js";
 import {
   SESSION_LIMIT,
   MAX_ELEMENTS,
@@ -7,16 +7,20 @@ import {
   appliedByClass,
   applySession,
   awaitingApply,
+  calculatorConfirmPayload,
+  calculatorConfirmable,
   cardOpen,
   classLabels,
   classLocalName,
   confidencePercent,
+  confirmCalculator,
   consequenceRows,
   createSession,
   getSession,
   includedGroupIds,
   itemView,
   labelFromFileName,
+  listCalculatorCandidates,
   listProfiles,
   listSessions,
   pendingAnswerIds,
@@ -29,6 +33,8 @@ import {
   proposalItems,
   proposalTitle,
   questionText,
+  rejectCalculator,
+  retireCalculator,
   selectorEntries,
   sessionAnswers,
   summaryTotals,
@@ -937,6 +943,198 @@ export function ApplyResult({ result, labelOf }) {
   );
 }
 
+// ── calculator review (plans 1303-16..18, DGOPN-05, D-54..D-60) ────────────────────────────────────────────────
+// A generated property calculator is shown with its source, its values on real boxes and the rule verdicts; the
+// operator types what the property measures and confirms it into the company catalogue, or rejects it. Every server
+// text (source, explanation, labels, reasons) is a React text child, never raw HTML. The caps equal the server limits.
+
+const SAMPLE_ROWS = 10;
+const MEANING_MAX = 160;
+const UNIT_MAX = 40;
+const REASON_MAX = 300;
+
+function plain(value) {
+  return value === null || value === undefined ? "" : String(value);
+}
+
+function statValue(value) {
+  return value === null || value === undefined || value === "" ? "—" : String(value);
+}
+
+function sampleLine(sample) {
+  return `${plain(sample?.objectRef)} · ${plain(sample?.label)} = ${plain(sample?.value)}`;
+}
+
+function verdictLine(verdict) {
+  const counts = verdict?.counts && typeof verdict.counts === "object" ? Object.entries(verdict.counts) : [];
+  return [plain(verdict?.ruleId), counts.map(([status, n]) => `${status} ${plain(n)}`).join(", ")].filter(Boolean).join(" · ");
+}
+
+export function CalculatorReviewCard({ candidate, run, companyAssigned, canReconfirm, busy, error, onConfirm, onReject }) {
+  const { t } = useT();
+  const [meaning, setMeaning] = React.useState("");
+  const [unit, setUnit] = React.useState(typeof candidate.unit === "string" ? candidate.unit : "");
+  const [reason, setReason] = React.useState("");
+  const [regenerate, setRegenerate] = React.useState(false);
+  const retired = candidate.retired === true;
+  const own = candidate.run && candidate.run.runId ? candidate.run : run;
+  const confirmable = calculatorConfirmable(candidate, run);
+  const mayConfirm = !retired || canReconfirm === true;
+  const stats = candidate.stats || {};
+  const samples = list(candidate.samples).slice(0, SAMPLE_ROWS);
+  const verdicts = list(candidate.verdicts);
+  let hint = "";
+  if (!confirmable) {
+    if (!own || !own.runId) hint = t("No published run yet: run the check with publishing first.");
+    else if (candidate.runNewerThanCalculator !== true) hint = t("The run is older than this calculator: run the check again.");
+    else hint = t("The run holds no values for this property.");
+  }
+  const meta = [candidate.provider, candidate.model].filter(Boolean).join(" · ");
+  return (
+    <div style={CARD} data-calculator-iri={candidate.dataPropertyIri}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ ...BODY, fontWeight: 500 }}>{candidate.propertyName}</span>
+        {retired && <Badge variant="warning">{t("Retired")}</Badge>}
+      </div>
+      {meta && <div style={MUTED}>{meta}</div>}
+      {candidate.unit && <div style={MUTED}>{`${t("Unit")}: ${candidate.unit}`}</div>}
+      {list(candidate.readCategories).length > 0 && (
+        <div style={MUTED}>{t("Reads categories: {categories}", { categories: list(candidate.readCategories).join(", ") })}</div>
+      )}
+      {candidate.explanation && <div style={{ ...MUTED, overflowWrap: "anywhere" }}>{candidate.explanation}</div>}
+      <CodeBlock label={t("Source code")}>{candidate.source}</CodeBlock>
+      <div style={BODY}>
+        {t("Values on {n} boxes · min {min} · max {max}", { n: plain(stats.n ?? 0), min: statValue(stats.min), max: statValue(stats.max) })}
+      </div>
+      {samples.length > 0 && (
+        <div style={{ display: "grid", gap: 2 }}>
+          {samples.map((sample, index) => (
+            <div key={`${plain(sample?.objectRef)}:${index}`} style={{ ...MONO, overflowWrap: "anywhere" }} data-calculator-sample={index}>
+              {sampleLine(sample)}
+            </div>
+          ))}
+        </div>
+      )}
+      {verdicts.length > 0 && (
+        <div style={{ display: "grid", gap: 2 }}>
+          <h5 style={CAPTION}>{t("Rule verdicts")}</h5>
+          {verdicts.map((verdict, index) => (
+            <div key={`${plain(verdict?.ruleId)}:${index}`} style={{ ...MONO, overflowWrap: "anywhere" }}>
+              {verdictLine(verdict)}
+            </div>
+          ))}
+        </div>
+      )}
+      {mayConfirm ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          <Input
+            label={t("What the property measures (one line)")}
+            value={meaning}
+            maxLength={MEANING_MAX}
+            disabled={busy}
+            onChange={(event) => setMeaning(event.target.value)}
+          />
+          <Input label={t("Unit")} value={unit} maxLength={UNIT_MAX} disabled={busy} onChange={(event) => setUnit(event.target.value)} />
+          {hint && <div style={MUTED}>{hint}</div>}
+          <div>
+            <Button
+              size="sm"
+              disabled={busy || !confirmable || !companyAssigned || !meaning.trim()}
+              onClick={() => onConfirm(calculatorConfirmPayload(candidate, run, meaning.trim(), unit.trim()))}
+            >
+              {retired ? t("Confirm again for the company catalogue") : t("Confirm for the company catalogue")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div style={MUTED}>{t("Only an owner of the project can confirm a retired calculator again.")}</div>
+      )}
+      {!retired && (
+        <div style={{ display: "grid", gap: 8, paddingTop: 10, borderTop: "1px solid var(--color-hairline)" }}>
+          <Input label={t("Reason")} value={reason} maxLength={REASON_MAX} disabled={busy} onChange={(event) => setReason(event.target.value)} />
+          <Checkbox label={t("Ask DG for a new calculator")} checked={regenerate} onChange={setRegenerate} />
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || !reason.trim()}
+              onClick={() => onReject({ dataPropertyIri: candidate.dataPropertyIri, sha256: candidate.sha256, reason: reason.trim(), regenerate })}
+            >
+              {t("Reject")}
+            </Button>
+          </div>
+        </div>
+      )}
+      {error && <div style={ERR_STYLE}>{describeError(error, t("Could not save the decision."))}</div>}
+    </div>
+  );
+}
+
+// One entry of the company catalogue. Retire is an owner action (D-59): the server reports canRetire. sourceProject and
+// confirmedBy are sent to owners only, so they show only when present.
+export function CatalogueEntryRow({ entry, canRetire, busy, error, onRetire }) {
+  const { t } = useT();
+  const [reason, setReason] = React.useState("");
+  const meta = [entry.provider, entry.model].filter(Boolean).join(" · ");
+  return (
+    <div style={CARD} data-catalogue-id={entry.catalogueId}>
+      <span style={{ ...BODY, fontWeight: 500 }}>{entry.propertyName}</span>
+      {entry.meaning && <div style={{ ...BODY, overflowWrap: "anywhere" }}>{entry.meaning}</div>}
+      {entry.unit && <div style={MUTED}>{`${t("Unit")}: ${entry.unit}`}</div>}
+      {list(entry.readCategories).length > 0 && (
+        <div style={MUTED}>{t("Reads categories: {categories}", { categories: list(entry.readCategories).join(", ") })}</div>
+      )}
+      {meta && <div style={MUTED}>{meta}</div>}
+      <div style={MUTED}>{t("Confirmed {date}", { date: formatDate(entry.confirmedAt) })}</div>
+      {entry.confirmedBy && <div style={MUTED}>{t("Confirmed by {user}", { user: entry.confirmedBy })}</div>}
+      {entry.sourceProject && <div style={MUTED}>{t("Source project {project}", { project: entry.sourceProject })}</div>}
+      {canRetire === true && (
+        <div style={{ display: "grid", gap: 8 }}>
+          <Input label={t("Reason")} value={reason} maxLength={REASON_MAX} disabled={busy} onChange={(event) => setReason(event.target.value)} />
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || !reason.trim()}
+              onClick={() => onRetire({ catalogueId: entry.catalogueId, reason: reason.trim() })}
+            >
+              {t("Retire")}
+            </Button>
+          </div>
+        </div>
+      )}
+      {error && <div style={ERR_STYLE}>{describeError(error, t("Could not save the decision."))}</div>}
+    </div>
+  );
+}
+
+// A calculator the project rejected (D-60: rejected rows only; a retired copy is never listed here). The operator may
+// ask DG for a new one with the rejection reason; the server refuses an already rejected source.
+export function BlockedCalculatorRow({ item, busy, error, onRegenerate }) {
+  const { t } = useT();
+  const [reason, setReason] = React.useState(typeof item.reason === "string" ? item.reason : "");
+  return (
+    <div style={CARD} data-blocked-iri={item.dataPropertyIri}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ ...BODY, fontWeight: 500 }}>{item.propertyName}</span>
+        <Badge variant="warning">{item.status === "rejected" ? t("Rejected") : plain(item.status)}</Badge>
+      </div>
+      <Input label={t("Reason")} value={reason} maxLength={REASON_MAX} disabled={busy} onChange={(event) => setReason(event.target.value)} />
+      <div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy || !reason.trim()}
+          onClick={() => onRegenerate({ dataPropertyIri: item.dataPropertyIri, sha256: item.sha256, reason: reason.trim() })}
+        >
+          {t("Ask DG for a new calculator")}
+        </Button>
+      </div>
+      {error && <div style={ERR_STYLE}>{describeError(error, t("Could not save the decision."))}</div>}
+    </div>
+  );
+}
+
 // Phase 1303-15 (DGOPN-02): one action puts a ready-to-run property check on the Grasshopper canvas. DG reads the
 // project's rules, assembles the calculator and highlighter scripts from its vetted catalogue and places them with the
 // OBJECT STATE / PROPERTY STATE / VALIDATOR chain next to the signed-in CONNECTOR; the user only runs it.
@@ -947,6 +1145,12 @@ function PropertyCheckCard({ project, t }) {
   const [checking, setChecking] = React.useState(false);
   const [check, setCheck] = React.useState(null);
   const [checkErr, setCheckErr] = React.useState(null);
+  // Calculator review (plans 1303-16..18, D-29): nothing is requested until the review button is clicked.
+  const [review, setReview] = React.useState(null);
+  const [reviewing, setReviewing] = React.useState(false);
+  const [reviewErr, setReviewErr] = React.useState(null);
+  const [acting, setActing] = React.useState(null);
+  const [actErr, setActErr] = React.useState(null);
   const run = async () => {
     setBusy(true);
     setError(null);
@@ -970,8 +1174,61 @@ function PropertyCheckCard({ project, t }) {
       setChecking(false);
     }
   };
+  const loadCandidates = async () => {
+    setReviewing(true);
+    setReviewErr(null);
+    try {
+      setReview(await listCalculatorCandidates(project, check?.summary?.validationRunIds?.[0]));
+    } catch (err) {
+      setReviewErr(err);
+    } finally {
+      setReviewing(false);
+    }
+  };
+  const confirmOne = async (key, payload) => {
+    setActing(key);
+    setActErr(null);
+    try {
+      await confirmCalculator(project, payload);
+      await loadCandidates();
+    } catch (err) {
+      setActErr({ key, err });
+    } finally {
+      setActing(null);
+    }
+  };
+  const rejectOne = async (key, payload) => {
+    setActing(key);
+    setActErr(null);
+    try {
+      await rejectCalculator(project, payload);
+      await loadCandidates();
+    } catch (err) {
+      setActErr({ key, err });
+    } finally {
+      setActing(null);
+    }
+  };
+  const retireOne = async (key, payload) => {
+    setActing(key);
+    setActErr(null);
+    try {
+      await retireCalculator(project, payload);
+      await loadCandidates();
+    } catch (err) {
+      setActErr({ key, err });
+    } finally {
+      setActing(null);
+    }
+  };
+  const regenerateOne = (key, item) =>
+    rejectOne(key, { dataPropertyIri: item.dataPropertyIri, sha256: item.sha256, reason: item.reason, regenerate: true });
+  const rowError = (key) => (actErr && actErr.key === key ? actErr.err : null);
   const placed = result?.placed || {};
   const status = check?.status || {};
+  const candidates = list(review?.candidates);
+  const blocked = list(review?.blocked);
+  const catalogue = list(review?.catalogue);
   return (
     <div style={CARD}>
       <div style={BODY}>{t("Property check from the project rules")}</div>
@@ -985,6 +1242,9 @@ function PropertyCheckCard({ project, t }) {
         </Button>
         <Button size="sm" variant="outline" disabled={busy || checking || !project} onClick={() => runCheck(true)}>
           {t("Clear colours")}
+        </Button>
+        <Button size="sm" variant="secondary" disabled={busy || checking || reviewing || acting !== null || !project} onClick={() => loadCandidates()}>
+          {reviewing ? t("Loading calculators…") : t("Review generated calculators")}
         </Button>
       </div>
       {error && <div style={ERR_STYLE}>{describeError(error, t("Could not generate the check."))}</div>}
@@ -1003,6 +1263,69 @@ function PropertyCheckCard({ project, t }) {
           {[...(status.highlighterReport || []), ...(status.messages || [])].map((line, i) => (
             <div key={`r${i}`} style={{ ...MUTED, overflowWrap: "anywhere" }}>{line}</div>
           ))}
+        </div>
+      )}
+      {reviewErr && <div style={ERR_STYLE}>{describeError(reviewErr, t("Could not load the calculators."))}</div>}
+      {review && (
+        <div style={{ display: "grid", gap: 10 }}>
+          {review.companyAssigned === false && (
+            <Callout
+              title={t("Company catalogue")}
+              detail={t("This project has no company: an admin assigns one before calculators can be shared.")}
+            />
+          )}
+          <div style={MUTED}>
+            {review.run
+              ? t("Run {runId} · {date}", { runId: plain(review.run.runId), date: formatDate(review.run.createdAt) })
+              : t("No published run yet: run the check with publishing first.")}
+          </div>
+          {candidates.length === 0 && blocked.length === 0 && <div style={MUTED}>{t("No generated calculators wait for review.")}</div>}
+          {candidates.map((candidate) => {
+            const key = `c:${candidate.dataPropertyIri}`;
+            return (
+              <CalculatorReviewCard
+                key={`${key}:${candidate.sha256}`}
+                candidate={candidate}
+                run={review.run}
+                companyAssigned={review.companyAssigned === true}
+                canReconfirm={review.canRetire === true}
+                busy={acting !== null || reviewing}
+                error={rowError(key)}
+                onConfirm={(payload) => confirmOne(key, payload)}
+                onReject={(payload) => rejectOne(key, payload)}
+              />
+            );
+          })}
+          {blocked.map((item) => {
+            const key = `b:${item.dataPropertyIri}:${item.sha256}`;
+            return (
+              <BlockedCalculatorRow
+                key={key}
+                item={item}
+                busy={acting !== null || reviewing}
+                error={rowError(key)}
+                onRegenerate={(payload) => regenerateOne(key, payload)}
+              />
+            );
+          })}
+          {catalogue.length > 0 && (
+            <div style={{ display: "grid", gap: 8 }}>
+              <h5 style={CAPTION}>{t("Company catalogue")}</h5>
+              {catalogue.map((entry) => {
+                const key = `e:${entry.catalogueId}`;
+                return (
+                  <CatalogueEntryRow
+                    key={key}
+                    entry={entry}
+                    canRetire={review.canRetire === true}
+                    busy={acting !== null || reviewing}
+                    error={rowError(key)}
+                    onRetire={(payload) => retireOne(key, payload)}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       {result && (

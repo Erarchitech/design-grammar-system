@@ -21,7 +21,20 @@ export const en = {
   "error.MAPPING_QUESTION_NOT_FOUND": "This question is no longer open. Refresh the session and answer the current questions.",
   "error.MAPPING_OPTION_INVALID": "That answer is not valid for this question. Refresh the session and choose again.",
   "error.MAPPING_INPUT_INVALID": "The mapping request is not valid. Check the descriptor file and try again.",
-  "error.MAPPING_TOO_MANY_ELEMENTS": "Too many elements for one session. Send at most 5000 elements."
+  "error.MAPPING_TOO_MANY_ELEMENTS": "Too many elements for one session. Send at most 5000 elements.",
+  // Phase 1303-16..18 property-calculator review (DGOPN-05, D-54..D-60)
+  "error.CALCULATOR_NOT_FOUND": "This calculator was not found. Load the list again and review the current calculators.",
+  "error.CALCULATOR_NOT_PENDING": "This calculator is no longer waiting for review. Load the list again.",
+  "error.CALCULATOR_CHANGED": "The calculator changed since it was shown. Load the list again and review it once more.",
+  "error.CALCULATOR_INTEGRITY": "The stored calculator source no longer matches its fingerprint, so it cannot be confirmed. Reject it and ask DG for a new calculator.",
+  "error.CALCULATOR_RUN_NOT_FOUND": "That run was not found in this project. Run the check with publishing, then review again.",
+  "error.CALCULATOR_RUN_INVALID": "That run cannot confirm this calculator: it is older than the calculator or holds no values for it. Run the check again.",
+  "error.CALCULATOR_INPUT_INVALID": "The calculator request is not valid. Check the property, the run and the meaning, then try again.",
+  "error.CALCULATOR_IN_CATALOGUE": "This calculator belongs to a company catalogue entry and cannot be rejected or regenerated here. An owner retires the entry or confirms it again.",
+  "error.CATALOGUE_COMPANY_REQUIRED": "This project has no company. An admin assigns one before calculators can be shared.",
+  "error.CATALOGUE_PROPERTY_TAKEN": "The company catalogue already holds a different calculator for this property. An owner retires that entry first, then confirm this one.",
+  "error.CATALOGUE_ENTRY_NOT_FOUND": "This catalogue entry was not found. Load the list again.",
+  "error.CATALOGUE_RECONFIRM_OWNER_REQUIRED": "Only an owner of this project can confirm a retired calculator again. Ask an owner."
 };
 
 export const ru = {
@@ -44,5 +57,17 @@ export const ru = {
   "error.MAPPING_QUESTION_NOT_FOUND": "Этот вопрос уже закрыт. Обновите сессию и ответьте на текущие вопросы.",
   "error.MAPPING_OPTION_INVALID": "Этот ответ недопустим для данного вопроса. Обновите сессию и выберите снова.",
   "error.MAPPING_INPUT_INVALID": "Запрос меппинга недопустим. Проверьте файл дескрипторов и повторите попытку.",
-  "error.MAPPING_TOO_MANY_ELEMENTS": "Слишком много элементов для одной сессии. Отправьте не более 5000 элементов."
+  "error.MAPPING_TOO_MANY_ELEMENTS": "Слишком много элементов для одной сессии. Отправьте не более 5000 элементов.",
+  "error.CALCULATOR_NOT_FOUND": "Калькулятор не найден. Загрузите список заново и проверьте актуальные калькуляторы.",
+  "error.CALCULATOR_NOT_PENDING": "Этот калькулятор больше не ждёт проверки. Загрузите список заново.",
+  "error.CALCULATOR_CHANGED": "Калькулятор изменился после показа. Загрузите список заново и проверьте его ещё раз.",
+  "error.CALCULATOR_INTEGRITY": "Сохранённый исходный код калькулятора не совпадает с его отпечатком, поэтому подтвердить его нельзя. Отклоните его и попросите DG написать новый.",
+  "error.CALCULATOR_RUN_NOT_FOUND": "Этот прогон не найден в проекте. Запустите проверку с публикацией и проверьте снова.",
+  "error.CALCULATOR_RUN_INVALID": "Этим прогоном калькулятор подтвердить нельзя: он старше калькулятора или не содержит его значений. Запустите проверку ещё раз.",
+  "error.CALCULATOR_INPUT_INVALID": "Запрос по калькулятору недопустим. Проверьте свойство, прогон и описание и повторите попытку.",
+  "error.CALCULATOR_IN_CATALOGUE": "Калькулятор входит в запись каталога компании, поэтому его нельзя отклонить или пересоздать здесь. Владелец отзывает запись или подтверждает её снова.",
+  "error.CATALOGUE_COMPANY_REQUIRED": "Проект не привязан к компании. Администратор назначает компанию, прежде чем калькуляторы станут общими.",
+  "error.CATALOGUE_PROPERTY_TAKEN": "В каталоге компании уже есть другой калькулятор этого свойства. Сначала владелец отзывает ту запись, затем подтвердите этот калькулятор.",
+  "error.CATALOGUE_ENTRY_NOT_FOUND": "Запись каталога не найдена. Загрузите список заново.",
+  "error.CATALOGUE_RECONFIRM_OWNER_REQUIRED": "Подтвердить отозванный калькулятор снова может только владелец проекта. Обратитесь к владельцу."
 };

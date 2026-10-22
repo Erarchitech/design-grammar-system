@@ -57,6 +57,79 @@ export function runPropertyCheck(project, { clear = false } = {}) {
   return apiFetch(`${dataServiceBase()}/scripts/property-check/run`, { method: "POST", body: { project, clear } });
 }
 
+// Phase 1303-16..18 (DGOPN-05, D-54..D-58): review of LLM-generated property calculators. The routes live under
+// /data-service/scripts/property-calculators. Confirm and reject are human decisions made in the Mapping panel only;
+// the client refuses, without a request, any confirm that lacks the exact sha256 and runId the operator was shown.
+
+function calculatorUrl(route) {
+  return `${dataServiceBase()}/scripts/property-calculators/${route}`;
+}
+
+function calculatorRefusal() {
+  return Promise.reject(Object.assign(new Error("CALCULATOR_INPUT_INVALID"), { code: "CALCULATOR_INPUT_INVALID" }));
+}
+
+function text(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+const SHA256 = /^[0-9a-f]{64}$/;
+
+// → { project, companyAssigned, canRetire, run, candidates, blocked, catalogue }. Without a runId the server picks
+// the newest published run of the project.
+export function listCalculatorCandidates(project, runId) {
+  const run = typeof runId === "string" && runId ? `&runId=${encodeURIComponent(runId)}` : "";
+  return apiFetch(calculatorUrl(`candidates?${projectQuery(project)}${run}`));
+}
+
+// → { catalogueId, entry, alreadyConfirmed, reconfirmed, reactivatedCopies }. `unit` travels only when non-empty;
+// an absent unit keeps the stored calculator unit.
+export function confirmCalculator(project, { dataPropertyIri, sha256, runId, meaning, unit } = {}) {
+  if (!text(dataPropertyIri) || typeof sha256 !== "string" || !SHA256.test(sha256) || !text(runId) || !text(meaning)) {
+    return calculatorRefusal();
+  }
+  const body = { project, dataPropertyIri, sha256, runId, meaning: text(meaning) };
+  if (text(unit)) body.unit = text(unit);
+  return apiFetch(calculatorUrl("confirm"), { method: "POST", body });
+}
+
+// → { alreadyRejected, regenerate, rejectedSha256s }. A retired catalogue copy is refused by the server (409).
+export function rejectCalculator(project, { dataPropertyIri, sha256, reason, regenerate } = {}) {
+  if (!text(dataPropertyIri) || typeof sha256 !== "string" || !SHA256.test(sha256) || !text(reason)) return calculatorRefusal();
+  return apiFetch(calculatorUrl("reject"), {
+    method: "POST", body: { project, dataPropertyIri, sha256, reason: text(reason), regenerate: regenerate === true }
+  });
+}
+
+// Owner role of the requesting project (D-59) → { catalogueId, retiredCopies, alreadyRetired }.
+export function retireCalculator(project, { catalogueId, reason } = {}) {
+  if (!text(catalogueId) || !text(reason)) return calculatorRefusal();
+  return apiFetch(calculatorUrl("retire"), { method: "POST", body: { project, catalogueId, reason: text(reason) } });
+}
+
+// The run a candidate is judged against: its own (a retired copy keeps its source run) else the shared one.
+function effectiveRun(candidate, run) {
+  const own = candidate?.run;
+  return own && typeof own === "object" && text(own.runId) ? own : run && typeof run === "object" && text(run.runId) ? run : null;
+}
+
+// D-58: confirmable only with a run, a run newer than the calculator and at least one value on it.
+export function calculatorConfirmable(candidate, run) {
+  if (!candidate || typeof candidate !== "object") return false;
+  return effectiveRun(candidate, run) !== null && candidate.runNewerThanCalculator === true && count(candidate.stats?.n) > 0;
+}
+
+// The confirm request exactly as shown: the candidate's sha256 unchanged and the effective run's id.
+export function calculatorConfirmPayload(candidate, run, meaning, unit) {
+  return {
+    dataPropertyIri: candidate?.dataPropertyIri,
+    sha256: candidate?.sha256,
+    runId: effectiveRun(candidate, run)?.runId ?? "",
+    meaning,
+    unit
+  };
+}
+
 // One decision per call → { decisions, profiles, session }. groupIds narrows a batch-assign answer to a subset.
 export function postDecision(project, sessionId, { questionId, optionId, groupIds, roles, comment } = {}) {
   const body = { project, questionId, optionId };

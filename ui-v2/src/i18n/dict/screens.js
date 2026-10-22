@@ -208,6 +208,37 @@ export const ru = {
   "The check is still running in Grasshopper · run it again in a moment":
     "Проверка ещё идёт в Grasshopper · запустите ещё раз через несколько секунд",
   "The scripts were regenerated for the current rules.": "Скрипты пересозданы под текущие правила.",
+  // ── calculator review (plans 1303-16..18)
+  "Review generated calculators": "Проверить сгенерированные калькуляторы",
+  "Loading calculators…": "Загрузка калькуляторов…",
+  "No generated calculators wait for review.": "Нет сгенерированных калькуляторов на проверку.",
+  "Run {runId} · {date}": "Прогон {runId} · {date}",
+  "No published run yet: run the check with publishing first.":
+    "Опубликованного прогона нет: сначала запустите проверку с публикацией.",
+  "The run is older than this calculator: run the check again.": "Прогон старше калькулятора: запустите проверку ещё раз.",
+  "The run holds no values for this property.": "В прогоне нет значений этого свойства.",
+  "Values on {n} boxes · min {min} · max {max}": "Значения на {n} боксах · мин {min} · макс {max}",
+  "Rule verdicts": "Вердикты правил",
+  "Source code": "Исходный код",
+  "Reads categories: {categories}": "Читает категории: {categories}",
+  "What the property measures (one line)": "Что измеряет свойство (одна строка)",
+  Unit: "Единица",
+  "Confirm for the company catalogue": "Подтвердить в каталог компании",
+  "Confirm again for the company catalogue": "Подтвердить снова в каталог компании",
+  "Only an owner of the project can confirm a retired calculator again.":
+    "Подтвердить отозванный калькулятор снова может только владелец проекта.",
+  "Ask DG for a new calculator": "Попросить DG написать новый калькулятор",
+  "Company catalogue": "Каталог компании",
+  Retire: "Отозвать",
+  "Confirmed {date}": "Подтверждён {date}",
+  "Confirmed by {user}": "Подтвердил {user}",
+  "Source project {project}": "Исходный проект {project}",
+  Rejected: "Отклонён",
+  Retired: "Отозван",
+  "This project has no company: an admin assigns one before calculators can be shared.":
+    "Проект не привязан к компании: администратор назначает компанию, прежде чем калькуляторы станут общими.",
+  "Could not load the calculators.": "Не удалось загрузить калькуляторы.",
+  "Could not save the decision.": "Не удалось сохранить решение.",
   "This file was prepared for project {fileProject}; the session is created in {project}.":
     "Файл подготовлен для проекта {fileProject}; сессия создаётся в проекте {project}.",
   "Creating session…": "Создание сессии…",
