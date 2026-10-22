@@ -2,7 +2,7 @@ import React from "react";
 import ScreenHeader from "../shell/ScreenHeader.jsx";
 import GraphEngine from "../graph/graphEngine.js";
 import buildRings, { orbitFallbackName } from "../graph/buildRings.js";
-import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules, fetchRuleDeletePreview, deleteRule, resolveRuleDeletion, bulkDeleteRules, checkRuleConflict, supersedeRule, acceptRuleOverlap, resolveOntologyDuplicate } from "../lib/graphApi.js";
+import { fetchGraph, ingestRules, queryGraph, tagProjectNodes, getConfig, fetchDrSessions, saveDrSession, updateNodeProp, fetchRules, fetchRuleDeletePreview, deleteRule, resolveRuleDeletion, bulkDeleteRules, fetchRuleConflicts, planConflictDecision, supersedeRule, acceptRuleOverlap, resolveOntologyDuplicate } from "../lib/graphApi.js";
 import {
   Badge,
   Button,
@@ -112,6 +112,15 @@ function warningText(w) {
       );
     case "refused":
       return t("Update did not apply — {ruleId} is still the rule in force.", { ruleId: w.ruleId }) + (w.detail ? " " + w.detail : "");
+    case "checkFailed":
+      return t("The conflict check for {ruleId} failed ({message}); the rule was written without it.", {
+        ruleId: w.ruleId,
+        message: describeError(w.err, t("unknown error"))
+      });
+    case "cancelKept":
+      return t("{ruleId} conflicts with an existing rule and stays written; delete it from the rule menu if you cancelled it.", {
+        ruleId: w.ruleId
+      });
     default:
       return (
         t("Recording the conflict decision failed: {message}.", { message: describeError(w.err, t("unknown error")) }) +
@@ -772,8 +781,8 @@ export default function GraphScreen({ active, onBack, project }) {
 
     // Ingest mode only (mode 0) — Edit mode (2) already targets a known
     // Rule_Id explicitly, so there is no new-vs-existing collision to check;
-    // Query mode (1) writes nothing. Runs the preview/confirm check BEFORE
-    // any n8n call, so a Cancel means literally nothing was sent anywhere.
+    // Query mode (1) writes nothing. The conflict check runs AFTER the write
+    // (D-65), on the stored atoms of each rule the turn created.
     if (mode === 0) {
       setPromptVal("");
       void runIngestWithConflictCheck(txt);
@@ -784,87 +793,87 @@ export default function GraphScreen({ active, onBack, project }) {
     void runTurn(mode, txt, editRuleId);
   };
 
-  // Preview/confirm gate (paper T1 ITcon R15.6 §4) in front of the normal
-  // ingest turn. On conflict, suspends for a user decision; Replace/Update
-  // records supersession AFTER the new rule lands, Keep both records
-  // provenance AFTER the new rule lands, Cancel runs nothing at all.
+  // Preview/confirm gate (paper T1 ITcon R15.6 §4), after the write (1303-21,
+  // D-65). The ingest turn runs first. For every Rule the turn created, the
+  // data-service reads the written atoms (subject class, property, comparator,
+  // participants) and returns the active rules that conflict with it: no LLM,
+  // any language. On a conflict the dialog opens with the new rule already in
+  // the graph: Replace/Update supersede the old rule, Keep both records the
+  // accepted overlap, Cancel opens the existing delete dialog for the new
+  // rule, which previews and deletes only after the user confirms. A failed
+  // conflict read never blocks or undoes the rule; it is shown as a warning.
   const runIngestWithConflictCheck = async (txt) => {
-    let oldRuleIdToSupersede = null;
-    let acceptedOverlapWith = null;
-    try {
-      const result = await checkRuleConflict(project, txt);
-      if (result?.conflict && Array.isArray(result.matches) && result.matches.length > 0) {
-        setConflictErr("");
-        setConflictMatches(result.matches);
-        setConflictText(txt);
-        const decision = await awaitConflictDecision(); // "replace" | "update" | "keep" | "cancel"
-        setConflictMatches([]);
-        setConflictText("");
-        if (decision === "cancel" || !decision) return; // nothing written, ever
-        if (decision === "replace" || decision === "update") {
-          // Both actions supersede the same way at the graph level — the old
-          // rule is retained with provenance, never deleted (Decision 3).
-          // "Replace" vs "Update" is a UX distinction only (Replace implies a
-          // different threshold/wording, Update implies the same shape with
-          // a new number) — the same single existing match is what a
-          // one-match conflict resolves to; multi-match ties are resolved to
-          // the first match rather than left ambiguous, matching this
-          // dialog only ever rendering the FIRST match's actions today.
-          oldRuleIdToSupersede = result.matches[0].ruleId;
-        } else if (decision === "keep") {
-          acceptedOverlapWith = result.matches.map((m) => m.ruleId);
-        }
-      }
-    } catch (err) {
-      // Fail OPEN, not closed: a conflict-check outage must not block
-      // authoring outright (it would make an availability problem in one
-      // new endpoint block the entire ingest pipeline). Matches the
-      // ambiguity policy's asymmetric-cost reasoning server-side.
-      console.warn("Rule conflict check failed — proceeding without it:", err);
-    }
-
     const turnResult = await runTurn(0, txt, "");
+    if (!turnResult) return;
+    const turnId = turnResult.id;
+    const appendWarning = (warning) => {
+      if (!turnId) return;
+      patchTurn(turnId, (tm) => ({ warnings: (tm.warnings || []).concat([warning]) }));
+    };
+    const newRuleIds = [
+      ...new Set((turnResult.createdNodes || []).filter((n) => n.label === "Rule" && n.display).map((n) => n.display))
+    ];
+    const cancelled = [];
 
-    // Post-ingest provenance writes — best-effort in the sense that they
-    // never roll back the rule that was just authored, but NOT silent:
-    // a refused supersede means "Update existing" visibly did nothing (the
-    // old rule is still the one in force), which the live UAT round found
-    // users cannot tell from a console.warn alone — it read as "nothing
-    // happened" when in fact the safety net had correctly refused a
-    // malformed replacement. Keep both's accept-overlap failure is lower
-    // stakes (provenance-only, never disarms anything) but is still
-    // surfaced the same way for consistency and because a silent failure
-    // there previously looked identical to a silent failure here.
-    if (oldRuleIdToSupersede || acceptedOverlapWith) {
-      const newRuleId = (turnResult?.createdNodes || []).find((n) => n.label === "Rule")?.display;
-      const turnId = turnResult?.id;
-      const appendWarning = (warning) => {
-        if (!turnId) return;
-        patchTurn(turnId, (tm) => ({ warnings: (tm.warnings || []).concat([warning]) }));
-      };
+    for (const newRuleId of newRuleIds) {
+      let conflict;
       try {
-        if (!newRuleId) {
-          appendWarning({ type: "unidentified", ruleId: oldRuleIdToSupersede });
-        } else if (oldRuleIdToSupersede) {
-          await supersedeRule(project, oldRuleIdToSupersede, newRuleId, txt);
-        } else if (acceptedOverlapWith) {
-          await acceptRuleOverlap(project, newRuleId, acceptedOverlapWith);
+        conflict = await fetchRuleConflicts(project, newRuleId);
+      } catch (err) {
+        // Fail OPEN: an availability problem in the conflict read must not
+        // block or undo authoring. It is surfaced, not swallowed.
+        console.warn("Rule conflict check failed — rule kept:", err);
+        appendWarning({ type: "checkFailed", ruleId: newRuleId, err });
+        continue;
+      }
+      if (!conflict?.conflict || !Array.isArray(conflict.matches) || conflict.matches.length === 0) continue;
+
+      setConflictErr("");
+      setConflictMatches(conflict.matches);
+      setConflictText(txt);
+      setConflictRuleId(newRuleId);
+      const decision = await awaitConflictDecision(); // "replace" | "update" | "keep" | "cancel"
+      setConflictMatches([]);
+      setConflictText("");
+      setConflictRuleId("");
+
+      const plan = planConflictDecision(decision, conflict.matches, newRuleId);
+      if (plan.action === "delete-dialog") {
+        cancelled.push(plan.ruleId);
+        continue;
+      }
+      // Post-ingest provenance writes never roll back the rule that was just
+      // authored, but they are NOT silent: a refused supersede means "Update
+      // existing" visibly did nothing (the old rule is still in force).
+      try {
+        if (plan.action === "supersede") {
+          await supersedeRule(project, plan.oldRuleId, plan.newRuleId, txt);
+        } else if (plan.action === "accept-overlap") {
+          await acceptRuleOverlap(project, plan.ruleId, plan.conflictsWith);
         }
       } catch (err) {
+        const oldRuleId = plan.oldRuleId;
         if (err?.code === "RULE_NOT_PUBLISHABLE") {
           // The safety net worked as intended: refuse to disarm a working
-          // rule in favor of a malformed one. This is not a warning to
-          // dismiss — the user's Update/Replace did NOT apply.
+          // rule in favor of a malformed one.
           appendWarning({
             type: "refused",
-            ruleId: oldRuleIdToSupersede,
+            ruleId: oldRuleId,
             detail: [err.message, err.hint].filter(Boolean).join(" ")
           });
         } else {
-          appendWarning({ type: "failed", ruleId: oldRuleIdToSupersede, err });
+          appendWarning({ type: "failed", ruleId: oldRuleId, err });
         }
         console.warn("Rule provenance write failed:", err);
       }
+    }
+
+    // Cancel: the shared delete dialog opens for the new rule (preview first,
+    // delete only on confirm). One dialog at a time, so any further cancelled
+    // rule stays written and is named in a warning.
+    if (cancelled.length > 0) {
+      void openDeleteDialog(cancelled[0]);
+      for (const extra of cancelled.slice(1)) appendWarning({ type: "cancelKept", ruleId: extra });
     }
   };
 
@@ -1014,11 +1023,10 @@ export default function GraphScreen({ active, onBack, project }) {
 
   // ── Rule ingest conflict check (paper T1 ITcon R15.6 §4 preview/confirm
   // stage) ─────────────────────────────────────────────────────────────────
-  // Runs BEFORE the n8n rules-ingest webhook, entirely client-side: checkRuleConflict()
-  // resolves grounding deterministically (no LLM) against this project's own
-  // vocabulary and reports any existing Rule sharing the same
-  // (Class, DatatypeProperty, comparator) signature. Ambiguous grounding or no
-  // match both mean "no conflict" — ingest proceeds exactly as before.
+  // Runs AFTER the n8n rules-ingest turn (D-65): fetchRuleConflicts() reads the
+  // written rule's atoms deterministically (no LLM, any language) and reports
+  // active rules with the same (subject class, DatatypeProperty, comparator)
+  // key whose participant classes overlap (D-64). No match means no dialog.
   const [dupItems, setDupItems] = React.useState([]); // [{kind, a:{iri,label}, b:{iri,label}, reason, existing}]
   const [dupBusy, setDupBusy] = React.useState(false);
   const [dupErr, setDupErr] = React.useState("");
@@ -1040,13 +1048,13 @@ export default function GraphScreen({ active, onBack, project }) {
   const [conflictBusy, setConflictBusy] = React.useState(false);
   const [conflictErr, setConflictErr] = React.useState("");
   const [conflictMatches, setConflictMatches] = React.useState([]); // [{ruleId, swrl, description, currentValue}]
-  const [conflictText, setConflictText] = React.useState(""); // the pending rules_text, resumed after a decision
+  const [conflictText, setConflictText] = React.useState(""); // the ingested rules_text the conflict was found for
+  const [conflictRuleId, setConflictRuleId] = React.useState(""); // the Rule_Id of the rule just written
   const conflictResolveRef = React.useRef(null); // resolves to true (proceed) / false (cancel) once the user decides
 
   // Opens the dialog and suspends until Replace/Update/Keep both/Cancel is
-  // chosen. Returns true to let the caller proceed with the normal ingest
-  // call, false to abort — the caller (sendPrompt) never writes anything
-  // itself; this function only gates whether it is allowed to.
+  // chosen. Resolves to "replace" | "update" | "keep" | "cancel"; the caller
+  // (runIngestWithConflictCheck) maps it with planConflictDecision().
   const awaitConflictDecision = () =>
     new Promise((resolve) => {
       conflictResolveRef.current = resolve;
@@ -1764,12 +1772,12 @@ export default function GraphScreen({ active, onBack, project }) {
         </div>
       )}
 
-      {/* Rule ingest conflict — the missing preview/confirm stage (paper T1
-          ITcon R15.6 §4). Blocks ONLY when checkRuleConflict() found an
-          existing Rule sharing the same (Class, DatatypeProperty, comparator)
-          grounding. Cancel sends nothing to n8n at all; Replace/Update/Keep
-          both all let the normal ingest turn run, differing only in what
-          provenance gets recorded against the new rule afterward. */}
+      {/* Rule ingest conflict — the preview/confirm stage (paper T1 ITcon
+          R15.6 §4), shown AFTER the write (D-65) when fetchRuleConflicts()
+          found an existing Rule with the same key and an overlapping
+          participant set. Replace/Update/Keep both record provenance against
+          the new rule; Cancel opens the delete dialog for it (preview, then
+          delete only on confirm). */}
       {dupItems.length > 0 && (
         <div
           style={{ position: "absolute", inset: 0, zIndex: 21, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.28)" }}
@@ -1821,7 +1829,7 @@ export default function GraphScreen({ active, onBack, project }) {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Dialog
-              title={t("This rule may conflict with an existing one")}
+              title={t("The new rule was written and may conflict with an existing one")}
               onClose={() => closeConflictDialog("cancel")}
               style={{ width: 460, maxHeight: "80vh", overflow: "auto" }}
               footer={
@@ -1844,6 +1852,11 @@ export default function GraphScreen({ active, onBack, project }) {
               <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
                 “{conflictText}”
               </div>
+              {conflictRuleId && (
+                <div style={{ font: "500 12px/1.4 var(--font-mono)" }}>
+                  {t("New rule: {ruleId}", { ruleId: conflictRuleId })}
+                </div>
+              )}
 
               {conflictErr && (
                 <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal-ink)" }}>{conflictErr}</div>
@@ -1869,6 +1882,11 @@ export default function GraphScreen({ active, onBack, project }) {
                       {t("Current threshold: {value}", { value: String(m.currentValue) })}
                     </div>
                   )}
+                  {Array.isArray(m.sharedClasses) && m.sharedClasses.length > 0 && (
+                    <div style={{ font: "400 11px/1.4 var(--font-sans)", color: "var(--text-muted)" }}>
+                      {t("Shared classes: {classes}", { classes: m.sharedClasses.join(", ") })}
+                    </div>
+                  )}
                   {m.swrl && (
                     <div style={{ font: "400 11px/1.4 var(--font-mono)", color: "var(--text-muted)", wordBreak: "break-word" }}>
                       {m.swrl}
@@ -1878,7 +1896,7 @@ export default function GraphScreen({ active, onBack, project }) {
               ))}
 
               <div style={{ font: "400 11px/1.5 var(--font-sans)", color: "var(--text-muted)" }}>
-                {t("Replace/Update keep the existing rule in the graph (marked superseded, with provenance) and stop it from taking part in validation — nothing is deleted. Keep both authors the new rule anyway and records that you saw this overlap. Cancel sends nothing.")}
+                {t("The new rule is already written. Replace/Update keep the existing rule in the graph (marked superseded, with provenance) and stop it from taking part in validation — nothing is deleted. Keep both leaves both rules and records that you saw this overlap. Cancel opens the delete dialog for the new rule; nothing is deleted until you confirm.")}
               </div>
             </Dialog>
           </div>

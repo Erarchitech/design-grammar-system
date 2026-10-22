@@ -123,7 +123,10 @@ export const ru = {
   "History · {date}": "История · {date}",
 
   // Conflict check after ingest
-  "This rule may conflict with an existing one": "Это правило может противоречить существующему",
+  "The new rule was written and may conflict with an existing one":
+    "Новое правило записано и может противоречить существующему",
+  "New rule: {ruleId}": "Новое правило: {ruleId}",
+  "Shared classes: {classes}": "Общие классы: {classes}",
   // ── ingest duplicate question (Phase 1303-15)
   "The new rule introduced something similar to what the project already has":
     "Новое правило ввело сущность, похожую на уже существующую в проекте",
@@ -146,8 +149,8 @@ export const ru = {
   "Keep both": "Оставить оба",
   "Update existing": "Обновить существующее",
   Replace: "Заменить",
-  "Replace/Update keep the existing rule in the graph (marked superseded, with provenance) and stop it from taking part in validation — nothing is deleted. Keep both authors the new rule anyway and records that you saw this overlap. Cancel sends nothing.":
-    "«Заменить» и «Обновить существующее» оставляют прежнее правило в графе (с пометкой «заменено» и сведениями о происхождении) и исключают его из валидации; ничего не удаляется. «Оставить оба» всё равно создаёт новое правило и фиксирует, что вы видели это пересечение. «Отмена» ничего не отправляет.",
+  "The new rule is already written. Replace/Update keep the existing rule in the graph (marked superseded, with provenance) and stop it from taking part in validation — nothing is deleted. Keep both leaves both rules and records that you saw this overlap. Cancel opens the delete dialog for the new rule; nothing is deleted until you confirm.":
+    "Новое правило уже записано. «Заменить» и «Обновить существующее» оставляют прежнее правило в графе (с пометкой «заменено» и сведениями о происхождении) и исключают его из валидации; ничего не удаляется. «Оставить оба» сохраняет оба правила и фиксирует, что вы видели это пересечение. «Отмена» открывает диалог удаления нового правила; ничего не удаляется, пока вы не подтвердите.",
   "Could not identify the newly created rule, so the conflict decision was not recorded.":
     "Не удалось определить созданное правило, поэтому решение по конфликту не записано.",
   "{ruleId} is still the rule in force.": "Правило {ruleId} по-прежнему действует.",
@@ -157,6 +160,10 @@ export const ru = {
   "Recording the conflict decision failed: {message}.": "Не удалось записать решение по конфликту: {message}.",
   "{ruleId} may still be the rule in force.": "Правило {ruleId}, возможно, по-прежнему действует.",
   "unknown error": "неизвестная ошибка",
+  "The conflict check for {ruleId} failed ({message}); the rule was written without it.":
+    "Проверка конфликтов для {ruleId} не удалась ({message}); правило записано без неё.",
+  "{ruleId} conflicts with an existing rule and stays written; delete it from the rule menu if you cancelled it.":
+    "{ruleId} конфликтует с существующим правилом и остаётся записанным; если вы отменили его, удалите его через меню правила.",
 
   // Rule deletion dialog
   "Delete rule?": "Удалить правило?",

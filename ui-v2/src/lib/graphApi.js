@@ -100,9 +100,42 @@ export function bulkDeleteRules(project, ruleIds) {
   });
 }
 
-// POST /rules/check-conflict → { grounding, conflict, matches[] }. Read-only
-// preview stage (paper T1 ITcon R15.6 §4): call this BEFORE ingestRules() so
-// the blocking dialog can run entirely client-side, ahead of the rules-ingest
+// GET /rules/{project}/{ruleId}/conflicts → { ruleId, conflict, matches[], reason? }.
+// Plan 1303-21 (D-65): the conflict check runs on the atoms of a rule that has
+// ALREADY been written, so it works for any language and covers every
+// participant class. Each match is { ruleId, swrl, description, currentValue,
+// sharedClasses[] }. Read-only. A rule whose subject cannot be read answers
+// conflict:false with a `reason`.
+export function fetchRuleConflicts(project, ruleId) {
+  return apiFetch(`${dataServiceBase()}/rules/${enc(project)}/${enc(ruleId)}/conflicts`);
+}
+
+// What a dialog decision does to a rule that is already written (D-65). Pure,
+// so it can be tested without React. Only the exact "cancel" decision leads to
+// the delete dialog, and that dialog still previews and waits for the user's
+// confirmation; any unknown or missing decision does nothing.
+//   replace | update -> supersede the first matching rule with the new one
+//   keep             -> record the accepted overlap on the new rule
+//   cancel           -> open the delete dialog for the new rule
+export function planConflictDecision(decision, matches, newRuleId) {
+  const list = Array.isArray(matches) ? matches : [];
+  if ((decision === "replace" || decision === "update") && list.length > 0 && newRuleId) {
+    return { action: "supersede", oldRuleId: list[0].ruleId, newRuleId };
+  }
+  if (decision === "keep" && list.length > 0 && newRuleId) {
+    return { action: "accept-overlap", ruleId: newRuleId, conflictsWith: list.map((m) => m.ruleId) };
+  }
+  if (decision === "cancel" && newRuleId) {
+    return { action: "delete-dialog", ruleId: newRuleId };
+  }
+  return { action: "none" };
+}
+
+// POST /rules/check-conflict → { grounding, conflict, matches[] }. Pre-ingest
+// text check (paper T1 ITcon R15.6 §4), retained for other callers; the Graph
+// Viewer no longer calls it on the ingest path since 1303-21 (it grounds
+// English labels only). Read-only. It was meant to run BEFORE ingestRules() so
+// the blocking dialog could run entirely client-side, ahead of the rules-ingest
 // relay. `grounding` is null and `conflict` is false whenever the NL text
 // could not be confidently resolved to a known Class+DatatypeProperty+
 // comparator in this project — treat that identically to "no conflict".
