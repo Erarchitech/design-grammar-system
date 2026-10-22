@@ -266,12 +266,88 @@ class TestIngestFolderHiddenPaths:
         )
 
 
-def test_computable_form_convention_steers_rules_to_one_numeric_subject_property():
-    """Phase 1303-15: VALIDATOR refuses ObjectPropertyAtoms, so the ingest prompt asks for one subject class and one
-    numeric property of it, and lists the properties DG has calculators for."""
+def test_computable_form_convention_lists_participants_and_relations():
+    """Phase 1303-20 (D-61): the convention keeps one numeric subject property and now asks for every other object
+    class of the rule as a participant ClassAtom related by an ObjectPropertyAtom, never a derived geometric notion."""
     conv = dg_knowledge.swrl_conventions()["computable_form"]
-    assert "NEVER relate two elements with an ObjectProperty atom" in conv["statement"]
+    statement = conv["statement"]
+    # one subject, one numeric DataPropertyAtom, one comparison; prohibition is count > 0, minimum is value < D
+    assert "ONE subject" in statement
+    assert "NUMERIC" in statement
+    assert "DataPropertyAtom" in statement
+    assert "count > 0" in statement
+    assert "value < D" in statement
+    # participants and their relations
+    assert "participant" in statement
+    assert "ObjectPropertyAtom" in statement
+    assert "ClassAtom" in statement
+    assert "hostedBy" in statement and "projectsOnto" in statement and "adjacentTo" in statement
+    assert "domain and range" in statement
+    # participant variables stay out of the measured quantity
+    assert "NEVER appears in a DataPropertyAtom, a builtin or the head" in statement
+    # the not-a-class list
+    for notion in ("outline", "projection", "clearance", "edge", "distance"):
+        assert notion in statement
+    assert "NEVER a class" in statement
+    # the one-class example stays, and rules naming no other object add no participant
     assert "hasBeamIntersectionCount(?b, ?n)" in conv["example"]["swrl"]
+    assert "add no participant the rule does not name" in statement
+    # the numeric catalogue vocabulary is untouched
     names = [v["property"] for v in conv["computable_properties"]]
     assert {"hasBeamIntersectionCount", "hasColumnIntersectionCount", "hasOpeningsBelowCount",
             "hasMinOpeningClearanceMm"} <= set(names)
+    assert set(conv["participants_example"]) == {"rule", "swrl", "cypher"}
+
+
+def test_participant_example_passes_the_write_allowlist_and_validator():
+    """The participants example Cypher is shown to the model as a positive pattern, so it must itself pass the
+    write profile and the full rule_ingest validator unchanged (no header stripping)."""
+    import cypher_allowlist
+    import dg_context
+
+    cypher = dg_knowledge.swrl_conventions()["computable_form"]["participants_example"]["cypher"]
+    assert cypher_allowlist.check_write_allowlist(cypher) == []
+    result = dg_context.validate_cypher(cypher, "rule_ingest", project="p")
+    assert result["valid"] is True, result["violations"]
+    # catalog style: project-scoped, one chained statement, relation written with label/domain/range
+    assert "project: $project" in cypher
+    assert "project: '" not in cypher
+    assert cypher.rstrip().endswith(";") and ";" not in cypher.rstrip().rstrip(";")
+    assert "SET OP_Host.label = 'hostedBy', OP_Host.domain = 'ex:Opening', OP_Host.range = 'ex:Slab'" in cypher
+    assert "a3.type = 'ObjectPropertyAtom'" in cypher
+    assert "ARG {pos: 1}" in cypher and "ARG {pos: 2}" in cypher
+
+
+def test_participant_example_swrl_has_a_subject_and_two_or_more_participants():
+    """Plain regex parse (no C#): the subject owns the numeric DataPropertyAtom, the participants are the other
+    ClassAtoms, each related by an ObjectPropertyAtom and absent from the data property, builtin and head."""
+    import re
+
+    swrl = dg_knowledge.swrl_conventions()["computable_form"]["participants_example"]["swrl"]
+    body, head = (part.strip() for part in swrl.split("->"))
+    atoms = [atom.strip() for atom in body.split(" ^ ")]
+    class_atoms = [m.groups() for a in atoms if (m := re.fullmatch(r"([A-Z]\w*)\(\?(\w+)\)", a))]
+    binary = [m.groups() for a in atoms if (m := re.fullmatch(r"([a-z]\w*)\(\?(\w+), \?(\w+)\)", a))]
+    builtin = [m.groups() for a in atoms if (m := re.fullmatch(r"swrlb:(\w+)\(\?(\w+), .+\)", a))]
+    assert len(builtin) == 1
+    value_var = builtin[0][1]
+    builtin_text = next(a for a in atoms if a.startswith("swrlb:"))
+    data_atoms = [(p, s, v) for (p, s, v) in binary if v == value_var]
+    assert len(data_atoms) == 1
+    subject_var = data_atoms[0][1]
+    classes = {var: cls for cls, var in class_atoms}
+    assert subject_var in classes
+    participants = {var for var in classes if var != subject_var}
+    assert len(participants) >= 2
+    related = [(p, a, b) for (p, a, b) in binary if b != value_var]
+    assert related, "at least one ObjectPropertyAtom"
+    for var in participants:
+        assert any(var in (a, b) for _, a, b in related), var
+        assert not any(var == s for _, s, _ in data_atoms)
+        assert f"?{var}" not in head
+        assert f"?{var}" not in builtin_text
+    head_vars = set(re.findall(r"\?(\w+)", head))
+    assert head_vars == {subject_var}
+    # the SWRL string stored on the Rule node in the Cypher is the same text
+    cypher = dg_knowledge.swrl_conventions()["computable_form"]["participants_example"]["cypher"]
+    assert f"SET r.SWRL = '{swrl}'" in cypher
