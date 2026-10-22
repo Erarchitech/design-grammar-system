@@ -9,7 +9,7 @@ public static class FailingBindingFormatter
     public static string Format(Rule rule, BindingRow binding)
     {
         var bodyAtoms = ParseBodyAtoms(rule);
-        var classVariables = ExtractClassVariables(bodyAtoms);
+        var classVariables = ExtractClassVariables(rule, bodyAtoms);
         var failedVariables = ExtractFailedVariables(bodyAtoms, classVariables);
 
         var leftParts = classVariables
@@ -59,13 +59,15 @@ public static class FailingBindingFormatter
         return rule.BodyAtoms.ToList();
     }
 
-    private static List<string> ExtractClassVariables(IReadOnlyList<Atom> bodyAtoms)
+    private static List<string> ExtractClassVariables(Rule rule, IReadOnlyList<Atom> bodyAtoms)
     {
         return bodyAtoms
             .Where(atom => atom.Type.Equals("ClassAtom", StringComparison.OrdinalIgnoreCase))
             .SelectMany(atom => atom.Args)
             .Where(arg => arg.Kind == ArgKind.Variable)
             .Select(arg => arg.Value)
+            // D-61: context-only participants are never bound, so they would print as `s(<missing>)`.
+            .Where(variable => !RuleVariableRoles.IsContextOnly(rule, variable))
             .Distinct(StringComparer.Ordinal)
             .ToList();
     }

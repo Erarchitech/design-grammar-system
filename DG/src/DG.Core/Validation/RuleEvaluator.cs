@@ -55,9 +55,25 @@ public sealed class RuleEvaluator
             };
         }
 
-        var bodyAtoms = rule.BodyAtoms.Count > 0
-            ? rule.BodyAtoms.ToList()
-            : SwrlRuleParser.Parse(rule.Swrl).BodyAtoms;
+        IReadOnlyList<Atom> bodyAtoms;
+        IReadOnlyList<Atom> headAtoms = rule.HeadAtoms.ToList();
+        if (rule.BodyAtoms.Count > 0)
+        {
+            bodyAtoms = rule.BodyAtoms.ToList();
+        }
+        else
+        {
+            var parsed = SwrlRuleParser.Parse(rule.Swrl);
+            bodyAtoms = parsed.BodyAtoms;
+            if (headAtoms.Count == 0)
+            {
+                headAtoms = parsed.HeadAtoms;
+            }
+        }
+
+        // D-61: classify once over the exact atoms that are evaluated below, so the classifier and
+        // the evaluator can never see different atoms.
+        var roles = RuleVariableRoles.Analyze(bodyAtoms, headAtoms);
 
         var failingBindings = new List<BindingRow>();
         var outcomes = new List<BindingEvaluationResult>(bindings.Count);
@@ -70,7 +86,7 @@ public sealed class RuleEvaluator
             BindingOutcome outcome;
             try
             {
-                outcome = EvaluateBody(bodyAtoms, binding);
+                outcome = EvaluateBody(bodyAtoms, roles, binding);
             }
             catch (Exception ex)
             {
@@ -122,6 +138,14 @@ public sealed class RuleEvaluator
             _ => $"Rule evaluation resolved to {status}.",
         };
 
+        // D-61: a context atom is asserted by the rule, never verified. Whenever the rule has any and a
+        // verdict was reached, say so; a rule without context atoms keeps today's message byte for byte.
+        if (roles.ContextAtoms.Count > 0
+            && (status == EvidenceStatus.Passed || status == EvidenceStatus.Failed))
+        {
+            message += " " + ContextDisclosure(roles.ContextAtoms);
+        }
+
         var result = new RuleEvaluationResult
         {
             RuleId = rule.Id,
@@ -136,11 +160,38 @@ public sealed class RuleEvaluator
         return result;
     }
 
-    private static BindingOutcome EvaluateBody(IReadOnlyList<Atom> atoms, BindingRow binding)
+    /// <summary>
+    /// The disclosure sentence appended to a Passed/Failed message when the rule has context atoms
+    /// (D-61): the relations and participant classes the rule asserts but this evaluator does not
+    /// verify. Example: <c>Asserted by the rule, not verified: Slab(?s), hostedBy(?o, ?s).</c>
+    /// </summary>
+    private static string ContextDisclosure(IReadOnlyList<Atom> contextAtoms) =>
+        "Asserted by the rule, not verified: " + string.Join(", ", contextAtoms.Select(DescribeAtom)) + ".";
+
+    private static string DescribeAtom(Atom atom)
+    {
+        var predicate = atom.PredicateLabel;
+        if (string.IsNullOrWhiteSpace(predicate))
+        {
+            var iri = atom.PredicateIri ?? atom.Id;
+            var cut = iri.LastIndexOfAny(new[] { '#', '/' });
+            predicate = cut >= 0 && cut < iri.Length - 1 ? iri[(cut + 1)..] : iri;
+        }
+
+        var args = atom.Args
+            .OrderBy(a => a.Pos)
+            .Select(a => a.Kind == ArgKind.Variable ? "?" + RuleVariableRoles.Normalize(a.Value) : a.Value);
+        return $"{predicate}({string.Join(", ", args)})";
+    }
+
+    private static BindingOutcome EvaluateBody(
+        IReadOnlyList<Atom> atoms,
+        RuleVariableRoles.RoleAnalysis roles,
+        BindingRow binding)
     {
         foreach (var atom in atoms)
         {
-            var outcome = EvaluateAtom(atom, binding);
+            var outcome = EvaluateAtom(atom, roles, binding);
             if (outcome.Status != EvidenceStatus.Failed)
             {
                 // Either a typed non-verdict (Unsupported/Unknown/Error) or a non-matching atom
@@ -175,12 +226,24 @@ public sealed class RuleEvaluator
     /// <item>anything else (an atom type string this evaluator does not recognize at all) ->
     /// the same typed <see cref="EvidenceStatus.Unsupported"/> refusal as the second bullet.</item>
     /// </list>
+    /// Before all of these, a D-61 context atom is answered as matched (see the body).
     /// </summary>
-    private static BindingOutcome EvaluateAtom(Atom atom, BindingRow binding)
+    private static BindingOutcome EvaluateAtom(Atom atom, RuleVariableRoles.RoleAnalysis roles, BindingRow binding)
     {
         if (atom.Type.Equals("BuiltinAtom", StringComparison.OrdinalIgnoreCase))
         {
             return EvaluateBuiltin(atom, binding);
+        }
+
+        // D-61: a context atom (a participant class of the rule, or a relation between the checked
+        // object and such a participant) is asserted by the rule. It counts as matched — Failed in the
+        // violation-pattern encoding — without resolving any variable, and is disclosed in the rule's
+        // message. This is not evaluation of the relation. Checked before the ObjectPropertyAtom
+        // refusal below; joins, headless rules and argument-less atoms are not context atoms and keep
+        // the typed refusal.
+        if (roles.IsContextAtom(atom))
+        {
+            return new BindingOutcome(EvidenceStatus.Failed, null);
         }
 
         if (atom.Type.Equals("ObjectPropertyAtom", StringComparison.OrdinalIgnoreCase)

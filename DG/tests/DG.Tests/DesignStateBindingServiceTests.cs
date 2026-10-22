@@ -413,6 +413,44 @@ public sealed class DesignStateBindingServiceTests
         return rule;
     }
 
+    [Fact]
+    public void BuildBindings_ContextOnlyParticipantsAreNeverBound_D61()
+    {
+        // D-61: Slab/Column/Wall are asserted participants, not checked objects. The acceptance rule
+        // yields exactly the rows its one-class form yields, and Slab-only ObjStates never throw.
+        var rule = RuleVariableRolesTests.AcceptanceRule();
+        var designState = new DesignState
+        {
+            ObjStates = new List<ObjState>
+            {
+                new() { StateId = "OS_O1", ObjectRef = "O1", ClassIri = "Opening" },
+                new() { StateId = "OS_S1", ObjectRef = "S1", ClassIri = "Slab" },
+                new() { StateId = "OS_C1", ObjectRef = "C1", ClassIri = "Column" },
+                new() { StateId = "OS_W1", ObjectRef = "W1", ClassIri = "Wall" },
+                new() { StateId = "OS_O2", ObjectRef = "O2", ClassIri = "Opening" },
+            },
+        };
+
+        var rows = DesignStateBindingService.BuildBindings(rule, designState);
+
+        Assert.Equal(2, rows.Count);
+        Assert.Equal(new[] { 0, 4 }, rows.Select(r => r.SourceObjStateIndex!.Value).ToArray());
+        Assert.All(rows, row =>
+        {
+            Assert.Equal(new[] { "?o" }, row.ValuesByVar.Keys.ToArray());
+            Assert.Equal(new[] { "?o" }, row.ElementRefsByVar.Keys.ToArray());
+        });
+
+        var participantsOnly = new DesignState
+        {
+            ObjStates = new List<ObjState>
+            {
+                new() { StateId = "OS_S1", ObjectRef = "S1", ClassIri = "Slab" },
+            },
+        };
+        Assert.Empty(DesignStateBindingService.BuildBindings(rule, participantsOnly));
+    }
+
     private static Rule MakeRuleWithObjectVar(string varName, string classIri)
     {
         return new Rule

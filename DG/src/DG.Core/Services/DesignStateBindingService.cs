@@ -16,6 +16,12 @@ public static class DesignStateBindingService
             if (string.IsNullOrWhiteSpace(variable.Name))
                 continue;
 
+            // D-61: a context-only participant (a class and relations the rule asserts about the
+            // checked object) is neither an object nor a property variable. It is never bound and never
+            // reaches RuleVariableUnclassified, so the rule yields the rows of its one-class form.
+            if (RuleVariableRoles.IsContextOnly(rule, variable.Name))
+                continue;
+
             var kind = VariableTypeInferrer.Infer(rule, variable.Name);
 
             if (kind == VariableKind.Object)
