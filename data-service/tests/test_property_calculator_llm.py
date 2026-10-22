@@ -169,3 +169,57 @@ def test_generation_logger_has_exactly_one_own_stderr_handler_even_after_reload(
     own = [h for h in logger.handlers if getattr(h, "_dg_generation", False)]
     assert len(own) == 1 and isinstance(own[0], logging.StreamHandler)  # stderr stream as captured at import
     assert logger.level == logging.INFO
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Phase 1303-22 (D-62): the generation prompt names the participants of the rules
+# ---------------------------------------------------------------------------------------------------------------
+
+PARTICIPANTS = [
+    {"label": "Slab", "relation": "hostedBy", "relatedTo": "Opening", "revitCategories": ["OST_Floors"]},
+    {"label": "Column", "relation": "projectsOnto", "relatedTo": "Slab",
+     "revitCategories": ["OST_Columns", "OST_StructuralColumns"]},
+]
+
+
+def test_prompt_without_participants_stays_byte_identical_to_the_1303_16_pin():
+    data_property = {"label": "hasHeightMm", "iri": "dg:hasHeightMm"}
+    rules = [{"ruleId": "R1", "text": "t", "swrl": "s"}]
+    for participants in (None, []):
+        plain = pcl.build_prompt(data_property, rules, "Beam", participants)
+        assert len(plain) == PROMPT_BEFORE_LENGTH and _sha(plain) == PROMPT_BEFORE_SHA256
+    assert "Participants" not in pcl.build_prompt(data_property, rules, "Beam")
+
+
+def test_prompt_with_participants_adds_one_block_and_leaves_the_context_api_alone():
+    data_property = {"label": "hasMinProjectionClearanceMm", "iri": "dg:hasMinProjectionClearanceMm"}
+    rules = [{"ruleId": "R1", "text": "t", "swrl": "s"}]
+    plain = pcl.build_prompt(data_property, rules, "Opening")
+    prompt = pcl.build_prompt(data_property, rules, "Opening", PARTICIPANTS)
+    block = ("Participants:\n"
+             "- Slab: hostedBy Opening; Revit categories: OST_Floors\n"
+             "- Column: projectsOnto Slab; Revit categories: OST_Columns, OST_StructuralColumns")
+    assert block in prompt and pcl.CONTEXT_API in prompt
+    assert prompt.index("Rules that test it:") < prompt.index("Participants:") < prompt.index(pcl.CONTEXT_API)
+    assert prompt.replace(block + "\n\n", "") == plain
+
+
+def test_a_participant_without_a_relation_or_categories_is_still_named():
+    block = pcl.participants_block([{"label": "Wall", "relation": None, "relatedTo": None, "revitCategories": []}])
+    assert block == "Participants:\n- Wall: Revit categories: none known"
+
+
+def test_participants_come_from_the_request_and_the_rejection_reason_still_follows_them():
+    seen = []
+    answer = '{"function": "def calc_gen(ctx, box, params):\n    return 1.0\n", "unit": "mm"}'
+
+    def complete(prompt, system):
+        seen.append(prompt)
+        return answer, "fake", "m"
+
+    base = {"label": "x", "iri": "dg:hasX", "participants": PARTICIPANTS, "rejectedReason": "wrong slab"}
+    pcl.generate_calculator(base, [{"ruleId": "R1"}], "Opening", complete=complete)
+    pcl.generate_calculator({"label": "x", "iri": "dg:hasX"}, [{"ruleId": "R1"}], "Opening", complete=complete)
+    assert "Participants:\n- Slab: hostedBy Opening" in seen[0]
+    assert seen[0].index("Participants:") < seen[0].index("wrong slab")
+    assert "Participants" not in seen[1]

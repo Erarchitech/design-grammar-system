@@ -1209,3 +1209,30 @@ def test_rule_context_categories_for_the_acceptance_rule_are_the_participants_ca
     monkeypatch.setattr(app_module, "_generate_property_scripts", lambda payload, **kw: generated)
     assert app_module.rule_context_categories(PROJECT) == {
         ACCEPTANCE_ID: {"OST_Floors", "OST_Columns", "OST_StructuralColumns", "OST_Walls"}}
+
+
+def test_the_generator_is_told_the_participants_of_the_rules_that_use_the_property(catalogue):
+    seen = []
+
+    def generator(dp, rules, box):
+        seen.append((dp.get("participants"), box))
+        return _reading("OST_Walls", "OST_StructuralColumns", "OST_Floors")
+
+    ps.generate(_Session(_acceptance_rows()), PROJECT, None, catalogue=catalogue, generator=generator)
+    participants, box = seen[0]
+    assert box == "Opening"
+    assert [(p["label"], p["relation"], p["relatedTo"], p["revitCategories"]) for p in participants] == [
+        ("Slab", "hostedBy", "Opening", ["OST_Floors"]),
+        ("Column", "projectsOnto", "Slab", ["OST_Columns", "OST_StructuralColumns"]),
+        ("Wall", "projectsOnto", "Slab", ["OST_Walls"])]
+
+
+def test_a_one_class_rule_sends_the_generator_the_request_it_always_did(catalogue):
+    seen = []
+
+    def generator(dp, rules, box):
+        seen.append(dict(dp))
+        return {"status": "invalid", "error": "x"}
+
+    ps.resolve(ps.rules_from_rows(_rows({"R_X_V": "hasFireRatingMinutes"})), catalogue, generator=generator)
+    assert seen == [{"iri": DG + "hasFireRatingMinutes", "label": "hasFireRatingMinutes"}]
