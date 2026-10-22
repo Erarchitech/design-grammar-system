@@ -358,7 +358,7 @@ Executed: 13/23 plans (checklist maintained by the GSD tooling)
 - [ ] 1303-14-PLAN.md
 - [x] 1303-15-PLAN.md
 - [x] 1303-16-PLAN.md
-- [ ] 1303-17-PLAN.md
+- [x] 1303-17-PLAN.md
 - [ ] 1303-18-PLAN.md
 - [x] 1303-19-PLAN.md
 - [ ] 1303-20-PLAN.md
