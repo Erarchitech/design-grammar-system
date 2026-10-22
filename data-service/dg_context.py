@@ -34,6 +34,7 @@ deterministic keyword/entity matching only, never embeddings (CTXA-05).
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -452,6 +453,47 @@ def fetch_existing_design_states(project: str, session: Any = None) -> list[dict
     ]
 
 
+# ── Company calculator vocabulary (Phase 1303-17: DGOPN-05, D-54 point 3, D-56) ──
+
+
+def _shared_vocabulary(project: str, session: Any = None) -> list[dict[str, str]]:
+    """``{property, meaning, unit}`` of the confirmed calculators of the project's company, ordered by property name.
+
+    Only the operator-entered, cleaned meaning and unit enter the ingest vocabulary, never the LLM explanation
+    (T-1303-17-05). A project with no company gets nothing (D-56) and no catalogue statement runs. Advisory: any
+    failure gives [] so rule ingest never fails on it."""
+    import property_calculator_store
+
+    company = property_calculator_store.company_of(project)
+    if not company:
+        return []
+    try:
+        if session is not None:
+            rows = property_calculator_store.vocabulary_rows(session, company)
+        else:
+            with _get_driver().session() as live_session:
+                rows = property_calculator_store.vocabulary_rows(live_session, company)
+    except Exception:  # noqa: BLE001 - the vocabulary is advisory
+        return []
+    return sorted(({"property": r["property"], "meaning": r["meaning"], "unit": r.get("unit") or ""} for r in rows),
+                  key=lambda r: r["property"].lower())
+
+
+def _conventions_with_vocabulary(project: str, session: Any = None) -> dict[str, Any]:
+    """A deep copy of the SWRL conventions whose computable properties are the file vocabulary followed by the
+    company's confirmed ones (a name repeating a file name, case-insensitively, is dropped). The module constant
+    ``dg_knowledge.SWRL_CONVENTIONS`` is never touched (T-1303-17-07)."""
+    conventions = copy.deepcopy(dg_knowledge.swrl_conventions())
+    computable = conventions["computable_form"]["computable_properties"]
+    known = {str(entry.get("property", "")).lower() for entry in computable}
+    for row in _shared_vocabulary(project, session):
+        if row["property"].lower() in known:
+            continue
+        known.add(row["property"].lower())
+        computable.append(row)
+    return conventions
+
+
 # ── The assembler itself (Phase 29-03: CTXA-01/04/05) ──
 
 
@@ -479,6 +521,8 @@ def assemble_context(req: ContextAssembleRequest, session: Any = None) -> dict[s
     shapes_by_id = {shape["id"]: shape for shape in catalog.get("shapes", []) if "id" in shape}
     selected_shapes = [shapes_by_id[shape_id] for shape_id in matched_shape_ids if shape_id in shapes_by_id]
 
+    # The vocabulary read comes before the entity read, so the entity read stays the session's last call.
+    conventions = _conventions_with_vocabulary(req.project, session)
     existing_entities = fetch_existing_entities(req.project, session=session)
 
     context: dict[str, Any] = {
@@ -488,7 +532,7 @@ def assemble_context(req: ContextAssembleRequest, session: Any = None) -> dict[s
         "metagraph": dict(METAGRAPH_CONCEPTS),
         "validgraph": dict(VALIDGRAPH_CONCEPTS),
         "computgraph": dg_knowledge.load_computgraph_catalog(),
-        "swrl_conventions": dg_knowledge.swrl_conventions(),
+        "swrl_conventions": conventions,
         "selected_cypher_shapes": selected_shapes,
         "existing_entities": existing_entities,
     }

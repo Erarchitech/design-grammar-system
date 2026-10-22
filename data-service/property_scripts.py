@@ -5,13 +5,16 @@ Grasshopper chain: a calculator script that computes those properties from the a
 Revit model (Rhino.Inside.Revit), the OBJECT STATE / PROPERTY STATE / DESIGN STATE /
 VALIDATOR components, and a highlighter script that colours the result in Revit.
 
-A DataProperty is bound, in order, to: its stored calculator (property_calculator_store, so
-scripts persist across rule updates and Design States), a vetted catalogue template
-(``property_calculators/catalogue.json``) by alias, an optional catalogue chooser, and, for a
-property nothing covers, a calculator the LLM writes under the contract of
-property_calculator_llm (validated AST, read-only model helpers). New bindings are stored when
-the scripts are placed, so the LLM is asked once per property; a property that still has no
-calculator is reported as unsupported, never guessed. Same rules and store, same bytes.
+A DataProperty is bound, in order, to: a vetted catalogue template
+(``property_calculators/catalogue.json``) by alias or an optional catalogue chooser; a calculator
+confirmed by the company (Phase 1303-17, D-54: ``CatalogueCalculator``, no LLM call); its stored
+calculator (property_calculator_store, so scripts persist across rule updates and Design States);
+and, for a property nothing covers, a calculator the LLM writes under the contract of
+property_calculator_llm (validated AST, read-only model helpers). Shared and stored generated
+code is verified (sha256, contract) before it binds, and a source the project rejected is never
+bound. New bindings are stored when the scripts are placed, so the LLM is asked once per
+property; a property that still has no calculator is reported as unsupported, never guessed.
+Same rules and store, same bytes.
 """
 
 from __future__ import annotations
@@ -191,14 +194,57 @@ def iri_prefix_of(iri: str) -> str:
     return iri[: len(iri) - len(name)] if name and iri.endswith(name) else "ex:"
 
 
-def _from_stored(record: dict, catalogue: dict) -> dict | None:
-    """A stored calculator as a binding; a catalogue entry that no longer exists is not reused."""
+def _integrity_problem(entry: dict) -> str | None:
+    """None when the generated calculator of ``entry`` is exactly what the generation contract produced (sha256,
+    function name, validated AST, normalized form), else a short reason (Phase 1303-17, D-54)."""
+    from property_calculator_llm import verify_stored_source
+
+    return verify_stored_source(entry.get("source"), entry.get("function"), entry.get("sha256"))
+
+
+def _from_shared(entry: dict, catalogue: dict, stored_record: dict | None, warnings: list[str]) -> dict | None:
+    """A confirmed company-catalogue entry as a binding (D-54 point 5), or None with a warning when its stored source
+    fails the integrity check. A shared entry is never regenerated: the LLM is not asked. ``new`` is true unless the
+    project already holds exactly this source under the same catalogue id."""
+    name = entry.get("propertyName") or entry.get("propertyKey") or "?"
+    problem = _integrity_problem(entry)
+    if problem:
+        warnings.append(f"company calculator {entry.get('catalogueId')} for {name} skipped: {problem}")
+        return None
+    if entry.get("contractVersion") != catalogue.get("version"):
+        warnings.append(f"company calculator {entry.get('catalogueId')} for {name} was confirmed under contract "
+                        f"{entry.get('contractVersion')!r}, the current contract is {catalogue.get('version')!r}")
+    digest = entry["sha256"]
+    same = (stored_record is not None and stored_record.get("sha256") == digest
+            and stored_record.get("catalogueId") == entry.get("catalogueId"))
+    return {"calculator": f"generated:{digest[:10]}", "params": {}, "resolvedBy": "shared", "origin": "generated",
+            "function": entry["function"], "source": entry["source"], "sha256": digest,
+            "provider": entry.get("provider"), "model": entry.get("model"), "unit": entry.get("unit") or None,
+            "catalogueId": entry.get("catalogueId"), "reviewStatus": "confirmed", "new": not same}
+
+
+def _from_stored(record: dict, catalogue: dict, warnings: list[str] | None = None,
+                 blocked: dict[str, dict] | None = None, iri: str | None = None) -> dict | None:
+    """A stored calculator as a binding; a catalogue entry that no longer exists is not reused. A generated record
+    is verified again (sha256, contract) and a source the project rejected is never bound (D-54 point 4)."""
+    warnings = warnings if warnings is not None else []
     if record.get("origin") == "generated":
         if not record.get("source") or not record.get("function"):
             return None
+        iri = record.get("dataPropertyIri") or iri or ""
+        if blocked and iri and _rejected(blocked, iri, record.get("sha256")):
+            warnings.append(f"stored calculator for {local_name(iri)} skipped: this project rejected that source")
+            return None
+        problem = _integrity_problem(record)
+        if problem:
+            warnings.append(f"stored calculator for {local_name(iri) or '?'} skipped: {problem}")
+            return None
         return {"calculator": record["calculator"], "params": record.get("params") or {}, "resolvedBy": "stored",
                 "origin": "generated", "function": record["function"], "source": record["source"],
-                "sha256": record.get("sha256"), "provider": record.get("provider"), "model": record.get("model")}
+                "sha256": record.get("sha256"), "provider": record.get("provider"), "model": record.get("model"),
+                "unit": record.get("unit") or None, "explanation": record.get("explanation"),
+                "catalogueId": record.get("catalogueId"),
+                "reviewStatus": record.get("reviewStatus") or "pending"}
     if record.get("calculator") not in catalogue["calculators"]:
         return None
     try:
@@ -208,10 +254,28 @@ def _from_stored(record: dict, catalogue: dict) -> dict | None:
     return {"calculator": record["calculator"], "params": params, "resolvedBy": "stored", "origin": "catalogue"}
 
 
+def _rejected(blocked: dict[str, dict] | None, iri: str, sha256: str | None) -> bool:
+    import property_calculator_store
+
+    return property_calculator_store.rejected_source(blocked or {}, iri, sha256)
+
+
 def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
-            stored: dict[str, dict] | None = None, generator: Generator | None = None) -> dict:
-    """Bind every body DataProperty: a stored calculator first (scripts persist across rule updates and Design
-    States), then a catalogue alias, then the optional catalogue chooser, then the optional LLM generator."""
+            stored: dict[str, dict] | None = None, generator: Generator | None = None,
+            shared: dict[str, dict] | None = None, blocked: dict[str, dict] | None = None) -> dict:
+    """Bind every body DataProperty, in the order of D-54 point 5: the vetted file catalogue (alias, chooser), the
+    confirmed calculators of the company (``shared``, by propertyKey), the project's stored calculator (scripts
+    persist across rule updates and Design States), and last the optional LLM generator.
+
+    A shared entry and a stored generated calculator are verified (sha256, contract) before they bind; a failing one
+    is skipped with a warning and never reaches an assembled script. ``blocked`` (load_blocked) holds the rejected
+    and retired rows of the project: such a property is unsupported without a generator call until an explicit
+    regenerate, and a source whose sha256 the project rejected is never bound, whatever its origin."""
+    import property_calculator_store
+
+    shared = shared or {}
+    blocked = blocked or {}
+    warnings: list[str] = []
     if not rules:
         raise PropertyScriptError("NO_RULES", "The project has no rules with DataProperty atoms to compute")
     classes = sorted({(c["iri"], c["label"]) for r in rules for c in r["classes"]})
@@ -242,16 +306,39 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
                             and previous.get("calculator") == binding["calculator"]
                             and (previous.get("params") or {}) == binding["params"])
                     binding = {**binding, "origin": "catalogue", "new": not same}
+            if binding is None:
+                entry = shared.get(property_calculator_store.property_key(dp["iri"]))
+                if entry is not None:
+                    if property_calculator_store.rejected_source(blocked, dp["iri"], entry.get("sha256")):
+                        warnings.append(f"company calculator {entry.get('catalogueId')} for {local_name(dp['iri'])} "
+                                        "skipped: this project rejected that source")
+                    else:
+                        binding = _from_shared(entry, catalogue, stored.get(dp["iri"]), warnings)
             if binding is None and dp["iri"] in stored:
-                binding = _from_stored(stored[dp["iri"]], catalogue)
+                binding = _from_stored(stored[dp["iri"]], catalogue, warnings, blocked, dp["iri"])
+            block = blocked.get(dp["iri"])
+            if binding is None and property_calculator_store.is_blocked(block):
+                unsupported.append({"ruleId": rule["ruleId"], "dataPropertyIri": dp["iri"],
+                                    "dataPropertyLabel": dp["label"],
+                                    "reason": f"{block.get('status')}: {block.get('reason') or 'no reason given'}"})
+                continue
             if binding is None and generator is not None:
-                answer = generator(dp, rules_by_dp[dp["iri"]], box_label)
+                request_dp = dp
+                if block and block.get("regenerate") and block.get("status") == property_calculator_store.STATUS_REJECTED:
+                    request_dp = {**dp, "rejectedReason": block.get("reason") or "rejected by the operator"}
+                answer = generator(request_dp, rules_by_dp[dp["iri"]], box_label)
                 if answer.get("status") == "ok":
                     digest = hashlib.sha256(answer["source"].encode("utf-8")).hexdigest()
+                    if property_calculator_store.rejected_source(blocked, dp["iri"], digest):
+                        unsupported.append({"ruleId": rule["ruleId"], "dataPropertyIri": dp["iri"],
+                                            "dataPropertyLabel": dp["label"],
+                                            "reason": "regenerated source was already rejected"})
+                        continue
                     binding = {"calculator": f"generated:{digest[:10]}", "params": {}, "resolvedBy": "llm",
                                "origin": "generated", "function": answer["function"], "source": answer["source"],
                                "sha256": digest, "provider": answer.get("provider"), "model": answer.get("model"),
-                               "explanation": answer.get("explanation"), "new": True}
+                               "unit": answer.get("unit") or None, "explanation": answer.get("explanation"),
+                               "reviewStatus": "pending", "new": True}
                 else:
                     unsupported.append({"ruleId": rule["ruleId"], "dataPropertyIri": dp["iri"],
                                         "dataPropertyLabel": dp["label"],
@@ -269,7 +356,7 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
                 **binding,
             })
     return {"boxClass": {"iri": classes[0][0], "label": box_label},
-            "resolved": resolved, "unsupported": unsupported}
+            "resolved": resolved, "unsupported": unsupported, "warnings": list(dict.fromkeys(warnings))}
 
 
 def _py_literal(value: Any) -> str:
@@ -411,6 +498,15 @@ def placement_plan(project: str, property_count: int) -> dict:
     return {"group": f"DG · Проверка свойств ({project})", "components": components, "wires": wires}
 
 
+def _saved(outcome: Any, entry: dict, warnings: list[str]) -> bool:
+    """True unless the store refused the save (a source the project rejected); a refusal becomes a warning."""
+    if isinstance(outcome, dict) and outcome.get("saved") is False:
+        warnings.append(f"calculator for {local_name(entry['dataPropertyIri'])} was not stored: "
+                        f"{outcome.get('reason') or 'refused'}")
+        return False
+    return True
+
+
 def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = None,
                         generator: Generator | None = None, actor: str | None = None) -> dict:
     """Owner 2026-10-20: DG creates every class a rule takes part in when the rule is created. The rule ingest
@@ -423,6 +519,10 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
     catalogue = catalogue or load_catalogue()
     rules = load_rules(session, project, None)
     stored = property_calculator_store.load_active(session, project)
+    company = property_calculator_store.company_of(project)
+    shared = property_calculator_store.load_catalogue(session, company)
+    blocked = property_calculator_store.load_blocked(session, project)
+    warnings: list[str] = []
     by_class: dict[tuple, list[dict]] = {}
     for rule in rules:
         if len(rule["classes"]) == 1 and rule["dataProperties"]:
@@ -430,7 +530,9 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
     created: list[dict] = []
     unsupported: list[dict] = []
     for (class_iri, _label), group in sorted(by_class.items()):
-        resolution = resolve(group, catalogue, None, stored=stored, generator=generator)
+        resolution = resolve(group, catalogue, None, stored=stored, generator=generator, shared=shared,
+                             blocked=blocked)
+        warnings.extend(resolution["warnings"])
         prefix = iri_prefix_of(class_iri)
         done = set()
         for entry in resolution["resolved"]:
@@ -439,8 +541,8 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
             done.add(entry["dataPropertyIri"])
             classes = context_classes(entry, catalogue, prefix)
             if entry.get("new"):
-                property_calculator_store.save(session, project, entry, actor)
-                stored[entry["dataPropertyIri"]] = entry
+                if _saved(property_calculator_store.save(session, project, entry, actor), entry, warnings):
+                    stored[entry["dataPropertyIri"]] = entry
             property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"], classes)
             created.append({"ruleId": entry["ruleId"], "dataPropertyIri": entry["dataPropertyIri"],
                             "classes": [c["label"] for c in classes]})
@@ -449,7 +551,8 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
     import class_duplicates
 
     return {"project": project, "linked": created, "unsupported": unsupported, "prunedClasses": pruned,
-            "duplicateCandidates": class_duplicates.find(session, project)}
+            "duplicateCandidates": class_duplicates.find(session, project),
+            "warnings": list(dict.fromkeys(warnings))}
 
 
 def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Chooser | None = None,
@@ -462,7 +565,12 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
     catalogue = catalogue or load_catalogue()
     rules = load_rules(session, project, rule_ids)
     stored = property_calculator_store.load_active(session, project)
-    resolution = resolve(rules, catalogue, chooser, stored=stored, generator=generator)
+    company = property_calculator_store.company_of(project)
+    shared = property_calculator_store.load_catalogue(session, company)
+    blocked = property_calculator_store.load_blocked(session, project)
+    resolution = resolve(rules, catalogue, chooser, stored=stored, generator=generator, shared=shared,
+                         blocked=blocked)
+    warnings = list(resolution["warnings"])
     if resolution["unsupported"] and not resolution["resolved"]:
         raise PropertyScriptError("NOTHING_TO_COMPUTE", "No rule DataProperty resolved to a catalogue calculator")
     prefix = iri_prefix_of(resolution["boxClass"]["iri"])
@@ -474,7 +582,7 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
             if entry["dataPropertyIri"] in saved:
                 continue
             if entry.get("new"):
-                property_calculator_store.save(session, project, entry, actor)
+                _saved(property_calculator_store.save(session, project, entry, actor), entry, warnings)
             property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
                                                            entry["contextClasses"])
             saved.add(entry["dataPropertyIri"])
@@ -488,5 +596,6 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
         "boxClass": resolution["boxClass"],
         "resolved": resolution["resolved"],
         "unsupported": resolution["unsupported"],
+        "warnings": list(dict.fromkeys(warnings)),
         **scripts,
     }

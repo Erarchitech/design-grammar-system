@@ -670,3 +670,305 @@ def test_a_published_check_records_the_source_model_on_its_runs(monkeypatch):
     monkeypatch.setattr(app_module.threading, "Thread", NoThread)
     app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", refresh=False), request=None)
     assert {"project": "p", "runIds": ["VR-1"], "model": "Likino"} in writes
+
+
+# --------------------------------------------------------------------------------------------------------------
+# Phase 1303-17 (DGOPN-05, D-54..D-60): resolution order, integrity, rejected-hash guard, company scope
+# --------------------------------------------------------------------------------------------------------------
+
+HEIGHT_RULES = {"R_H_V": "hasOpeningHeightMm"}
+HEIGHT_IRI = DG + "hasOpeningHeightMm"
+
+
+def _calculator(variant=1):
+    """(function, source, sha256) of a contract-valid generated calculator; each variant is a different source."""
+    import hashlib
+
+    from property_calculator_llm import finalize
+
+    name, source = finalize(GOOD_FUNCTION.replace("round(best, 1)", f"round(best, {variant})"))
+    return name, source, hashlib.sha256(source.encode("utf-8")).hexdigest()
+
+
+def _entry(variant=1, **over):
+    name, source, digest = _calculator(variant)
+    row = {"catalogueId": f"CC-{digest[:16]}", "propertyKey": "hasopeningheightmm",
+           "propertyName": "hasOpeningHeightMm", "sha256": digest, "source": source, "function": name,
+           "unit": "mm", "meaning": "tallest opening height", "contractVersion": None, "provider": "fake",
+           "model": "m", "status": "active"}
+    row.update(over)
+    return row
+
+
+def _stored_row(variant=1, **over):
+    name, source, digest = _calculator(variant)
+    row = {"dataPropertyIri": HEIGHT_IRI, "calculator": f"generated:{digest[:10]}", "origin": "generated",
+           "params": {}, "function": name, "source": source, "sha256": digest, "provider": "fake", "model": "m",
+           "unit": None, "explanation": None, "catalogueId": None, "reviewStatus": "pending"}
+    row.update(over)
+    return row
+
+
+def _height_rules():
+    return ps.rules_from_rows(_rows(HEIGHT_RULES))
+
+
+def _generator(variant, calls):
+    def generator(dp, rules, box):
+        calls.append(dp)
+        name, source, _digest = _calculator(variant)
+        return {"status": "ok", "function": name, "source": source, "unit": "mm", "explanation": "tallest",
+                "provider": "fake", "model": "m"}
+
+    return generator
+
+
+def _no_generator(*_a):
+    pytest.fail("the generator must not be called")
+
+
+def test_shared_entry_binds_before_stored_without_a_generator_call(catalogue):
+    entry = _entry(1, contractVersion=catalogue["version"])
+    res = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: _stored_row(2)}, generator=_no_generator,
+                     shared={"hasopeningheightmm": entry}, blocked={})
+    bound = res["resolved"][0]
+    assert bound["resolvedBy"] == "shared" and bound["origin"] == "generated"
+    assert bound["catalogueId"] == entry["catalogueId"] and bound["reviewStatus"] == "confirmed"
+    assert bound["sha256"] == entry["sha256"] and bound["unit"] == "mm" and bound["new"] is True
+    assert res["warnings"] == [] and res["unsupported"] == []
+
+
+def test_shared_file_catalogue_alias_binds_before_a_shared_entry(catalogue):
+    rules = ps.rules_from_rows(_rows({"R_B_V": "hasBeamIntersectionCount"}))
+    entry = _entry(1, propertyKey="hasbeamintersectioncount", propertyName="hasBeamIntersectionCount",
+                   contractVersion=catalogue["version"])
+    res = ps.resolve(rules, catalogue, shared={"hasbeamintersectioncount": entry}, generator=_no_generator)
+    assert res["resolved"][0]["resolvedBy"] == "alias" and res["resolved"][0]["origin"] == "catalogue"
+
+
+def test_shared_hit_reports_not_new_when_the_project_holds_the_same_source(catalogue):
+    entry = _entry(1, contractVersion=catalogue["version"])
+    held = _stored_row(1, catalogueId=entry["catalogueId"], reviewStatus="confirmed")
+    res = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: held}, shared={"hasopeningheightmm": entry})
+    assert res["resolved"][0]["resolvedBy"] == "shared" and res["resolved"][0]["new"] is False
+
+
+def test_shared_contract_version_mismatch_warns_but_still_binds(catalogue):
+    entry = _entry(1, contractVersion="older-contract")
+    res = ps.resolve(_height_rules(), catalogue, shared={"hasopeningheightmm": entry})
+    assert res["resolved"][0]["resolvedBy"] == "shared"
+    assert len(res["warnings"]) == 1 and "older-contract" in res["warnings"][0]
+
+
+def test_shared_generate_store_saves_the_project_copy_once_with_the_catalogue_id(catalogue, monkeypatch):
+    import property_calculator_store as store
+
+    monkeypatch.setattr(store, "company_of", lambda project: "ACME")
+    entry = _entry(1, contractVersion=catalogue["version"])
+    rows = _rows(HEIGHT_RULES)
+    session = _Session(rows, catalogue=[entry])
+    first = ps.generate(session, PROJECT, None, catalogue=catalogue, generator=_no_generator, store=True,
+                        actor="owner")
+    assert first["resolved"][0]["resolvedBy"] == "shared" and first["warnings"] == []
+    assert len(session.saved) == 1 and session.saved[0]["catalogueId"] == entry["catalogueId"]
+    assert session.saved[0]["sha256"] == entry["sha256"]
+    # the next generation finds the copy (same sha256, same catalogue id): nothing is saved again
+    held = {k: v for k, v in _stored_row(1, catalogueId=entry["catalogueId"], reviewStatus="confirmed").items()
+            if k != "params"}
+    held["paramsJson"] = "{}"  # the row as Neo4j returns it; load_active parses it
+    again_session = _Session(rows, stored=[held], catalogue=[entry])
+    again = ps.generate(again_session, PROJECT, None, catalogue=catalogue, generator=_no_generator, store=True)
+    assert again["resolved"][0]["resolvedBy"] == "shared" and again_session.saved == []
+    assert [e for e in again["resolved"] if "new" in e] == []
+
+
+def test_shared_generate_without_a_company_runs_no_catalogue_statement(catalogue, monkeypatch):
+    import property_calculator_store as store
+
+    monkeypatch.setattr(store, "company_of", lambda project: None)
+    entry = _entry(1, contractVersion=catalogue["version"])
+    rows = _rows({"R_B_V": "hasBeamIntersectionCount"}) + _rows(HEIGHT_RULES)
+    session = _Session(rows, catalogue=[entry])
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue)
+    assert not any("CatalogueCalculator" in q for q, _p in session.calls)
+    assert [r["dataPropertyLabel"] for r in out["resolved"]] == ["hasBeamIntersectionCount"]
+    assert [u["dataPropertyLabel"] for u in out["unsupported"]] == ["hasOpeningHeightMm"]
+    assert session.calls[0][1] == {"project": PROJECT, "ruleIds": None}  # load_rules stays the first session call
+
+
+def test_shared_generate_reads_the_catalogue_of_the_projects_company_only(catalogue, monkeypatch):
+    import property_calculator_store as store
+
+    monkeypatch.setattr(store, "company_of", lambda project: "ACME")
+    session = _Session(_rows({"R_B_V": "hasBeamIntersectionCount"}), catalogue=[])
+    ps.generate(session, PROJECT, None, catalogue=catalogue)
+    queries = [(q, p) for q, p in session.calls if "CatalogueCalculator" in q]
+    assert len(queries) == 1 and queries[0][1] == {"company": "ACME"}
+    assert "company:$company" in queries[0][0]
+    assert not any("CatalogueCalculator" in q for q, _p in session.calls[:1])
+
+
+def test_shared_ensure_rule_classes_binds_the_company_entry_without_the_llm(catalogue, monkeypatch):
+    import property_calculator_store as store
+
+    monkeypatch.setattr(store, "company_of", lambda project: "ACME")
+    entry = _entry(1, contractVersion=catalogue["version"])
+    session = _Session(_rows(HEIGHT_RULES), catalogue=[entry])
+    out = ps.ensure_rule_classes(session, PROJECT, catalogue=catalogue, generator=_no_generator, actor="owner")
+    assert [e["dataPropertyIri"] for e in out["linked"]] == [HEIGHT_IRI] and out["unsupported"] == []
+    assert out["warnings"] == [] and session.saved[0]["catalogueId"] == entry["catalogueId"]
+
+
+def test_integrity_failing_shared_entry_is_skipped_with_a_warning_and_never_assembled(catalogue):
+    entry = _entry(1, contractVersion=catalogue["version"])
+    entry["source"] = entry["source"].replace("round(best, 1)", "round(best, 9)")  # no longer matches its sha256
+    res = ps.resolve(_height_rules(), catalogue, shared={"hasopeningheightmm": entry},
+                     generator=lambda *a: {"status": "invalid", "error": "x"})
+    assert res["resolved"] == [] and len(res["warnings"]) == 1
+    assert "skipped" in res["warnings"][0] and "sha256" in res["warnings"][0]
+    with pytest.raises(ps.PropertyScriptError):
+        ps.assemble(PROJECT, res, catalogue)
+
+
+def test_integrity_failing_shared_entry_with_forbidden_code_never_binds(catalogue):
+    import hashlib
+
+    source = "def calc_gen_0123456789(ctx, box, params):\n    import os\n    return 1\n"
+    entry = _entry(1, contractVersion=catalogue["version"], source=source, function="calc_gen_0123456789",
+                   sha256=hashlib.sha256(source.encode("utf-8")).hexdigest())
+    res = ps.resolve(_height_rules(), catalogue, shared={"hasopeningheightmm": entry})
+    assert res["resolved"] == [] and "contract" in res["warnings"][0]
+
+
+def test_integrity_failing_stored_calculator_is_skipped_and_the_generator_is_asked(catalogue):
+    tampered = _stored_row(1)
+    tampered["source"] = tampered["source"] + "\n# tampered\n"
+    calls = []
+    res = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: tampered}, generator=_generator(2, calls))
+    assert len(calls) == 1 and res["resolved"][0]["resolvedBy"] == "llm"
+    assert res["resolved"][0]["sha256"] != tampered["sha256"]
+    assert "stored calculator" in res["warnings"][0] and "skipped" in res["warnings"][0]
+
+
+def test_integrity_valid_stored_calculator_binds_with_review_fields(catalogue):
+    record = _stored_row(1, unit="mm", explanation="tallest", catalogueId="CC-1", reviewStatus="confirmed")
+    res = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: record}, generator=_no_generator)
+    bound = res["resolved"][0]
+    assert bound["resolvedBy"] == "stored" and bound["unit"] == "mm" and bound["explanation"] == "tallest"
+    assert bound["catalogueId"] == "CC-1" and bound["reviewStatus"] == "confirmed" and res["warnings"] == []
+
+
+def test_generated_binding_carries_unit_explanation_and_pending_review(catalogue):
+    calls = []
+    res = ps.resolve(_height_rules(), catalogue, generator=_generator(1, calls))
+    bound = res["resolved"][0]
+    assert bound["resolvedBy"] == "llm" and bound["unit"] == "mm" and bound["explanation"] == "tallest"
+    assert bound["reviewStatus"] == "pending" and bound["new"] is True
+
+
+def test_reject_blocks_the_property_without_a_generator_call(catalogue):
+    _n, _s, digest = _calculator(1)
+    blocked = {HEIGHT_IRI: {"status": "rejected", "sha256": digest, "sha256s": [digest], "reason": "wrong unit",
+                            "by": "u", "regenerate": False}}
+    res = ps.resolve(_height_rules(), catalogue, generator=_no_generator, blocked=blocked)
+    assert res["resolved"] == []
+    assert res["unsupported"][0]["reason"].startswith("rejected") and "wrong unit" in res["unsupported"][0]["reason"]
+
+
+def test_reject_with_regenerate_calls_the_generator_once_with_the_reason(catalogue):
+    _n, _s, digest = _calculator(1)
+    blocked = {HEIGHT_IRI: {"status": "rejected", "sha256": digest, "sha256s": [digest], "reason": "wrong unit",
+                            "by": "u", "regenerate": True}}
+    calls = []
+    res = ps.resolve(_height_rules(), catalogue, generator=_generator(2, calls), blocked=blocked)
+    assert len(calls) == 1 and calls[0]["rejectedReason"] == "wrong unit"
+    assert res["resolved"][0]["resolvedBy"] == "llm" and res["resolved"][0]["reviewStatus"] == "pending"
+
+
+def test_reject_of_a_regenerated_source_the_project_already_rejected_is_unsupported(catalogue):
+    _n, _s, digest = _calculator(1)
+    blocked = {HEIGHT_IRI: {"status": "rejected", "sha256": digest, "sha256s": [digest], "reason": "r",
+                            "by": "u", "regenerate": True}}
+    res = ps.resolve(_height_rules(), catalogue, generator=_generator(1, []), blocked=blocked)
+    assert res["resolved"] == []
+    assert res["unsupported"][0]["reason"] == "regenerated source was already rejected"
+
+
+def test_reject_shared_entry_the_project_rejected_is_skipped_with_a_warning(catalogue):
+    entry = _entry(1, contractVersion=catalogue["version"])
+    blocked = {HEIGHT_IRI: {"status": "active", "sha256": "other", "sha256s": [entry["sha256"]], "reason": None,
+                            "by": None, "regenerate": False}}
+    res = ps.resolve(_height_rules(), catalogue, shared={"hasopeningheightmm": entry}, blocked=blocked)
+    assert res["resolved"] == [] and "rejected" in res["warnings"][0]
+
+
+def test_reject_stored_source_the_project_rejected_is_skipped_with_a_warning(catalogue):
+    record = _stored_row(1)
+    blocked = {HEIGHT_IRI: {"status": "active", "sha256": record["sha256"], "sha256s": [record["sha256"]],
+                            "reason": None, "by": None, "regenerate": False}}
+    res = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: record}, blocked=blocked)
+    assert res["resolved"] == [] and "rejected" in res["warnings"][0]
+
+
+def test_reject_cycle_regenerated_source_already_rejected_is_unsupported(catalogue):
+    """Reject A, regenerate B, reject B, regenerate A ends unsupported; B is never revived through the active row."""
+    _na, _sa, hash_a = _calculator(1)
+    _nb, _sb, hash_b = _calculator(2)
+    # 1. A rejected with regenerate: the generator's B binds as a pending candidate
+    blocked = {HEIGHT_IRI: {"status": "rejected", "sha256": hash_a, "sha256s": [hash_a], "reason": "r",
+                            "by": "u", "regenerate": True}}
+    first = ps.resolve(_height_rules(), catalogue, generator=_generator(2, []), blocked=blocked)
+    assert first["resolved"][0]["sha256"] == hash_b and first["resolved"][0]["reviewStatus"] == "pending"
+    # 2. B rejected as well (A and B rejected, regenerate): a generator answering A is unsupported
+    blocked = {HEIGHT_IRI: {"status": "rejected", "sha256": hash_b, "sha256s": sorted([hash_a, hash_b]),
+                            "reason": "r", "by": "u", "regenerate": True}}
+    second = ps.resolve(_height_rules(), catalogue, generator=_generator(1, []), blocked=blocked)
+    assert second["resolved"] == []
+    assert second["unsupported"][0]["reason"] == "regenerated source was already rejected"
+    # 3. the row is active again holding a stored B that fails integrity, A is still rejected: A is not revived
+    broken = _stored_row(2)
+    broken["source"] = broken["source"] + "\n# tampered\n"
+    blocked = {HEIGHT_IRI: {"status": "active", "sha256": hash_b, "sha256s": [hash_a], "reason": None,
+                            "by": None, "regenerate": False}}
+    third = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: broken}, generator=_generator(1, []),
+                       blocked=blocked)
+    assert third["resolved"] == []
+    assert third["unsupported"][0]["reason"] == "regenerated source was already rejected"
+    assert any("skipped" in w for w in third["warnings"])
+
+
+def test_retire_entry_absent_from_the_catalogue_does_not_bind_and_the_copy_stays_unsupported(catalogue):
+    _n, _s, digest = _calculator(1)
+    blocked = {HEIGHT_IRI: {"status": "retired", "sha256": digest, "sha256s": [], "reason": "retired from the "
+                            "company catalogue: obsolete", "by": "o", "regenerate": False}}
+    res = ps.resolve(_height_rules(), catalogue, shared={}, generator=_no_generator, blocked=blocked)
+    assert res["resolved"] == []
+    assert res["unsupported"][0]["reason"].startswith("retired")
+
+
+def test_retired_entry_confirmed_again_binds_as_shared(catalogue):
+    """D-59: after an owner confirms the retired entry again it is back in the catalogue and the copy is active."""
+    import property_calculator_store as store
+
+    entry = _entry(1, contractVersion=catalogue["version"])
+    retired_state = {HEIGHT_IRI: {"status": "retired", "sha256": entry["sha256"], "sha256s": [], "reason": "r",
+                                  "by": "o", "regenerate": False}}
+    # a retired row's own hash is paused, not rejected
+    assert store.rejected_source(retired_state, HEIGHT_IRI, entry["sha256"]) is False
+    paused = ps.resolve(_height_rules(), catalogue, shared={}, generator=_no_generator, blocked=retired_state)
+    assert paused["resolved"] == [] and paused["unsupported"][0]["reason"].startswith("retired")
+    held = _stored_row(1, catalogueId=entry["catalogueId"], reviewStatus="confirmed")
+    again = ps.resolve(_height_rules(), catalogue, stored={HEIGHT_IRI: held}, generator=_no_generator,
+                       shared={"hasopeningheightmm": entry}, blocked={})
+    assert again["resolved"][0]["resolvedBy"] == "shared" and again["unsupported"] == []
+    assert again["resolved"][0]["new"] is False
+
+
+def test_shared_save_refusal_becomes_a_warning(catalogue, monkeypatch):
+    import property_calculator_store as store
+
+    monkeypatch.setattr(store, "company_of", lambda project: None)
+    monkeypatch.setattr(store, "save", lambda *a, **k: {"saved": False, "reason": "rejected source"})
+    out = ps.generate(_Session(_rows(HEIGHT_RULES)), PROJECT, None, catalogue=catalogue,
+                      generator=_generator(1, []), store=True)
+    assert any("hasOpeningHeightMm" in w and "rejected source" in w for w in out["warnings"])
