@@ -62,3 +62,110 @@ def test_generate_calculator_rejects_unsafe_answer_and_survives_provider_errors(
         raise RuntimeError("provider down")
 
     assert pcl.generate_calculator({"label": "x"}, [], "Box", complete=boom)["status"] == "unavailable"
+
+
+# --- Phase 1303-16: integrity of stored code, rename-aware validation, prompt and log line -----------------------
+
+import hashlib  # noqa: E402
+import importlib  # noqa: E402
+import logging  # noqa: E402
+
+# sha256 and length of build_prompt({'label': 'hasHeightMm', 'iri': 'dg:hasHeightMm'},
+# [{'ruleId': 'R1', 'text': 't', 'swrl': 's'}], 'Beam') taken BEFORE 1303-16 changed build_prompt.
+PROMPT_BEFORE_SHA256 = "0c22e77a4b18b6ea043cba85974a3354456b8fd00645b82775c494b8e7d0180e"
+PROMPT_BEFORE_LENGTH = 1419
+
+GEN_LOGGER = "dg.property_calculator_generation"
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def test_rename_validate_function_accepts_the_stored_content_derived_name():
+    name, source = pcl.finalize(GOOD)
+    assert pcl.validate_function(source, name=name) == source
+    with pytest.raises(pcl.GeneratedCalculatorError) as err:
+        pcl.validate_function(source)  # default name stays calc_gen
+    assert "calc_gen" in str(err.value)
+    with pytest.raises(pcl.GeneratedCalculatorError) as err:
+        pcl.validate_function(GOOD, name=name)
+    assert name in str(err.value)  # the error text names the expected name
+
+
+def test_integrity_finalize_output_verifies():
+    name, source = pcl.finalize(GOOD)
+    assert pcl.verify_stored_source(source, name, _sha(source)) is None
+
+
+def test_integrity_changed_byte_wrong_hash_and_wrong_name_are_reported():
+    name, source = pcl.finalize(GOOD)
+    tampered = source.replace("StructuralFraming", "StructuralFramingX")
+    assert "sha256" in pcl.verify_stored_source(tampered, name, _sha(source))
+    assert "sha256" in pcl.verify_stored_source(source, name, "0" * 64)
+    assert pcl.verify_stored_source(source, "calc_gen", _sha(source))  # not calc_gen_<10 hex>
+    assert pcl.verify_stored_source(source, "calc_gen_XYZ", _sha(source))
+    assert pcl.verify_stored_source(None, name, _sha(source))
+    assert pcl.verify_stored_source(source, name, None)
+
+
+def test_integrity_name_that_does_not_match_the_source_digest_is_reported():
+    name, source = pcl.finalize(GOOD)
+    forged = source.replace(name, "calc_gen_0000000000")
+    assert name != "calc_gen_0000000000"
+    reason = pcl.verify_stored_source(forged, "calc_gen_0000000000", _sha(forged))
+    assert reason and "digest" in reason
+
+
+def test_integrity_source_that_is_not_a_fixed_point_is_reported():
+    source = "def calc_gen_abcdef0123(ctx, box, params):\n    return  1\n"
+    reason = pcl.verify_stored_source(source, "calc_gen_abcdef0123", _sha(source))
+    assert reason and "normalized" in reason
+
+
+def test_integrity_forbidden_construct_is_reported():
+    source = "def calc_gen_abcdef0123(ctx, box, params):\n    box.Delete()\n    return 0\n"
+    reason = pcl.verify_stored_source(source, "calc_gen_abcdef0123", _sha(source))
+    assert reason and "Delete" in reason
+
+
+def test_prompt_without_rejected_reason_is_unchanged_and_with_it_names_the_reason():
+    data_property = {"label": "hasHeightMm", "iri": "dg:hasHeightMm"}
+    rules = [{"ruleId": "R1", "text": "t", "swrl": "s"}]
+    plain = pcl.build_prompt(data_property, rules, "Beam")
+    assert len(plain) == PROMPT_BEFORE_LENGTH and _sha(plain) == PROMPT_BEFORE_SHA256
+    assert pcl.build_prompt({**data_property, "rejectedReason": ""}, rules, "Beam") == plain
+
+    with_reason = pcl.build_prompt({**data_property, "rejectedReason": "counts only the nearest wall"}, rules, "Beam")
+    assert with_reason.startswith(plain)
+    assert "counts only the nearest wall" in with_reason and "different calculator" in with_reason
+
+
+def _generation_records(caplog):
+    return [r for r in caplog.records if r.name == GEN_LOGGER]
+
+
+def test_generation_logs_one_line_per_call_without_prompt_or_source(caplog):
+    answer = '{"function": "def calc_gen(ctx, box, params):\n    return 1.0\n", "unit": "mm"}'
+    with caplog.at_level(logging.INFO, logger=GEN_LOGGER):
+        for _ in range(2):
+            pcl.generate_calculator({"label": "x", "iri": "dg:hasHeightMm"}, [{"ruleId": "R1", "text": "SECRETRULE"}],
+                                    "Beam", complete=lambda p, s: (answer, "fake", "m"))
+        pcl.generate_calculator({"label": "x", "iri": "dg:hasHeightMm"}, [], "Beam",
+                                complete=lambda p, s: (_ for _ in ()).throw(RuntimeError("down")))
+    records = _generation_records(caplog)
+    assert len(records) == 3  # one per call, also for a provider error
+    for record in records:
+        message = record.getMessage()
+        assert message == "property calculator LLM generation requested: dg:hasHeightMm"
+        assert "SECRETRULE" not in message and "calc_gen" not in message and "return 1.0" not in message
+        assert record.levelno == logging.INFO
+
+
+def test_generation_logger_has_exactly_one_own_stderr_handler_even_after_reload():
+    importlib.reload(pcl)
+    importlib.reload(pcl)
+    logger = logging.getLogger(GEN_LOGGER)
+    own = [h for h in logger.handlers if getattr(h, "_dg_generation", False)]
+    assert len(own) == 1 and isinstance(own[0], logging.StreamHandler)  # stderr stream as captured at import
+    assert logger.level == logging.INFO

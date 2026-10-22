@@ -13,8 +13,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import logging
 import os
 import re
+import sys
 from typing import Any, Mapping, Optional
 
 import llm_gateway
@@ -22,6 +24,19 @@ import llm_gateway
 MAX_TOKENS = 1800
 TIMEOUT_S = 90
 FUNCTION_NAME = "calc_gen"
+# finalize() stores a generated calculator as calc_gen_<first 10 hex of the sha256 of the normalized source>.
+GENERATED_NAME = re.compile(r"^calc_gen_[0-9a-f]{10}$")
+
+# Phase 1303-16 (D-55): every LLM generation request writes one visible line. data-service configures no root
+# logging and uvicorn only its own loggers, so this logger carries its own stderr handler (added once, also after a
+# reload) or the line would never reach `docker logs`. The record names the DataProperty IRI only.
+_GENERATION_LOG = logging.getLogger("dg.property_calculator_generation")
+_GENERATION_LOG.setLevel(logging.INFO)
+if not any(getattr(h, "_dg_generation", False) for h in _GENERATION_LOG.handlers):
+    _generation_handler = logging.StreamHandler(sys.stderr)
+    _generation_handler._dg_generation = True  # type: ignore[attr-defined]
+    _generation_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(message)s"))
+    _GENERATION_LOG.addHandler(_generation_handler)
 
 ALLOWED_GLOBALS = frozenset({
     # shell helpers and constants
@@ -68,18 +83,21 @@ class GeneratedCalculatorError(ValueError):
     pass
 
 
-def validate_function(source: str) -> str:
-    """Return the normalized source when it satisfies the contract, else raise GeneratedCalculatorError."""
+def validate_function(source: str, name: str = FUNCTION_NAME) -> str:
+    """Return the normalized source when it satisfies the contract, else raise GeneratedCalculatorError.
+
+    ``name`` is the function name the source must define: ``calc_gen`` for an LLM answer, ``calc_gen_<hex>`` for a
+    stored (finalized) source."""
     try:
         tree = ast.parse(source)
     except SyntaxError as exc:
         raise GeneratedCalculatorError(f"not valid Python: {exc.msg}") from exc
     body = [n for n in tree.body if not (isinstance(n, ast.Expr) and isinstance(getattr(n, "value", None), ast.Constant))]
-    if len(body) != 1 or not isinstance(body[0], ast.FunctionDef) or body[0].name != FUNCTION_NAME:
-        raise GeneratedCalculatorError("the answer must be exactly one function named calc_gen")
+    if len(body) != 1 or not isinstance(body[0], ast.FunctionDef) or body[0].name != name:
+        raise GeneratedCalculatorError(f"the answer must be exactly one function named {name}")
     fn = body[0]
     if [a.arg for a in fn.args.args] != ["ctx", "box", "params"] or fn.args.vararg or fn.args.kwarg:
-        raise GeneratedCalculatorError("calc_gen must take exactly (ctx, box, params)")
+        raise GeneratedCalculatorError(f"{name} must take exactly (ctx, box, params)")
     local_names = {a.arg for a in fn.args.args}
     for node in ast.walk(fn):
         if isinstance(node, (ast.Name, ast.arg)) and isinstance(getattr(node, "ctx", None), ast.Store):
@@ -130,14 +148,45 @@ def finalize(source: str) -> tuple[str, str]:
     return name, re.sub(r"^def calc_gen\(", f"def {name}(", normalized, count=1)
 
 
+def verify_stored_source(source: Any, function: Any, sha256: Any) -> Optional[str]:
+    """None when a stored generated calculator is exactly what ``finalize`` produced, else a short reason.
+
+    Checked before a calculator is promoted into the company catalogue (D-54): the function name, the sha256 of the
+    stored bytes, the contract (a re-validation must give back the same bytes, i.e. the source is an ``ast.unparse``
+    fixed point) and the content-derived name."""
+    if not isinstance(source, str) or not isinstance(function, str) or not isinstance(sha256, str):
+        return "calculator source, function or hash is missing"
+    if not GENERATED_NAME.match(function):
+        return "function name is not calc_gen_<10 hex>"
+    if hashlib.sha256(source.encode("utf-8")).hexdigest() != sha256:
+        return "source does not match its sha256"
+    try:
+        normalized = validate_function(source, name=function)
+    except GeneratedCalculatorError as exc:
+        return f"source fails the contract: {exc}"
+    if normalized != source:
+        return "source is not the normalized form"
+    unnamed = re.sub(r"^def " + re.escape(function) + r"\(", "def calc_gen(", source, count=1)
+    if hashlib.sha256(unnamed.encode("utf-8")).hexdigest()[:10] != function[len("calc_gen_"):]:
+        return "function name does not match the source digest"
+    return None
+
+
 def build_prompt(data_property: Mapping, rules: list[Mapping], class_label: str) -> str:
     rule_lines = "\n".join(f"- {r.get('ruleId')}: {r.get('text') or ''} | SWRL: {r.get('swrl') or ''}" for r in rules)
-    return (
+    prompt = (
         f"Element class: {class_label}\n"
         f"Property to compute: {data_property.get('label')} ({data_property.get('iri')})\n"
         f"Rules that test it:\n{rule_lines}\n\n{CONTEXT_API}\n"
         "Write calc_gen so that the rules above can be evaluated on this property."
     )
+    reason = data_property.get("rejectedReason")
+    if reason:
+        prompt += (
+            "\nThe operator rejected the previous calculator for this property. Reason: "
+            f"{str(reason)[:400]}\nWrite a different calculator that avoids this problem."
+        )
+    return prompt
 
 
 def _extract_json(text: str) -> Optional[dict]:
@@ -162,6 +211,7 @@ def generate_calculator(data_property: Mapping, rules: list[Mapping], class_labe
     ``complete(prompt, system) -> (text, provider, model)`` replaces the gateway in tests.
     """
     prompt = build_prompt(data_property, rules, class_label)
+    _GENERATION_LOG.info("property calculator LLM generation requested: %s", data_property.get("iri"))
     try:
         if complete is None:
             settings = llm_gateway.load_persisted_llm_settings()
