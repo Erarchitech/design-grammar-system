@@ -183,13 +183,18 @@ class TestClaimUntagged:
         assert "n.project IS NULL" in query
         assert "default-project" not in query
         assert PROJECT not in query
-        assert params == {"project": PROJECT, "sharedGraphs": ["SpecGraph"]}
+        assert params == {"project": PROJECT, "sharedGraphs": ["SpecGraph", "CalculatorCatalogue"]}
 
     def test_shared_hub_graph_is_never_claimed(self):
         query = app_module.CLAIM_UNTAGGED_QUERY
         assert "$sharedGraphs" in query
         assert "SpecGraph" in app_module.CLAIM_UNTAGGED_SHARED_GRAPHS
         assert "SpecGraph" not in query  # bound, never interpolated
+
+    def test_company_calculator_catalogue_is_never_claimed(self):
+        # Phase 1303-16 (D-56): CatalogueCalculator nodes carry no project property by design.
+        assert "CalculatorCatalogue" in app_module.CLAIM_UNTAGGED_SHARED_GRAPHS
+        assert "CalculatorCatalogue" not in app_module.CLAIM_UNTAGGED_QUERY  # bound, never interpolated
 
     def test_statement_never_matches_a_named_project(self):
         query = app_module.CLAIM_UNTAGGED_QUERY
@@ -248,6 +253,25 @@ class TestNodeProperty:
         db["write"] = {"props": {key: "x"}}
         response = client.put(self.URL, json={"key": key, "value": "x"}, headers=_headers())
         assert response.status_code == 200
+
+    def test_calculator_labels_are_locked_for_the_property_route(self, client, db):
+        assert {"PropertyCalculator", "CatalogueCalculator"} <= set(app_module.LOCKED_NODE_LABELS)
+        db["write"] = {"props": {"label": "x"}}
+
+        client.put(self.URL, json={"key": "label", "value": "x"}, headers=_headers())
+
+        params = db["calls"][0][2]
+        assert {"PropertyCalculator", "CatalogueCalculator"} <= set(params["lockedLabels"])
+
+    @pytest.mark.parametrize("key", ["source", "sha256", "SHA256", "Source"])
+    def test_calculator_source_and_hash_are_protected_keys(self, client, db, key):
+        assert app_module.is_protected_node_key(key)
+
+        response = client.put(self.URL, json={"key": key, "value": "x"}, headers=_headers())
+
+        assert response.status_code == 403
+        assert _code(response) == "PROTECTED_PROPERTY"
+        assert db["calls"] == []
 
     @pytest.mark.parametrize("key", ["project", "graph"])
     def test_protected_keys_are_refused_before_any_write(self, client, db, key):

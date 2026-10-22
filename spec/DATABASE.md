@@ -612,10 +612,28 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 
 **PropertyCalculator** (experimental, Phase 1303-15) — the stored script that computes one rule DataProperty of a project from the live Revit model (Rhino.Inside.Revit), reused by every later generation so a rule update or a new Design State re-runs the same script.
 ```
-(:PropertyCalculator {graph: "Computgraph", project: "str-openings-01", dataPropertyIri: "...#hasMinOpeningClearanceMm", calculator: "revit_min_opening_clearance_mm" | "generated:<10 hex>", origin: "catalogue|generated", paramsJson: "{...}", function: "calc_gen_<10 hex>" (generated only), source: "def calc_gen_...(ctx, box, params): ..." (generated only), sha256, provider, model, createdBy, createdAt, status: "active|rejected"})
+(:PropertyCalculator {graph: "Computgraph", project: "str-openings-01", dataPropertyIri: "...#hasMinOpeningClearanceMm", calculator: "revit_min_opening_clearance_mm" | "generated:<10 hex>", origin: "catalogue|generated", paramsJson: "{...}", function: "calc_gen_<10 hex>" (generated only), source: "def calc_gen_...(ctx, box, params): ..." (generated only), sha256, provider, model, createdBy, createdAt, status: "active|rejected|retired", unit (generated only), explanation (generated only), reviewStatus: "pending|confirmed|rejected", reviewedBy, reviewedAt, reviewReason, rejectedSha256Json: "[...]", regenerateRequested, catalogueId, sourceRunId, reviewLock})
 ```
-- Merge key: `(project, dataPropertyIri)`; written only by `property_calculator_store.save` when the check is placed or run
+- Merge key: `(project, dataPropertyIri)`; written only by `property_calculator_store.save` when the check is placed or run, and by `confirm`, `reject` and `retire` of the same module (Phase 1303-16, D-54)
+- Review state (Phase 1303-16): `status` is `active`, `rejected` or `retired`; a retired copy returns to `active` when its catalogue entry is confirmed again (D-59). `reviewStatus` is `pending`, `confirmed` or `rejected`; absent means `pending` for `origin: generated`. `reviewedBy`, `reviewedAt` and `reviewReason` hold the latest review decision. A save with the stored `sha256` keeps status, reviewStatus, catalogueId, createdAt and createdBy; a different `sha256` resets status to `active`, reviewStatus to `pending` (generated) and `regenerateRequested` to false
+- `unit` and `explanation` are what the LLM stated for a generated calculator; `explanation` is never used as vocabulary text
+- `rejectedSha256Json`: a sorted JSON list of every `sha256` the project rejected for this DataProperty. It is kept when a regenerated source makes the row active again, and save never writes it; a save of a generated source whose `sha256` is in the list is refused
+- `regenerateRequested` (bool): set by a reject that asks for a new calculator
+- `catalogueId`: a string link to the company entry, with no relationship; `sourceRunId`: the validation run that justified the confirmation
+- `reviewLock`: a counter incremented inside each write transaction as a row write lock
 - `origin: catalogue` binds a vetted template of `data-service/property_calculators/catalogue.json`; `origin: generated` holds a function the LLM wrote, accepted only after `property_calculator_llm.validate_function` (one function, no imports, transactions, Revit write calls or dunders)
+
+**CatalogueCalculator** (experimental, Phase 1303-16, D-54..D-59) — a confirmed generated calculator promoted into the company catalogue, so every project of the company reuses it with no LLM call.
+```
+(:CatalogueCalculator {graph: "CalculatorCatalogue", catalogueId: "CC-<16 hex>", company, propertyKey, propertyName, dataPropertyIri (of the source project), function, source, sha256, unit, meaning, readCategories, contractVersion, provider, model, sourceProject, sourceRunId, sourceRunCreatedAt, confirmedBy, confirmedAt, status: "active|retired", retiredBy, retiredAt, retiredReason, reconfirmedBy, reconfirmedAt, reconfirmedRunId, historyJson})
+```
+- `catalogueId` = `"CC-"` + the first 16 hex of sha256(`company` + U+001F + `sha256`)
+- Company-scoped and deliberately without a `project` property; listed in `CLAIM_UNTAGGED_SHARED_GRAPHS` (never claimed) and in `LOCKED_NODE_LABELS` (no generic property edit)
+- At most one active entry per (`company`, `propertyKey`)
+- Written only by `property_calculator_store.confirm` and `retire`
+- An owner of any project of the company may retire it (D-59); a retired entry may be confirmed again, by an owner only (D-60), which makes it and its retired project copies active again (D-59)
+- `historyJson`: an append-only JSON list of events `{event: "confirmed|retired|reconfirmed", by, at, project, runId?, reason?}`; `retiredBy/At/Reason` and `reconfirmedBy/At/RunId` hold the latest such event
+- Never deleted; linked to project copies only by the `catalogueId` string, so no project traversal or cascade reaches it
 
 ## Relationships
 

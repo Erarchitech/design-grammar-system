@@ -5913,6 +5913,8 @@ PROTECTED_NODE_KEYS_CI = frozenset(
         "cgId", "definitionId", "algIndex", "noteId", "sessionId", "runId",
         "SWRL", "status", "ValidStatus", "SendStatus", "kind", "platform",
         "propertyName", "sourceRuleId", "provider", "model",
+        # Phase 1303-16 (DGOPN-05): calculator source and its hash are never edited by hand.
+        "source", "sha256",
     )
 )
 PROTECTED_NODE_KEY_PATTERN = re.compile(r"(?i)(^(evidence|shacl)|json$)")
@@ -5928,6 +5930,9 @@ LOCKED_NODE_LABELS = [
     "MappingSession",
     "MappingDecision",
     "MappingProfile",
+    # Phase 1303-16 (DGOPN-05): calculators are written only by property_calculator_store.
+    "PropertyCalculator",
+    "CatalogueCalculator",
 ]
 
 
@@ -5972,7 +5977,8 @@ GRAPH_RELS_QUERY = (
 # and never a node of a named project (default-project included).
 # WR-02 (1205 review): shared hub graphs (SpecGraph carries SpecClass nodes with
 # no project by design) are never claimed by a project.
-CLAIM_UNTAGGED_SHARED_GRAPHS = ["SpecGraph"]
+# Phase 1303-16 (D-56): the company calculator catalogue has no project by design and is never claimed.
+CLAIM_UNTAGGED_SHARED_GRAPHS = ["SpecGraph", "CalculatorCatalogue"]
 CLAIM_UNTAGGED_QUERY = (
     "MATCH (n) WHERE n.project IS NULL AND NOT coalesce(n.graph, '') IN $sharedGraphs "
     "SET n.project = $project RETURN count(n) AS claimed"

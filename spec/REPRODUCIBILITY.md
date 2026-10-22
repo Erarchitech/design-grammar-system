@@ -159,7 +159,7 @@ The fenced block below is the machine-checked scope for LLM call sites. It is re
 `tools/de01/tests/test_reproducibility_scope_drift.py`, which asserts that the block and the
 set of generative call sites found by static AST scan of `data-service/*.py` agree **in both
 directions**. One line per **generative** call site, formatted
-`file|function|scope-class`, exactly nine lines:
+`file|function|scope-class`, exactly ten lines:
 
 <!-- reproducibility:llm-call-sites:start -->
 ```
@@ -172,6 +172,7 @@ dg_context.py|consult_computgraph|model-dependent-unmeasured
 dg_context.py|select_rules_for_deletion|model-dependent-unmeasured
 degram_relay.py|relay_chat_completions|model-dependent-unmeasured
 mapping_llm.py|propose_mapping|model-dependent-unmeasured
+property_calculator_llm.py|generate_calculator|model-dependent-unmeasured
 ```
 <!-- reproducibility:llm-call-sites:end -->
 
@@ -180,6 +181,14 @@ proposal: one call per mapping session, made only when the deterministic engine 
 questions, at temperature 0. Its validated proposal is recorded in the session context and
 reused for every recompute of that session, so the session itself is replayable; the call is
 not measured, and the proposal is one vote that a human confirms, never a decision.
+
+The `property_calculator_llm.py|generate_calculator` row (Phase 1303-15, registered by 1303-16,
+DGOPN-05, D-55) is the calculator generation for a rule DataProperty that neither the file
+catalogue nor the company catalogue covers: temperature 0, one call per uncovered property, plus
+one per explicit regenerate after a rejection (plans 1303-16 and 1303-17). The answer is accepted
+only under the AST contract and is stored and reused byte-for-byte; a calculator confirmed into
+the company catalogue (D-54) is reused with no call. Each call writes one visible
+`property calculator LLM generation requested` line to stderr. The call is not measured.
 
 Excluded as non-generative: `llm_gateway.py|list_models_for_provider` is excluded as
 non-generative — it calls `get_adapter` only and never calls `.generate`, so it lists models

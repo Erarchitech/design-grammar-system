@@ -152,14 +152,28 @@ class _Result:
 class _Session:
     """Fake Neo4j session: rule atoms, stored calculators, and recorded saves."""
 
-    def __init__(self, rows, stored=()):
+    def __init__(self, rows, stored=(), catalogue=(), blocked=()):
         self.rows = rows
         self.stored = list(stored)
+        self.catalogue = list(catalogue)
+        self.blocked = list(blocked)
         self.calls = []
         self.saved = []
 
+    def execute_write(self, fn, *args, **kwargs):
+        return fn(self, *args, **kwargs)
+
     def run(self, query, **params):
         self.calls.append((query, params))
+        # Phase 1303-16 marker contract: the save-state read carries `reviewLock`; it also names
+        # `rejectedSha256Json` and starts with MERGE, so it is answered before every other branch.
+        if "reviewLock" in query:
+            iri = params.get("dataPropertyIri")
+            return _Result([r for r in self.stored if r.get("dataPropertyIri") == iri])
+        if "rejectedSha256Json" in query:
+            return _Result(self.blocked)
+        if "CatalogueCalculator" in query:
+            return _Result(self.catalogue)
         if "READS_CLASS" in query:
             if "MERGE (k:Class" in query:
                 self.classes = getattr(self, "classes", []) + [params]
