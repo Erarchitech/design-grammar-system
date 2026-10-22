@@ -340,7 +340,7 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 
 **Plans**: MVP-срез — `phases/1303-pravilo-gh-obekt/` (см. «MVP-срез 1303» ниже), планы 1303-01…18 (11–14 — Revit-срез: форк revit-mcp DG как Revit-коннектор, сервер, DeGram, живой акт 3; 15 — проверка боксов отверстий ИОС → КР через Rhino.Inside.Revit + VALIDATOR, DGOPN-01…04, приоритет владельца 2026-10-20; 16–18 — продвижение подтверждённых сгенерированных калькуляторов в каталог компании, DGOPN-05, решения D-54…D-60: 16 хранилище и защиты → 17 порядок поиска, словарь ingest и маршруты → 18 UI, выкладка и живая проверка V13; 19–23 — правила из нескольких объектов, DGOPN-06, решения D-61…D-65: 19 C#-вычислитель и холст (участники-контекст) → 20 промпт ingest и схема → 21 проверка конфликтов по атомам после ввода → 22 участники в калькуляторах → 23 выкладка и приёмка владельцем); полный объём DGBN — TBD после демо
 
-Executed: 13/23 plans (checklist maintained by the GSD tooling)
+Executed: 16/23 plans (checklist maintained by the GSD tooling)
 
 - [x] 1303-01-PLAN.md
 - [x] 1303-02-PLAN.md
@@ -361,7 +361,7 @@ Executed: 13/23 plans (checklist maintained by the GSD tooling)
 - [x] 1303-17-PLAN.md
 - [ ] 1303-18-PLAN.md
 - [x] 1303-19-PLAN.md
-- [ ] 1303-20-PLAN.md
+- [x] 1303-20-PLAN.md
 - [ ] 1303-21-PLAN.md
 - [ ] 1303-22-PLAN.md
 - [ ] 1303-23-PLAN.md
@@ -486,7 +486,7 @@ Executed: 13/23 plans (checklist maintained by the GSD tooling)
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
 | 1301. Рабочий клиент и безопасное чтение | 40/41 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
-| 1303. Правило ↔ GH ↔ объект | 14/23 (MVP slice + 15–23) | MVP slice executing — plans 01–05 done offline (2026-10-17); 06 live demo, 07 optional | — |
+| 1303. Правило ↔ GH ↔ объект | 16/23 (MVP slice + 15–23) | MVP slice executing — plans 01–05 done offline (2026-10-17); 06 live demo, 07 optional | — |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
 | 1305. Ограниченное GH intent editing | 0/TBD | Not started | — |
 | 1306. Межплатформенная передача | 0/TBD | Not started | — |

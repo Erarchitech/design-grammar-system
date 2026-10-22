@@ -4,17 +4,17 @@ milestone: v13.0
 milestone_name: DeGram Agent
 current_phase: 1303
 current_phase_name: pravilo-gh-obekt
-current_plan: 18
+current_plan: 21
 status: executing
-stopped_at: Completed 1303-17-PLAN.md
-last_updated: "2026-10-22T07:49:11.569Z"
+stopped_at: Completed 1303-20-PLAN.md
+last_updated: "2026-10-22T08:20:04.935Z"
 last_activity: 2026-10-22
-last_activity_desc: Wave 8 — plan 1303-17 (calculator resolution order, company vocabulary, four calculator routes) executed; next 1303-20 then 18 (14 stays blocked on the owner)
+last_activity_desc: Plan 1303-20 (participants in the ingest prompt, Russian shape keywords, ObjectProperty domain/range schema propagation) executed; next 1303-21 (18 is owned by a parallel executor, 14 stays blocked on the owner)
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 93
-  completed_plans: 73
+  completed_plans: 74
   percent: 11
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1303 (pravilo-gh-obekt) — MVP slice EXECUTING (2026-10-17)
 Current Phase: 1303
 Current Phase Name: pravilo-gh-obekt
-Current Plan: 18 (14 stays blocked on the owner; 20 is also unblocked)
+Current Plan: 21 (18 owned by a parallel executor; 14 stays blocked on the owner)
 Total Plans in Phase: 23 (MVP slice 01–14; 15 MEP opening check; 16–18 D-54 calculator review; 19–23 DGOPN-06 multi-participant rules)
-Plan: 15 of 23 complete (01–05, 08–13, 16, 17, 19) plus 15 implemented with SUMMARY status partial (acceptance evidence open); 06 live demo open; 07 cut line; 14 blocked at installation/open/sign-in checkpoint; 18, 20–23 not started
+Plan: 16 of 23 complete (01-05, 08-13, 15-17, 19, 20; 15 with SUMMARY status partial); 06 live demo open; 07 cut line; 14 blocked at installation/open/sign-in checkpoint; 18 in progress elsewhere; 21-23 not started
 Status: GH rehearsal through proposal answers/undo, apply, placement and VALIDATOR V1/V2 recorded in 1303-10-SUMMARY.md. Revit connector/server/DeGram implementation and build complete, but real Revit reads, writes, transfer and gold metrics remain unverified. Prior pyRevit installation was denied and has not been retried. Demo profiles remain retired; 1309 continues separately; 1300 gates remain open for full 1303 acceptance.
 Last activity: 2026-10-18 — plans 11–13 implemented; data-service 82378ca1 from committed export, connector 400 tests and mapping 63 tests passed; DeGram 1aa3b39c built (exit 0), launched isolated; bundled MCP lists 54 tools and status returns BRIDGE_OFF (Revit not running)
 Last Activity Description: Revit live act 3 awaits owner installation/open/sign-in; see 1303-14-CHECKPOINT.md
@@ -209,6 +209,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1303 P16 | 2h | 3 tasks | 11 files |
 | Phase 1303 P19 | 45min | 3 tasks | 9 files |
 | Phase 1303 P17 | 1h45m | 3 tasks | 11 files |
+| Phase 1303 P20 | ~1h | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -577,6 +578,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1303-16: retire rights and confirming again follow D-59/D-60; reactivation of a retired entry always needs allow_reconfirm (owner), and a source confirmed for another DataProperty is refused (CATALOGUE_PROPERTY_TAKEN)
 - [Phase ?]: 1303-19: context-atom disclosure pinned as ' Asserted by the rule, not verified: <atoms>.' appended to Passed/Failed message only; no new field or status
 - [Phase ?]: 1303-17: resolve order file, company catalogue, project-stored, LLM with integrity and rejected-hash guards; company vocabulary via deep copy; four calculator routes with member-only decision rows; retire needs owner (D-59), re-confirming a retired copy needs owner via allow_reconfirm (D-60)
+- [Phase ?]: [Phase 1303-20] ObjectProperty domain/range are annotations, not exported as rdfs:domain/rdfs:range axioms (flat-vocabulary rule kept); dg-shapes.ttl unchanged
 
 ### Research Flags (carry into planning)
 
@@ -675,8 +677,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-22T07:49:11.557Z
-Stopped at: Completed 1303-17-PLAN.md
+Last session: 2026-10-22T08:20:04.917Z
+Stopped at: Completed 1303-20-PLAN.md
 Resume file: None
 
 ## Performance Metrics
