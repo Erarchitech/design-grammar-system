@@ -36,10 +36,13 @@ RATE_LIMITED_AUTH_LOCATION = "^/data-service/auth/(login|password|accept-invite|
 RELAY_LOCATION = "/data-service/degram/v1/"
 # Phase 1301-09 (D-21): Speckle geometry streams through its own unbuffered location.
 SPECKLE_PROXY_LOCATION = "/data-service/speckle-proxy/"
+# Phase 1303-15: a property check waits for the Rhino.Inside solution, so /data-service/scripts/ has a longer read timeout.
+SCRIPTS_PROXY_LOCATION = "/data-service/scripts/"
 ALLOWED_PROXY_LOCATIONS = {
     "/data-service/",
     RELAY_LOCATION,
     SPECKLE_PROXY_LOCATION,
+    SCRIPTS_PROXY_LOCATION,
     "/llm/",
     "/reasoner/",
     RATE_LIMITED_AUTH_LOCATION,
