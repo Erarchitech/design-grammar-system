@@ -234,6 +234,18 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/scripts/rule-classes"): _p(_MEM, _DEL, source="body", role="editor"),
     ("POST", "/scripts/property-calculator/place"): _p(_MEM, _DEL, source="body", role="editor"),
     ("GET", "/scripts/property-calculators"): _p(_MEM, _DEL, source="query", role="viewer"),
+    # ── calculator promotion (Phase 1303-17, DGOPN-05) ──
+    # Confirm, reject and retire are human decisions in the Web UI and admit the member principal only, so the
+    # DeGram delegated principal lists candidates but never decides (D-57, same principle as D-16: the LLM never
+    # decides). Retire needs the owner role: per owner decision D-59 an owner of any project in the company may
+    # retire a catalogue entry. The confirm row stays editor-level for a first confirm (D-57 unchanged); confirming
+    # a retired entry again goes through the same row and the same gates, but only an owner of the requesting
+    # project may do it (D-60), which the confirm handler and the store enforce, because a policy row cannot tell
+    # a retired copy from a pending one.
+    ("GET", "/scripts/property-calculators/candidates"): _p(_MEM, _DEL, source="query", role="viewer"),
+    ("POST", "/scripts/property-calculators/confirm"): _p(_MEM, source="body", role="editor"),
+    ("POST", "/scripts/property-calculators/reject"): _p(_MEM, source="body", role="editor"),
+    ("POST", "/scripts/property-calculators/retire"): _p(_MEM, source="body", role="owner"),
     # run re-places the chain when the rules changed and writes Revit colours through the canvas: editor.
     ("POST", "/scripts/property-check/run"): _p(_MEM, _DEL, source="body", role="editor"),
     ("POST", "/scripts/property-check/status"): _p(_MEM, _DEL, source="body", role="viewer"),

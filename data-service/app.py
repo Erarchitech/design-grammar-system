@@ -92,6 +92,7 @@ import mapping_engine
 import mapping_store
 import class_duplicates
 import property_calculator_llm
+import property_calculator_review
 import property_calculator_store
 import property_scripts
 import dsav_watcher
@@ -2447,6 +2448,228 @@ def get_property_calculators(project: str = Query(...)):
     with driver.session() as session:
         stored = property_calculator_store.load_active(session, project)
     return {"project": project, "calculators": list(stored.values())}
+
+
+# ---------------------------------------------------------------------------
+# Property-calculator promotion (Phase 1303-17: DGOPN-05, D-54..D-60)
+#
+# A generated calculator becomes code that runs in other users' Rhino.Inside.Revit sessions once it is promoted
+# into the company catalogue, so confirm, reject and retire are human decisions of a signed-in member (D-57; the
+# route-policy rows admit the member principal only). The handlers never call the generator or the LLM. Every
+# refusal answers {error, hint, code}; the company name is never returned (D-56).
+# ---------------------------------------------------------------------------
+
+
+class CalculatorConfirmRequest(BaseModel):
+    project: str = Field(min_length=1, max_length=200)
+    dataPropertyIri: str = Field(min_length=1, max_length=500)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    runId: str = Field(min_length=1, max_length=200)
+    meaning: str = Field(min_length=1, max_length=400)
+    unit: str | None = Field(default=None, max_length=40)
+
+
+class CalculatorRejectRequest(BaseModel):
+    project: str = Field(min_length=1, max_length=200)
+    dataPropertyIri: str = Field(min_length=1, max_length=500)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    reason: str = Field(min_length=1, max_length=600)
+    regenerate: bool = False
+
+
+class CalculatorRetireRequest(BaseModel):
+    project: str = Field(min_length=1, max_length=200)
+    catalogueId: str = Field(pattern=r"^CC-[0-9a-f]{16}$")
+    reason: str = Field(min_length=1, max_length=600)
+
+
+# One hint per code: nine store codes (property_calculator_store.CalculatorReviewError) and three raised here.
+_CALCULATOR_HINTS = {
+    "CALCULATOR_NOT_FOUND": "The project has no generated calculator for this property; place the scripts first.",
+    "CALCULATOR_NOT_PENDING": "The calculator was already decided; reload the review list.",
+    "CALCULATOR_CHANGED": "The calculator changed since it was shown; reload the review list and review it again.",
+    "CALCULATOR_INTEGRITY": "The stored source no longer passes the generation contract; regenerate the calculator.",
+    "CALCULATOR_RUN_INVALID": "Pick a validation run of this project that is newer than the calculator and holds "
+                              "values for the property.",
+    "CALCULATOR_IN_CATALOGUE": "The calculator belongs to the company catalogue; retire the entry instead.",
+    "CATALOGUE_PROPERTY_TAKEN": "The company already has a calculator for this property; retire it first.",
+    "CATALOGUE_ENTRY_NOT_FOUND": "No such catalogue entry in this company; reload the review list.",
+    "CATALOGUE_RECONFIRM_OWNER_REQUIRED": "Only an owner of the project confirms a retired calculator again.",
+    "CALCULATOR_RUN_NOT_FOUND": "Pick a validation run of this project (the run list of the model view).",
+    "CALCULATOR_INPUT_INVALID": "Enter a short meaning (and a reason) as plain text.",
+    "CATALOGUE_COMPANY_REQUIRED": "Assign the project to a company before promoting or retiring a calculator.",
+}
+
+
+def _calculator_error(exc: property_calculator_store.CalculatorReviewError) -> HTTPException:
+    return _structured_error_response(exc.detail, _CALCULATOR_HINTS.get(exc.code, ""), exc.code, exc.status)
+
+
+def _calculator_route_error(code: str, message: str, status_code: int) -> HTTPException:
+    return _structured_error_response(message, _CALCULATOR_HINTS[code], code, status_code)
+
+
+def _calculator_company(project: str) -> str:
+    company_name = property_calculator_store.company_of(project)
+    if not company_name:
+        raise _calculator_route_error("CATALOGUE_COMPANY_REQUIRED", "the project has no company", 422)
+    return company_name
+
+
+def _run_stamp(run: dict | None) -> dict | None:
+    """``{runId, createdAt}`` of a validation run, with createdAt as an ISO string."""
+    if not run:
+        return None
+    created = run.get("createdAt")
+    if created is not None and not isinstance(created, str):
+        created = created.isoformat() if hasattr(created, "isoformat") else str(created)
+    return {"runId": run.get("runId"), "createdAt": created}
+
+
+def _calculator_clean(text: str, limit: int) -> str:
+    try:
+        return property_calculator_review.clean_line(text, limit)
+    except ValueError as exc:
+        raise _calculator_route_error("CALCULATOR_INPUT_INVALID", str(exc), 422) from exc
+
+
+@router.get("/scripts/property-calculators/candidates")
+def get_property_calculator_candidates(request: Request, project: str = Query(...),
+                                       runId: str | None = Query(None)):
+    """Review list: the pending generated calculators of the project and its retired catalogue copies, each with
+    its source, sample values and rule verdicts from a published run; rejected rows; the company catalogue.
+    Read only. ``sourceProject`` and ``confirmedBy`` of a catalogue row reach owners only."""
+    is_owner = auth.effective_role(request.state.principal, project) == "owner"
+    run = get_validation_run(project, runId) if runId else get_validation_run(project)
+    if runId and run is None:
+        raise _calculator_route_error("CALCULATOR_RUN_NOT_FOUND", "no such validation run in this project", 404)
+    company_name = property_calculator_store.company_of(project)
+    with driver.session() as session:
+        calculators = property_calculator_store.load_candidates(session, project)
+        blocked = property_calculator_store.load_blocked(session, project)
+        entries = property_calculator_store.load_catalogue_entries(session, company_name)
+        rule_ids_by_property: dict[str, set[str]] = {}
+        for rule in property_scripts.load_rules(session, project, None):
+            for data_property in rule["dataProperties"]:
+                rule_ids_by_property.setdefault(data_property["iri"], set()).add(rule["ruleId"])
+        # D-59: a retired copy whose property has no values in the selected run is shown with the run it was
+        # confirmed on, read only through the project's own runs.
+        fetched: dict[str, dict | None] = {}
+        runs_by_property: dict[str, dict] = {}
+        for row in calculators:
+            iri = row.get("dataPropertyIri") or ""
+            source_run_id = row.get("sourceRunId")
+            if (row.get("retired") and source_run_id
+                    and not property_calculator_review.run_values(run, iri)):
+                if source_run_id not in fetched:
+                    fetched[source_run_id] = get_validation_run(project, source_run_id)
+                if fetched[source_run_id]:
+                    runs_by_property[iri] = fetched[source_run_id]
+        verdicts: dict[str, list] = {}
+        for row in calculators:
+            iri = row.get("dataPropertyIri") or ""
+            used = runs_by_property.get(iri) or run
+            if used and used.get("runId") and rule_ids_by_property.get(iri):
+                verdicts[iri] = property_calculator_store.load_verdict_counts(
+                    session, project, used["runId"], sorted(rule_ids_by_property[iri]))
+    candidates = property_calculator_review.build_candidates(
+        calculators, run, verdicts, {k: sorted(v) for k, v in rule_ids_by_property.items()}, runs_by_property)
+    catalogue_rows = []
+    for entry in entries:
+        row = {k: entry.get(k) for k in ("catalogueId", "propertyKey", "propertyName", "dataPropertyIri", "sha256",
+                                         "unit", "meaning", "readCategories", "contractVersion", "provider",
+                                         "model", "confirmedAt")}
+        if is_owner:
+            row["sourceProject"] = entry.get("sourceProject")
+            row["confirmedBy"] = entry.get("confirmedBy")
+        catalogue_rows.append(row)
+    return {
+        "project": project,
+        "companyAssigned": bool(company_name),
+        "canRetire": is_owner,
+        "run": _run_stamp(run),
+        "candidates": candidates,
+        # A retired copy is listed once, as a retired candidate; blocked[] holds rejected rows only (D-60).
+        "blocked": [{"dataPropertyIri": iri, "propertyName": property_scripts.local_name(iri),
+                     "status": entry.get("status"), "sha256": entry.get("sha256"), "reason": entry.get("reason"),
+                     "by": entry.get("by"), "regenerate": bool(entry.get("regenerate"))}
+                    for iri, entry in sorted(blocked.items())
+                    if entry.get("status") == property_calculator_store.STATUS_REJECTED],
+        "catalogue": catalogue_rows,
+    }
+
+
+@router.post("/scripts/property-calculators/confirm")
+def post_property_calculator_confirm(payload: CalculatorConfirmRequest, request: Request):
+    """Promote a pending generated calculator into the company catalogue, or confirm a retired one again.
+
+    Gates (D-58): a run of this project that holds values for the property, the exact sha256 that was shown, a
+    cleaned non-empty meaning. The store re-checks sha256, integrity, run time and the property key inside its
+    locked write transaction. Only an owner of the project confirms a retired copy again (D-60): the handler hands
+    the owner check to the store, which refuses a retired copy without it."""
+    company_name = _calculator_company(payload.project)
+    meaning = _calculator_clean(payload.meaning, property_calculator_review.MEANING_MAX)
+    unit = None
+    if isinstance(payload.unit, str) and payload.unit.strip():
+        try:
+            unit = property_calculator_review.clean_line(payload.unit, property_calculator_review.UNIT_MAX)
+        except ValueError:
+            unit = None  # nothing printable left: the stored calculator unit stays
+    run = get_validation_run(payload.project, payload.runId)
+    if run is None:
+        raise _calculator_route_error("CALCULATOR_RUN_NOT_FOUND", "no such validation run in this project", 404)
+    if not property_calculator_review.run_values(run, payload.dataPropertyIri):
+        raise _calculator_route_error("CALCULATOR_RUN_INVALID", "the run holds no values for this property", 422)
+    allow_reconfirm = auth.effective_role(request.state.principal, payload.project) == "owner"
+    try:
+        with driver.session() as session:
+            result = property_calculator_store.confirm(
+                session, project=payload.project, company=company_name, data_property_iri=payload.dataPropertyIri,
+                sha256=payload.sha256, run=_run_stamp(run), actor=_mapping_actor(request), meaning=meaning,
+                unit=unit, contract_version=property_scripts.load_catalogue()["version"],
+                allow_reconfirm=allow_reconfirm)
+    except property_calculator_store.CalculatorReviewError as exc:
+        raise _calculator_error(exc) from exc
+    return {"project": payload.project, "dataPropertyIri": payload.dataPropertyIri,
+            "catalogueId": result.get("catalogueId"), "alreadyConfirmed": bool(result.get("alreadyConfirmed")),
+            "reconfirmed": bool(result.get("reconfirmed")),
+            "reactivatedCopies": int(result.get("reactivatedCopies") or 0)}
+
+
+@router.post("/scripts/property-calculators/reject")
+def post_property_calculator_reject(payload: CalculatorRejectRequest, request: Request):
+    """Reject the pending calculator that was shown with ``sha256``; durable, the hash is never bound again. With
+    ``regenerate`` the next generation asks the LLM again with the reason. A catalogue copy, active or retired, is
+    refused by the store (``CALCULATOR_IN_CATALOGUE``): retire the entry instead (D-60)."""
+    reason = _calculator_clean(payload.reason, property_calculator_review.REASON_MAX)
+    try:
+        with driver.session() as session:
+            result = property_calculator_store.reject(
+                session, project=payload.project, data_property_iri=payload.dataPropertyIri, sha256=payload.sha256,
+                actor=_mapping_actor(request), reason=reason, regenerate=payload.regenerate)
+    except property_calculator_store.CalculatorReviewError as exc:
+        raise _calculator_error(exc) from exc
+    return {"project": payload.project, "dataPropertyIri": payload.dataPropertyIri,
+            "alreadyRejected": bool(result.get("alreadyRejected")), "regenerate": bool(result.get("regenerate")),
+            "rejectedSha256s": list(result.get("rejectedSha256s") or [])}
+
+
+@router.post("/scripts/property-calculators/retire")
+def post_property_calculator_retire(payload: CalculatorRetireRequest, request: Request):
+    """Retire a company catalogue entry and its project copies (owner role of the requesting project, D-59). Nothing
+    is deleted and the history keeps the event; the entry is read only with this project's company."""
+    company_name = _calculator_company(payload.project)
+    reason = _calculator_clean(payload.reason, property_calculator_review.REASON_MAX)
+    try:
+        with driver.session() as session:
+            result = property_calculator_store.retire(
+                session, project=payload.project, company=company_name, catalogue_id=payload.catalogueId,
+                actor=_mapping_actor(request), reason=reason)
+    except property_calculator_store.CalculatorReviewError as exc:
+        raise _calculator_error(exc) from exc
+    return {"project": payload.project, "catalogueId": result.get("catalogueId"),
+            "retiredCopies": int(result.get("retiredCopies") or 0),
+            "alreadyRetired": bool(result.get("alreadyRetired"))}
 
 
 # ---------------------------------------------------------------------------

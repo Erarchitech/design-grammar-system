@@ -175,6 +175,18 @@ The Speckle read token is one credential for the whole Speckle server. It never 
 
 Delivery receipts (`batchId` + `delivery`) remain connector-only in the handler. A delegated or member principal cannot report a physical CAD write; a connector cannot submit commit intent. A queued batch is server confirmation, not a CAD write receipt. This amendment changes only the existing mapping apply row, not authored-profile permissions or other routes.
 
+### 3.10 Calculator promotion (Phase 1303-16/17, D-54..D-60)
+
+A generated property calculator is Python that runs in other users' Rhino.Inside.Revit sessions once it is shared, so confirming one is a code-promotion gate, not a note. The four routes `GET /scripts/property-calculators/candidates` and `POST /scripts/property-calculators/confirm`, `/reject`, `/retire` carry the decision.
+
+- **The gate (confirm).** An editor of the source project, as the member principal only; the exact sha256 that was shown; a validation run of the same project, newer than the calculator, that holds values for the property; a cleaned non-empty meaning. The store re-runs the sha256, the AST contract and the run-time check inside its locked write transaction, so a calculator that changed between display and confirm is refused (`CALCULATOR_CHANGED`).
+- **Heuristic binding (accepted, D-53, D-58).** A run records no calculator sha256, so "this run was computed by this calculator" is a heuristic: the run is of the project, holds values for the property and is newer than the calculator. A stronger binding needs a DG.gha change, which is out of scope.
+- **Company scope (D-56).** The catalogue belongs to a company. A project with no company neither confirms nor resolves (422 `CATALOGUE_COMPANY_REQUIRED`), a project of another company never reads an entry, and no route returns the company name. `sourceProject` and `confirmedBy` of a catalogue row reach owners only.
+- **At resolve time.** Every shared entry and every stored generated calculator is verified again (sha256, contract) before it binds, a failing one is skipped with a warning and never reaches an assembled script, and a source whose sha256 the project rejected is never bound, through any reject and regenerate order. Only the operator-entered, cleaned meaning and unit enter the ingest vocabulary, never the LLM explanation. The graph routes lock the `CatalogueCalculator` and `PropertyCalculator` labels, protect `source` and `sha256`, and exclude claim-untagged shared nodes (plan 1303-16).
+- **Retire (D-59).** Owner role of the requesting project, member principal only; an owner of any project of the company may retire an entry. It retires the entry and its project copies in the same company, deletes nothing and keeps the history.
+- **Confirming again (D-59, D-60).** A retired calculator may be confirmed again through the confirm gate above, which makes the entry and its retired copies active again; a retired hash is paused, not rejected. Only an owner of the requesting project may do it: the confirm row stays editor-level for a first confirm, the handler passes the owner check to the store, and the store refuses a retired copy otherwise with `CATALOGUE_RECONFIRM_OWNER_REQUIRED` (403) inside its write transaction. A retired copy is never rejected or regenerated per project (`CALCULATOR_IN_CATALOGUE`, 409), so no path turns a paused hash into a rejected one.
+- **DeGram (D-57).** The delegated principal may only list candidates; it is absent from the confirm, reject and retire rows, and the generation of calculators never decides a promotion.
+
 ## 4. Machine-Checked Blocks
 
 Each block is enclosed by an HTML-comment marker pair. The drift test compares it to the code or compose file named in the heading.
@@ -310,6 +322,10 @@ GET|/rules/{project}/{rule_id}/delete-preview|member|path|viewer
 POST|/scripts/property-calculator|delegated+member|body|viewer
 POST|/scripts/property-calculator/place|delegated+member|body|editor
 GET|/scripts/property-calculators|delegated+member|query|viewer
+GET|/scripts/property-calculators/candidates|delegated+member|query|viewer
+POST|/scripts/property-calculators/confirm|member|body|editor
+POST|/scripts/property-calculators/reject|member|body|editor
+POST|/scripts/property-calculators/retire|member|body|owner
 POST|/scripts/property-check/run|delegated+member|body|editor
 POST|/scripts/property-check/status|delegated+member|body|viewer
 POST|/scripts/rule-classes|delegated+member|body|editor
