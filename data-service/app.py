@@ -79,6 +79,7 @@ import secrets_policy
 
 import reasoner
 import dg_context
+import rule_conflicts
 import cg_recognition
 import dg_identity
 from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
@@ -4733,6 +4734,26 @@ def preview_rule_deletion(project: str, rule_id: str):
             404,
         )
     return preview
+
+
+@router.get("/rules/{project}/{rule_id}/conflicts")
+def get_rule_conflicts(project: str, rule_id: str):
+    """Active rules of the project that conflict with the written rule (D-64, D-65).
+
+    Read-only and LLM-free: compares the rule's stored atoms (subject class,
+    DatatypeProperty, comparator, context participants) with the project's
+    other active rules, so a Russian rule is checked like an English one.
+    """
+    try:
+        with driver.session() as session:
+            return rule_conflicts.structural_conflicts(session, project, rule_id)
+    except rule_conflicts.RuleNotFoundError:
+        raise _structured_error_response(
+            f"Rule '{rule_id}' not found in project '{project}'.",
+            "Check the Rule_Id; it is case-sensitive.",
+            "RULE_NOT_FOUND",
+            404,
+        )
 
 
 @router.delete("/rules/{project}/{rule_id}")

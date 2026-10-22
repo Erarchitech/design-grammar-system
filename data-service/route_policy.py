@@ -320,6 +320,7 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("DELETE", "/knowledge/note/{note_id}"): _p(_MEM, source="resource:note", role="editor"),
     # ── rules ──
     ("GET", "/rules/{project}/{rule_id}/delete-preview"): _p(_MEM, source="path", role="viewer"),
+    ("GET", "/rules/{project}/{rule_id}/conflicts"): _p(_MEM, source="path", role="viewer"),
     ("DELETE", "/rules/{project}/{rule_id}"): _p(_MEM, source="path", role="editor"),
     ("POST", "/rules/resolve-deletion"): _p(_MEM, source="body", role="editor"),
     ("POST", "/rules/bulk-delete"): _p(_MEM, source="body", role="editor"),

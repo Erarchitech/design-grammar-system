@@ -358,6 +358,84 @@ class TestRules:
         assert _code(response) == "RULE_NOT_FOUND"
 
 
+class TestRuleConflicts:
+    """Plan 1303-21 (D-65): GET /rules/{project}/{rule_id}/conflicts reads the
+    written rule's atoms through the route-policy point, never the rule text."""
+
+    @pytest.fixture
+    def fake_driver(self, monkeypatch):
+        state = {"queries": [], "new": [], "corpus": []}
+
+        class _Session:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def run(self, query, **params):
+                state["queries"].append((query, params))
+                if "Rule_Id: $ruleId" in query:
+                    return list(state["new"])
+                return list(state["corpus"])
+
+        class _Driver:
+            def session(self):
+                return _Session()
+
+        monkeypatch.setattr(app_module, "driver", _Driver())
+        return state
+
+    @staticmethod
+    def _rows(rule_id, limit):
+        def atom(role, order, atom_type, ref_kind, ref_iri, args, label=""):
+            return {
+                "ruleId": rule_id, "swrl": "s", "description": "", "role": role, "ord": order,
+                "atomId": f"{rule_id}_{order}", "atomType": atom_type, "refKind": ref_kind,
+                "refIri": ref_iri, "refLabel": label, "args": args,
+            }
+
+        var = lambda pos, name: {"pos": pos, "kind": "Var", "value": name}  # noqa: E731
+        return [
+            atom("HAS_BODY", 1, "ClassAtom", "Class", "ex:Opening", [var(1, "?x")], "Opening"),
+            atom("HAS_BODY", 2, "DataPropertyAtom", "DatatypeProperty", "ex:dist", [var(1, "?x"), var(2, "?v")]),
+            atom("HAS_BODY", 3, "BuiltinAtom", "Builtin", "swrlb:ge",
+                 [var(1, "?v"), {"pos": 2, "kind": "Literal", "value": limit}]),
+            atom("HAS_HEAD", 1, "DataPropertyAtom", "DatatypeProperty", "ex:bad",
+                 [var(1, "?x"), {"pos": 2, "kind": "Literal", "value": "true"}]),
+        ]
+
+    def test_conflict_answer_shape_and_bound_project(self, client, fake_driver):
+        fake_driver["new"] = self._rows("R_NEW", "500")
+        fake_driver["corpus"] = self._rows("R_OLD", "300")
+
+        response = client.get(f"/rules/{PROJECT}/R_NEW/conflicts", headers=_headers(role="viewer"))
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["ruleId"] == "R_NEW" and body["conflict"] is True
+        assert body["matches"][0]["ruleId"] == "R_OLD"
+        assert body["matches"][0]["currentValue"] == "300"
+        assert set(body["matches"][0]) == {"ruleId", "swrl", "description", "currentValue", "sharedClasses"}
+        for query, params in fake_driver["queries"]:
+            assert params["project"] == PROJECT
+            assert PROJECT not in query
+
+    def test_unknown_rule_is_404(self, client, fake_driver):
+        response = client.get(f"/rules/{PROJECT}/R_MISSING/conflicts", headers=_headers(role="viewer"))
+
+        assert response.status_code == 404
+        assert _code(response) == "RULE_NOT_FOUND"
+
+    def test_a_non_member_is_refused_before_any_read(self, client, fake_driver):
+        headers = _headers(username="other@dg.local", role="viewer", project="OtherProject")
+
+        response = client.get(f"/rules/{PROJECT}/R_NEW/conflicts", headers=headers)
+
+        assert response.status_code == 403
+        assert fake_driver["queries"] == []
+
+
 class TestEntityStatuses:
     def test_statuses_for_one_entity(self, client, db):
         db["many"] = [[{"ruleId": "R_A", "status": "passed"}, {"ruleId": "R_B", "status": "failed"}]]

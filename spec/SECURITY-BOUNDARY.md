@@ -318,6 +318,7 @@ POST|/rules/supersede|member|body|editor
 GET|/rules/{project}|delegated+member|path|viewer
 DELETE|/rules/{project}/{rule_id}|member|path|editor
 GET|/rules/{project}/{rule_id}|member|path|viewer
+GET|/rules/{project}/{rule_id}/conflicts|member|path|viewer
 GET|/rules/{project}/{rule_id}/delete-preview|member|path|viewer
 POST|/scripts/property-calculator|delegated+member|body|viewer
 POST|/scripts/property-calculator/place|delegated+member|body|editor
