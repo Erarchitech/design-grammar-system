@@ -50,6 +50,25 @@ unresolvable predicate kind: that case returns successfully with an `Unsupported
 exactly as `TryParse` does. This asymmetry is intentional (documented on `Parse`'s own doc-comment)
 and is itself one of the nine corpus cases in `fixtures/golden/parser/cases.json`.
 
+**Subject, context-only variable and context atom (D-61, Phase 1303).** Three terms define how a rule
+that names several object classes is read; they are computed by one shared classifier,
+`DG.Core.Parsing.RuleVariableRoles`, used by the binder, the evaluator, the failing-binding formatter
+and the Grasshopper RULE DECONSTRUCT component:
+
+- The **subject** is the variable at position 1 of the first head atom: the object the rule flags as
+  non-compliant. A rule with no head atom has no subject.
+- A **context-only variable** is not the subject, appears in at least one body atom and in no head atom,
+  and every body atom that mentions it is a `ClassAtom` or an `ObjectPropertyAtom` (never a
+  `DataPropertyAtom`, `BuiltinAtom` or `UnsupportedAtom`).
+- A **context atom** is a body `ClassAtom` whose position-1 variable is context-only, or a body
+  `ObjectPropertyAtom` with exactly two variable arguments, each the subject or context-only, at least
+  one of them context-only. A zero-argument, literal-argument or subject-to-subject
+  `ObjectPropertyAtom` is never a context atom.
+
+Context-only variables are never bound (a rule yields the rows of its one-class form), and the
+Grasshopper `Objects` output hides them; their classes stay in the METAGRAPH `Objects` query and so stay
+mappable.
+
 ### 1.2 Supported builtins
 
 The evaluator implements exactly six `swrlb:`-prefixed comparison builtins. This is the D-15
@@ -106,6 +125,21 @@ never silently reported as satisfied. Implementing genuine OWL object-property e
 is out of scope for this phase (and is the general-reasoner claim [§3](#3-non-claims-d-14)
 disclaims) — it is explicitly deferred, not attempted partially.
 
+**Scope of the refusal since D-61 (Phase 1303).** The refusal above applies to every
+`ObjectPropertyAtom` that is not a context atom ([§1.1](#11-atom-types-the-parser-emits)): a
+multi-object join (the atom relates the subject to a variable that also appears in a
+`DataPropertyAtom` or `BuiltinAtom`), every `ObjectPropertyAtom` of a rule with no head atom, and every
+argument-less `ObjectPropertyAtom`. `UnsupportedAtom` is refused as before.
+
+**Context atoms are asserted, not evaluated.** A context atom is **asserted by the rule**: the evaluator
+counts it as matched without resolving any of its variables (in the violation-pattern encoding the
+atom outcome is `failed`, so the body walk continues), and it is **listed in the result message**. When
+a rule has context atoms and its status is `passed` or `failed`, `RuleEvaluationResult.Message` ends
+with one sentence of the form `Asserted by the rule, not verified: Slab(?s), hostedBy(?o, ?s).` A rule
+without context atoms keeps its message unchanged. This is **not** evaluation of the relation: the
+evaluator never decides whether the relation holds, no status is added, and `StatusRollup` precedence
+is unchanged. The sentence is free `detail` text (`spec/EVIDENCE-CONTRACT.md`) and not a pinned field.
+
 ---
 
 ## 3. Non-Claims (D-14)
@@ -134,7 +168,7 @@ table below is the human-readable mapping the block mirrors, in the same order:
 
 | Construct | Status it yields | Why |
 |---|---|---|
-| `ObjectPropertyAtom` **evaluation** (recognized, not evaluated — [§2](#2-the-recognize-versus-evaluate-asymmetry)) | `unsupported` | Genuine OWL object-property semantics are not implemented; refusing beats guessing. |
+| `ObjectPropertyAtom` evaluation outside a context atom (recognized, not evaluated — [§2](#2-the-recognize-versus-evaluate-asymmetry); a context atom is asserted, [§1.1](#11-atom-types-the-parser-emits)) | `unsupported` | Genuine OWL object-property semantics are not implemented; refusing beats guessing. A multi-object join, a headless rule and an argument-less atom stay refused. |
 | String and date builtins beyond the six in [§1.2](#12-supported-builtins) (e.g. `swrlb:stringConcat`, `swrlb:yearGreaterThan`) | `unsupported` | Not in `SupportedBuiltins.Names`; `EvaluateBuiltin` refuses any predicate outside the allow-list. |
 | Negation (SWRL has no native negation-as-failure atom, and none is emitted or evaluated here) | `unsupported` | No atom type or evaluation path exists for it; there is nothing to guess at. |
 | OWL inference of any kind (subclass reasoning, property chains, equivalence, disjointness) | `unsupported` | The evaluator checks bound values against atoms as written; it performs no TBox reasoning. |

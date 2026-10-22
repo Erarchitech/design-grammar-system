@@ -111,6 +111,14 @@ public sealed class RuleDeconstructComponent : GH_Component
 
         foreach (var variable in sortedVariables)
         {
+            // D-61/D-62: a context-only participant is asserted by the rule, not checked: it gets no
+            // ObjState and no Objects output. Its class stays visible in the METAGRAPH Objects query
+            // (ObjectsQuery is unchanged), so Slab, Column and Wall remain mappable classes.
+            if (RuleVariableRoles.IsContextOnly(rule, variable.Name))
+            {
+                continue;
+            }
+
             var kind = VariableTypeInferrer.Infer(rule, variable.Name);
 
             if (kind == VariableKind.Object)
