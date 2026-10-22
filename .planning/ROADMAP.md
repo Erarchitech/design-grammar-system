@@ -339,7 +339,7 @@ Plans (wave order; plan numbers are stable identifiers, not execution order):
 4. Автор запускает существующее распознавание, просматривает предложения, частично принимает/отклоняет их; unrecognized остаются видимыми, отдельное подтверждение публикации показывает target project, revision и реально записанный результат. [DGBN-05]
 5. Пользователь открывает согласованные reference `.gh` с прежними компонентами/GUIDs и получает эквивалентные успешные tagging/publish результаты без новых missing-component placeholders; заранее известные исключения, включая CONNECTOR post-825, перечислены явно. [DGBN-06]
 
-**Plans**: 17/23 plans executed
+**Plans**: 18/23 plans executed
 
 Executed: 16/23 plans (checklist maintained by the GSD tooling)
 
@@ -364,7 +364,7 @@ Executed: 16/23 plans (checklist maintained by the GSD tooling)
 - [x] 1303-19-PLAN.md
 - [x] 1303-20-PLAN.md
 - [x] 1303-21-PLAN.md
-- [ ] 1303-22-PLAN.md
+- [x] 1303-22-PLAN.md
 - [ ] 1303-23-PLAN.md
 
 **UI hint**: yes
@@ -487,7 +487,7 @@ Executed: 16/23 plans (checklist maintained by the GSD tooling)
 | 1300. Контракты, проверка и ownership | 0/8 active | Incomplete — scope revision; 1300-07 withdrawn, not complete; acceptance OPEN | — |
 | 1301. Рабочий клиент и безопасное чтение | 40/41 | In Progress|  |
 | 1302. Источник, словарь и утверждённая редакция | 0/TBD | Not started | — |
-| 1303. Правило ↔ GH ↔ объект | 17/23 | In Progress|  |
+| 1303. Правило ↔ GH ↔ объект | 18/23 | In Progress|  |
 | 1304. Design State, проверка и review | 0/TBD | Not started | — |
 | 1305. Ограниченное GH intent editing | 0/TBD | Not started | — |
 | 1306. Межплатформенная передача | 0/TBD | Not started | — |
