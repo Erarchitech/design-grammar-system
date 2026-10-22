@@ -82,7 +82,12 @@ const cases = [
   ['mapping.postDecision', () => mapping.postDecision(project, 'ms/1', { questionId: 'Q-1', optionId: 'accept-all', groupIds: ['G-1'] }), 'POST', '/data-service/mapping/sessions/ms%2F1/decisions', { project, questionId: 'Q-1', optionId: 'accept-all', groupIds: ['G-1'] }],
   ['mapping.applySession', () => mapping.applySession(project, 'ms/1', { requestId: 'batch-security', revision: 'a'.repeat(24), answerIds: ['A-1'] }), 'POST', '/data-service/mapping/sessions/ms%2F1/apply', { project, requestId: 'batch-security', revision: 'a'.repeat(24), answerIds: ['A-1'] }],
   ['mapping.listProfiles', () => mapping.listProfiles(project), 'GET', `/data-service/mapping/profiles?project=${encoded}`],
-  ['mapping.createProfile', () => mapping.createProfile(project, { platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }), 'POST', '/data-service/mapping/profiles', { project, platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }]
+  ['mapping.createProfile', () => mapping.createProfile(project, { platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }), 'POST', '/data-service/mapping/profiles', { project, platform: 'revit', selector: { family: 'Facade_Module_Hex' }, roles: ['ex:HexagonalUnit'] }],
+  // Phase 1303-18: property-calculator review (D-54..D-60) — project in the query (GET) or the body (POST).
+  ['mapping.listCalculatorCandidates', () => mapping.listCalculatorCandidates(project, 'run/1'), 'GET', `/data-service/scripts/property-calculators/candidates?project=${encoded}&runId=run%2F1`],
+  ['mapping.confirmCalculator', () => mapping.confirmCalculator(project, { dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), runId: 'run/1', meaning: 'Window area', unit: 'm2' }), 'POST', '/data-service/scripts/property-calculators/confirm', { project, dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), runId: 'run/1', meaning: 'Window area', unit: 'm2' }],
+  ['mapping.rejectCalculator', () => mapping.rejectCalculator(project, { dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), reason: 'too coarse', regenerate: true }), 'POST', '/data-service/scripts/property-calculators/reject', { project, dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), reason: 'too coarse', regenerate: true }],
+  ['mapping.retireCalculator', () => mapping.retireCalculator(project, { catalogueId: 'cat/1', reason: 'superseded' }), 'POST', '/data-service/scripts/property-calculators/retire', { project, catalogueId: 'cat/1', reason: 'superseded' }]
 ];
 for (const [name, invoke, method, url, body, mode] of cases) {
   for (const status of [200, 401, 403]) {

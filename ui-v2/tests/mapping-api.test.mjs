@@ -12,10 +12,13 @@ import {
   appliedByClass,
   applySession,
   awaitingApply,
+  calculatorConfirmPayload,
+  calculatorConfirmable,
   cardOpen,
   classLabels,
   classLocalName,
   confidencePercent,
+  confirmCalculator,
   consequenceRows,
   createProfile,
   createSession,
@@ -23,6 +26,7 @@ import {
   includedGroupIds,
   itemView,
   labelFromFileName,
+  listCalculatorCandidates,
   listProfiles,
   listSessions,
   mergeProfiles,
@@ -34,6 +38,8 @@ import {
   proposalItems,
   proposalTitle,
   questionText,
+  rejectCalculator,
+  retireCalculator,
   selectorEntries,
   sessionAnswers,
   sessionSummary,
@@ -73,6 +79,13 @@ const qp = `project=${encodeURIComponent(project)}`;
 const sid = 'ms-0123 /?#';
 const sessionPath = `/data-service/mapping/sessions/${encodeURIComponent(sid)}`;
 const body = (i = 0) => JSON.parse(calls[i].init.body);
+
+// Plans 1303-16 and 1303-17: nine store codes and three route-level codes (D-60 adds the owner one): twelve in all.
+const CALCULATOR_ERROR_CODES = [
+  'CALCULATOR_NOT_FOUND', 'CALCULATOR_NOT_PENDING', 'CALCULATOR_CHANGED', 'CALCULATOR_INTEGRITY',
+  'CALCULATOR_RUN_NOT_FOUND', 'CALCULATOR_RUN_INVALID', 'CALCULATOR_INPUT_INVALID', 'CALCULATOR_IN_CATALOGUE',
+  'CATALOGUE_COMPANY_REQUIRED', 'CATALOGUE_PROPERTY_TAKEN', 'CATALOGUE_ENTRY_NOT_FOUND', 'CATALOGUE_RECONFIRM_OWNER_REQUIRED'
+];
 
 test('listSessions GETs the project-scoped list with an optional limit and no CSRF marker', async () => {
   reply = [200, { sessions: [{ sessionId: 'ms-1' }] }];
@@ -186,7 +199,7 @@ test('mapping error codes reach describeError through ApiError', async () => {
 test('mapping error codes have EN and RU texts and describeError maps them', async () => {
   const { EN, RU } = await import('../src/i18n/dict/index.js');
   const i18n = await import('../src/i18n/index.js');
-  const codes = ['MAPPING_SESSION_NOT_FOUND', 'MAPPING_QUESTION_NOT_FOUND', 'MAPPING_OPTION_INVALID', 'MAPPING_INPUT_INVALID', 'MAPPING_TOO_MANY_ELEMENTS', 'MAPPING_COMMIT_REQUIRED', 'MAPPING_COMMIT_CONFLICT', 'MAPPING_ANSWER_COMMITTED'];
+  const codes = ['MAPPING_SESSION_NOT_FOUND', 'MAPPING_QUESTION_NOT_FOUND', 'MAPPING_OPTION_INVALID', 'MAPPING_INPUT_INVALID', 'MAPPING_TOO_MANY_ELEMENTS', 'MAPPING_COMMIT_REQUIRED', 'MAPPING_COMMIT_CONFLICT', 'MAPPING_ANSWER_COMMITTED', ...CALCULATOR_ERROR_CODES];
   for (const code of codes) {
     assert.equal(typeof EN[`error.${code}`], 'string', `EN ${code}`);
     assert.equal(typeof RU[`error.${code}`], 'string', `RU ${code}`);
@@ -395,9 +408,10 @@ function panelParts() {
   partsPromise ??= build({
     stdin: {
       contents: [
-        'export { ProposalCard, AnswerCard, ItemRow, ApplyResult } from "./src/screens/MappingPanel.jsx";',
+        'export { ProposalCard, AnswerCard, ItemRow, ApplyResult, CalculatorReviewCard, CatalogueEntryRow, BlockedCalculatorRow } from "./src/screens/MappingPanel.jsx";',
         'export { renderToStaticMarkup } from "react-dom/server.browser";',
         'export { createElement } from "react";',
+        'export { default as React } from "react";',
         'export { setLang } from "./src/i18n/index.js";'
       ].join('\n'),
       resolveDir: fileURLToPath(new URL('..', import.meta.url)),
@@ -603,4 +617,322 @@ test('MappingPanel keys card state by questionId / answerId, undoes per answer a
   const { RU } = await import('../src/i18n/dict/index.js');
   assert.ok(!Object.keys(RU).some(key => /start mapping|start a mapping/i.test(key)), 'no start-mapping text');
   assert.match(source, /t\("Import descriptors \(JSON\)"\)/);
+});
+
+// ── calculator review (plans 1303-16..18, DGOPN-05, D-54..D-60) ───────────────────────────────────────────────
+
+const SHA = 'a'.repeat(64);
+const calcBase = '/data-service/scripts/property-calculators';
+
+test('listCalculatorCandidates GETs the encoded project and run with no CSRF marker and no runId when absent', async () => {
+  reply = [200, { project, companyAssigned: true, canRetire: false, run: null, candidates: [], blocked: [], catalogue: [] }];
+  const res = await listCalculatorCandidates('A b', 'run/1');
+  await listCalculatorCandidates('A b');
+  await listCalculatorCandidates('A b', '');
+  assert.equal(res.companyAssigned, true);
+  assert.deepEqual(calls.map(c => c.url), [
+    `${calcBase}/candidates?project=A%20b&runId=run%2F1`,
+    `${calcBase}/candidates?project=A%20b`,
+    `${calcBase}/candidates?project=A%20b`
+  ]);
+  for (const call of calls) {
+    assert.equal(call.init.method, 'GET');
+    assert.equal(call.init.headers[CSRF_HEADER], undefined);
+    assert.equal(call.init.body, undefined);
+  }
+});
+
+test('confirmCalculator POSTs exactly the shown sha256 and runId, the unit only when non-empty, with the CSRF marker', async () => {
+  reply = [200, { catalogueId: 'cat-1', alreadyConfirmed: false, reconfirmed: false, reactivatedCopies: 0 }];
+  const intent = { dataPropertyIri: 'ex:hasWindowArea', sha256: SHA, runId: 'run/1', meaning: '  Window area per box  ', unit: 'm2' };
+  const res = await confirmCalculator(project, intent);
+  await confirmCalculator(project, { ...intent, unit: '' });
+  await confirmCalculator(project, { ...intent, unit: undefined });
+  assert.equal(res.catalogueId, 'cat-1');
+  assert.equal(calls[0].url, `${calcBase}/confirm`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
+  assert.deepEqual(body(0), { project, dataPropertyIri: 'ex:hasWindowArea', sha256: SHA, runId: 'run/1', meaning: 'Window area per box', unit: 'm2' });
+  assert.deepEqual(body(1), { project, dataPropertyIri: 'ex:hasWindowArea', sha256: SHA, runId: 'run/1', meaning: 'Window area per box' });
+  assert.deepEqual(body(2), body(1), 'an absent unit keeps the stored calculator unit');
+});
+
+test('confirmCalculator refuses a bad sha256, a missing run, a blank meaning or property without sending a request', async () => {
+  const ok = { dataPropertyIri: 'ex:p', sha256: SHA, runId: 'run-1', meaning: 'm' };
+  const bad = [
+    { ...ok, sha256: 'A'.repeat(64) }, { ...ok, sha256: 'a'.repeat(63) }, { ...ok, sha256: undefined },
+    { ...ok, runId: '' }, { ...ok, runId: undefined },
+    { ...ok, meaning: '   ' }, { ...ok, meaning: undefined },
+    { ...ok, dataPropertyIri: '' }
+  ];
+  for (const intent of bad) {
+    await assert.rejects(() => confirmCalculator(project, intent), err => err.code === 'CALCULATOR_INPUT_INVALID', JSON.stringify(intent));
+  }
+  await assert.rejects(() => confirmCalculator(project), err => err.code === 'CALCULATOR_INPUT_INVALID');
+  assert.equal(calls.length, 0, 'the client sends nothing without the exact sha256 and runId');
+});
+
+test('rejectCalculator POSTs a boolean regenerate and refuses a blank reason without a request', async () => {
+  reply = [200, { alreadyRejected: false, regenerate: true, rejectedSha256s: [SHA] }];
+  await rejectCalculator(project, { dataPropertyIri: 'ex:p', sha256: SHA, reason: ' too coarse ', regenerate: true });
+  await rejectCalculator(project, { dataPropertyIri: 'ex:p', sha256: SHA, reason: 'wrong unit' });
+  assert.equal(calls[0].url, `${calcBase}/reject`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
+  assert.deepEqual(body(0), { project, dataPropertyIri: 'ex:p', sha256: SHA, reason: 'too coarse', regenerate: true });
+  assert.deepEqual(body(1), { project, dataPropertyIri: 'ex:p', sha256: SHA, reason: 'wrong unit', regenerate: false });
+  const before = calls.length;
+  for (const intent of [{ dataPropertyIri: 'ex:p', sha256: SHA, reason: '  ' }, { dataPropertyIri: 'ex:p', sha256: SHA }, { dataPropertyIri: 'ex:p', sha256: 'x', reason: 'r' }]) {
+    await assert.rejects(() => rejectCalculator(project, intent), err => err.code === 'CALCULATOR_INPUT_INVALID');
+  }
+  assert.equal(calls.length, before);
+});
+
+test('retireCalculator POSTs the catalogue id and a reason and refuses a blank one without a request', async () => {
+  reply = [200, { catalogueId: 'cat/1', retiredCopies: 2, alreadyRetired: false }];
+  await retireCalculator(project, { catalogueId: 'cat/1', reason: ' superseded ' });
+  assert.equal(calls[0].url, `${calcBase}/retire`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
+  assert.deepEqual(body(0), { project, catalogueId: 'cat/1', reason: 'superseded' });
+  for (const intent of [{ catalogueId: 'cat/1', reason: '' }, { catalogueId: '', reason: 'r' }, { reason: 'r' }, undefined]) {
+    await assert.rejects(() => retireCalculator(project, intent), err => err.code === 'CALCULATOR_INPUT_INVALID');
+  }
+  assert.equal(calls.length, 1);
+});
+
+test('calculatorConfirmable needs an effective run, a run newer than the calculator and at least one value', () => {
+  const run = { runId: 'run-1', createdAt: '2026-10-22T09:00:00Z' };
+  const good = { runNewerThanCalculator: true, stats: { n: 3 } };
+  assert.equal(calculatorConfirmable(good, run), true);
+  assert.equal(calculatorConfirmable(good, null), false, 'no published run');
+  assert.equal(calculatorConfirmable({ ...good, run }, null), true, "the candidate's own run is enough when the shared run is null");
+  assert.equal(calculatorConfirmable({ ...good, run: { runId: 'own' } }, run), true);
+  assert.equal(calculatorConfirmable({ ...good, runNewerThanCalculator: false }, run), false, 'run older than the calculator');
+  assert.equal(calculatorConfirmable({ ...good, runNewerThanCalculator: undefined }, run), false);
+  assert.equal(calculatorConfirmable({ ...good, stats: { n: 0 } }, run), false, 'no values');
+  assert.equal(calculatorConfirmable({ ...good, stats: undefined }, run), false);
+  assert.equal(calculatorConfirmable({ ...good, run: { createdAt: 'x' } }, null), false, 'a run without an id cannot be confirmed against');
+  assert.equal(calculatorConfirmable(null, run), false);
+});
+
+test('calculatorConfirmPayload carries the sha256 unchanged and the runId of the effective run (D-58, D-59)', () => {
+  const candidate = { dataPropertyIri: 'ex:p', sha256: SHA, unit: 'm2', run: { runId: 'own-run' } };
+  assert.deepEqual(calculatorConfirmPayload(candidate, { runId: 'shared-run' }, 'Window area', 'm2'),
+    { dataPropertyIri: 'ex:p', sha256: SHA, runId: 'own-run', meaning: 'Window area', unit: 'm2' }, 'a retired copy confirms against its own run');
+  assert.equal(calculatorConfirmPayload({ ...candidate, run: null }, { runId: 'shared-run' }, 'm', 'm2').runId, 'shared-run');
+  assert.equal(calculatorConfirmPayload({ ...candidate, run: null }, null, 'm', 'm2').runId, '', 'no run, no id: confirmCalculator then refuses');
+});
+
+test('calculator error codes have EN and RU texts that differ and describeError maps them (CATALOGUE_PROPERTY_TAKEN in both languages)', async () => {
+  const { EN, RU } = await import('../src/i18n/dict/index.js');
+  const i18n = await import('../src/i18n/index.js');
+  assert.equal(CALCULATOR_ERROR_CODES.length, 12);
+  for (const code of CALCULATOR_ERROR_CODES) {
+    assert.equal(typeof EN[`error.${code}`], 'string', `EN ${code}`);
+    assert.equal(typeof RU[`error.${code}`], 'string', `RU ${code}`);
+    assert.notEqual(EN[`error.${code}`], RU[`error.${code}`], code);
+  }
+  assert.equal(i18n.describeError({ code: 'CATALOGUE_PROPERTY_TAKEN', message: 'taken' }, 'fb'), EN['error.CATALOGUE_PROPERTY_TAKEN']);
+  i18n.setLang('ru');
+  try {
+    assert.equal(i18n.describeError({ code: 'CATALOGUE_PROPERTY_TAKEN', message: 'taken' }, 'fb'), RU['error.CATALOGUE_PROPERTY_TAKEN']);
+    assert.equal(i18n.describeError({ code: 'CATALOGUE_RECONFIRM_OWNER_REQUIRED' }, 'fb'), 'Подтвердить отозванный калькулятор снова может только владелец проекта. Обратитесь к владельцу.');
+  } finally {
+    i18n.setLang('en');
+  }
+  assert.equal(EN['error.CATALOGUE_RECONFIRM_OWNER_REQUIRED'], 'Only an owner of this project can confirm a retired calculator again. Ask an owner.');
+});
+
+// Static rendering of the review cards. The cards keep their input text in React state, which a static render never
+// changes, so the seeded renderer answers the card's useState calls from `seeds` by call index. Card hooks, in
+// order: meaning (0), unit (1), reason (2), regenerate (3). CatalogueEntryRow: reason (0).
+async function renderSeeded(name, props, seeds = {}, lang = 'en') {
+  const parts = await panelParts();
+  const original = parts.React.useState;
+  let index = 0;
+  parts.React.useState = (initial) => {
+    const value = typeof initial === 'function' ? initial() : initial;
+    const at = index++;
+    return [at in seeds ? seeds[at] : value, () => {}];
+  };
+  parts.setLang(lang);
+  try {
+    return parts.renderToStaticMarkup(parts.createElement(parts[name], props));
+  } finally {
+    parts.React.useState = original;
+    parts.setLang('en');
+  }
+}
+
+const calcRun = { runId: 'run/1', createdAt: '2026-10-22T09:00:00Z' };
+const calcCandidate = (extra = {}) => ({
+  dataPropertyIri: 'ex:hasWindowArea', propertyName: 'WindowArea', function: 'window_area',
+  source: 'def calc(box):\n    return box.area', sha256: SHA, unit: 'm2',
+  explanation: 'LLM explanation of the window area', provider: 'anthropic', model: 'claude-test',
+  createdAt: '2026-10-22T08:00:00Z', createdBy: 'editor', readCategories: ['Windows', 'Walls'], ruleIds: ['R_WINDOW_MIN_V'],
+  samples: Array.from({ length: 12 }, (_, i) => ({ objectRef: `rvt:${i}`, label: `Box ${i}`, value: i * 1.5 })),
+  stats: { n: 12, numeric: 12, min: 0, max: 16.5 },
+  verdicts: [{ ruleId: 'R_WINDOW_MIN_V', counts: { violated: 2, satisfied: 10 } }],
+  run: calcRun, runNewerThanCalculator: true, retired: false, catalogueId: null, ...extra
+});
+const calcProps = (candidate, extra = {}) => ({
+  candidate, run: calcRun, companyAssigned: true, canReconfirm: false, busy: false, error: null, onConfirm() {}, onReject() {}, ...extra
+});
+const CONFIRM = 'Confirm for the company catalogue';
+const CONFIRM_AGAIN = 'Confirm again for the company catalogue';
+const OWNER_HINT = 'Only an owner of the project can confirm a retired calculator again.';
+
+test('CalculatorReviewCard shows source, up to ten sample rows, the stats line and one verdict row per rule', async () => {
+  const html = await render('CalculatorReviewCard', calcProps(calcCandidate()));
+  assert.match(html, /WindowArea/);
+  for (const text of ['anthropic', 'claude-test', 'm2', 'Windows', 'Walls', 'LLM explanation of the window area']) assert.ok(html.includes(text), text);
+  assert.match(html, /<pre[^>]*>def calc\(box\):\n    return box\.area<\/pre>/, 'the source sits in a code block');
+  assert.equal(count(html, /data-calculator-sample="/g), 10, 'twelve samples, ten rows');
+  assert.ok(html.includes('rvt:0 · Box 0 = 0'));
+  assert.ok(html.includes('rvt:9 · Box 9 = 13.5'));
+  assert.ok(!html.includes('rvt:10 · Box 10'));
+  assert.ok(html.includes('Values on 12 boxes · min 0 · max 16.5'));
+  assert.ok(html.includes('Rule verdicts'));
+  assert.ok(html.includes('R_WINDOW_MIN_V · violated 2, satisfied 10'));
+  assert.doesNotMatch(html, />Retired</, 'a pending candidate is not marked retired');
+});
+
+test('calculator cards never render the source, explanation, labels or reason as HTML', async () => {
+  const hostile = calcCandidate({
+    source: '<script>alert(1)</script>', explanation: '<img src=x onerror=alert(2)>',
+    samples: [{ objectRef: '<b>ref</b>', label: '<i>x</i>', value: '<u>1</u>' }],
+    verdicts: [{ ruleId: '<svg onload=alert(3)>', counts: { '<b>violated</b>': 1 } }]
+  });
+  const html = await render('CalculatorReviewCard', calcProps(hostile));
+  assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+  for (const raw of ['<script', '<img', '<b>ref', '<i>x', '<u>1', '<svg onload']) assert.ok(!html.includes(raw), raw);
+  const blocked = await render('BlockedCalculatorRow', { item: { dataPropertyIri: 'ex:p', propertyName: '<b>P</b>', status: 'rejected', sha256: SHA, reason: '"><script>x</script>', by: 'e', regenerate: false }, busy: false, error: null, onRegenerate() {} });
+  assert.ok(!blocked.includes('<script') && !blocked.includes('<b>P'));
+});
+
+test('CalculatorReviewCard Confirm needs a confirmable run, a company and a typed meaning (D-56, D-58)', async () => {
+  const empty = await render('CalculatorReviewCard', calcProps(calcCandidate()));
+  assert.match(buttonTag(empty, CONFIRM), /disabled=""/, 'empty meaning');
+  assert.doesNotMatch(empty, /value="LLM explanation/, 'the LLM explanation is shown for reference and never pre-filled');
+  const typed = { 0: 'Window area per box' };
+  assert.doesNotMatch(buttonTag(await renderSeeded('CalculatorReviewCard', calcProps(calcCandidate()), typed), CONFIRM), /disabled/, 'meaning typed');
+  assert.match(buttonTag(await renderSeeded('CalculatorReviewCard', calcProps(calcCandidate()), { 0: '   ' }), CONFIRM), /disabled=""/, 'blank meaning');
+  const cases = [
+    ['The run is older than this calculator: run the check again.', calcCandidate({ runNewerThanCalculator: false })],
+    ['The run holds no values for this property.', calcCandidate({ stats: { n: 0, numeric: 0, min: null, max: null }, samples: [] })],
+    ['No published run yet: run the check with publishing first.', calcCandidate({ run: null }), { run: null }]
+  ];
+  for (const [hint, candidate, extra] of cases) {
+    const html = await renderSeeded('CalculatorReviewCard', calcProps(candidate, extra), typed);
+    assert.match(buttonTag(html, CONFIRM), /disabled=""/, hint);
+    assert.ok(html.includes(hint), hint);
+  }
+  const noCompany = await renderSeeded('CalculatorReviewCard', calcProps(calcCandidate(), { companyAssigned: false }), typed);
+  assert.match(buttonTag(noCompany, CONFIRM), /disabled=""/, 'no company, no confirm');
+  const ownRun = await renderSeeded('CalculatorReviewCard', calcProps(calcCandidate(), { run: null }), typed);
+  assert.doesNotMatch(buttonTag(ownRun, CONFIRM), /disabled/, "the candidate's own run is enough");
+  assert.match(buttonTag(await renderSeeded('CalculatorReviewCard', calcProps(calcCandidate(), { busy: true }), typed), CONFIRM), /disabled=""/, 'no second request while one runs');
+});
+
+test('CalculatorReviewCard pending candidate offers Reject with a reason and the regenerate option', async () => {
+  const html = await render('CalculatorReviewCard', calcProps(calcCandidate()));
+  assert.match(buttonTag(html, 'Reject'), /disabled=""/, 'blank reason');
+  assert.ok(html.includes('Ask DG for a new calculator'));
+  assert.ok(html.includes('>Reason<'));
+  assert.doesNotMatch(buttonTag(await renderSeeded('CalculatorReviewCard', calcProps(calcCandidate()), { 2: 'values too coarse' }), 'Reject'), /disabled/);
+  const failed = await render('CalculatorReviewCard', calcProps(calcCandidate(), { error: { code: 'CALCULATOR_CHANGED' } }));
+  assert.ok(failed.includes('The calculator changed since it was shown'));
+});
+
+test('CalculatorReviewCard retired calculator with its own run and an owner: Confirm again (D-59)', async () => {
+  const retired = calcCandidate({ retired: true, catalogueId: 'cat-1', run: { runId: 'source-run', createdAt: '2026-10-21T09:00:00Z' } });
+  const html = await renderSeeded('CalculatorReviewCard', calcProps(retired, { run: null, canReconfirm: true }), { 0: 'Window area per box' });
+  assert.match(html, />Retired</);
+  assert.ok(html.includes('def calc(box):'), 'source shown as for a pending candidate');
+  assert.ok(html.includes('Values on 12 boxes'));
+  const tag = buttonTag(html, CONFIRM_AGAIN);
+  assert.ok(tag !== undefined, 'Confirm again button');
+  assert.doesNotMatch(tag, /disabled/);
+  assert.equal(buttonTag(html, CONFIRM), undefined, 'the first-confirm label is not used for a retired calculator');
+  assert.equal(count(html, /<input/g), 2, 'meaning and unit inputs');
+  const ru = await render('CalculatorReviewCard', calcProps(retired, { run: null, canReconfirm: true }), 'ru');
+  assert.match(ru, />Отозван</);
+  assert.ok(buttonTag(ru, 'Подтвердить снова в каталог компании') !== undefined);
+});
+
+test('retired calculator: Confirm again only for an owner (D-60)', async () => {
+  const retired = calcCandidate({ retired: true, catalogueId: 'cat-1' });
+  const nonOwner = await render('CalculatorReviewCard', calcProps(retired, { canReconfirm: false }));
+  assert.ok(!nonOwner.includes(CONFIRM_AGAIN), 'no Confirm again for a non-owner');
+  assert.equal(buttonTag(nonOwner, CONFIRM), undefined);
+  assert.ok(nonOwner.includes(OWNER_HINT), 'owner-only hint');
+  assert.equal(count(nonOwner, /<input/g), 0, 'no meaning or unit input without the right to confirm');
+  assert.match(nonOwner, />Retired</);
+  const owner = await render('CalculatorReviewCard', calcProps(retired, { canReconfirm: true }));
+  assert.ok(owner.includes(CONFIRM_AGAIN));
+  assert.ok(!owner.includes(OWNER_HINT));
+  const ru = await render('CalculatorReviewCard', calcProps(retired, { canReconfirm: false }), 'ru');
+  assert.ok(ru.includes('Подтвердить отозванный калькулятор снова может только владелец проекта.'));
+  assert.ok(!ru.includes('Подтвердить снова в каталог компании'));
+});
+
+test('retired calculator renders no Reject or regenerate action (D-60)', async () => {
+  const retired = calcCandidate({ retired: true, catalogueId: 'cat-1' });
+  for (const canReconfirm of [true, false]) {
+    for (const [lang, reject, regenerate, reason] of [['en', 'Reject', 'Ask DG for a new calculator', '>Reason<'], ['ru', 'Отклонить', 'Попросить DG написать новый калькулятор', '>Обоснование<']]) {
+      const html = await render('CalculatorReviewCard', calcProps(retired, { canReconfirm }), lang);
+      assert.equal(buttonTag(html, reject), undefined, `${lang} Reject, canReconfirm ${canReconfirm}`);
+      assert.ok(!html.includes(regenerate), `${lang} regenerate, canReconfirm ${canReconfirm}`);
+      assert.ok(!html.includes(reason), `${lang} reason input, canReconfirm ${canReconfirm}`);
+    }
+  }
+});
+
+test('CatalogueEntryRow shows Retire only with canRetire and the owner-only fields only when present', async () => {
+  const entry = { catalogueId: 'cat-1', propertyKey: 'windowarea', propertyName: 'WindowArea', dataPropertyIri: 'ex:hasWindowArea', sha256: SHA, unit: 'm2',
+    meaning: 'Window area per box', readCategories: ['Windows'], contractVersion: 3, provider: 'anthropic', model: 'claude-test', confirmedAt: '2026-10-22T09:30:00Z' };
+  const base = { entry, canRetire: false, busy: false, error: null, onRetire() {} };
+  const viewer = await render('CatalogueEntryRow', base);
+  for (const text of ['WindowArea', 'Window area per box', 'm2', 'Windows']) assert.ok(viewer.includes(text), text);
+  assert.match(viewer, /Confirmed /);
+  assert.equal(buttonTag(viewer, 'Retire'), undefined, 'no Retire without canRetire');
+  assert.doesNotMatch(viewer, /str-openings-01|owner-1/);
+  const owner = await render('CatalogueEntryRow', { ...base, canRetire: true, entry: { ...entry, sourceProject: 'str-openings-01', confirmedBy: 'owner-1' } });
+  assert.match(buttonTag(owner, 'Retire'), /disabled=""/, 'Retire needs a typed reason');
+  assert.ok(owner.includes('str-openings-01') && owner.includes('owner-1'));
+  assert.doesNotMatch(buttonTag(await renderSeeded('CatalogueEntryRow', { ...base, canRetire: true }, { 0: 'superseded' }), 'Retire'), /disabled/);
+  assert.ok(buttonTag(await render('CatalogueEntryRow', { ...base, canRetire: true }, 'ru'), 'Отозвать') !== undefined);
+  assert.ok((await render('CatalogueEntryRow', { ...base, error: { code: 'CATALOGUE_ENTRY_NOT_FOUND' } })).includes('This catalogue entry was not found'));
+});
+
+test('BlockedCalculatorRow shows the status, the pre-filled reason and a regenerate action', async () => {
+  const item = { dataPropertyIri: 'ex:hasWindowArea', propertyName: 'WindowArea', status: 'rejected', sha256: SHA, reason: 'values too coarse', by: 'editor', regenerate: false };
+  const props = { item, busy: false, error: null, onRegenerate() {} };
+  const html = await render('BlockedCalculatorRow', props);
+  assert.ok(html.includes('WindowArea'));
+  assert.match(html, />Rejected</);
+  assert.ok(html.includes('value="values too coarse"'), 'reason input pre-filled from the rejected row');
+  assert.doesNotMatch(buttonTag(html, 'Ask DG for a new calculator'), /disabled/);
+  assert.match(buttonTag(await render('BlockedCalculatorRow', { ...props, item: { ...item, reason: '' } }), 'Ask DG for a new calculator'), /disabled=""/);
+  const ru = await render('BlockedCalculatorRow', props, 'ru');
+  assert.match(ru, />Отклонён</);
+  assert.ok(buttonTag(ru, 'Попросить DG написать новый калькулятор') !== undefined);
+});
+
+test('PropertyCheckCard loads calculators only from the review button and after a decision (D-29, D-57)', async () => {
+  const source = await readFile(new URL('../src/screens/MappingPanel.jsx', import.meta.url), 'utf8');
+  assert.equal(count(source, /\blistCalculatorCandidates\(/g), 1, 'one call site');
+  assert.match(source, /const loadCandidates = async \(\) => \{[\s\S]*?await listCalculatorCandidates\(project, check\?\.summary\?\.validationRunIds\?\.\[0\]\)/);
+  assert.equal(count(source, /\bloadCandidates\(/g), 4, 'the review button and the three post-action refreshes');
+  assert.match(source, /onClick=\{\(\) => loadCandidates\(\)\}/);
+  assert.equal(count(source, /\bload\(/g), 4, 'the mapping-session load count is unchanged');
+  const card = source.slice(source.indexOf('function PropertyCheckCard'), source.indexOf('export default function MappingPanel'));
+  assert.doesNotMatch(card, /useEffect|useLayoutEffect/, 'nothing runs on mount');
+  assert.match(source, /canReconfirm=\{review\.canRetire === true\}/, 'D-60: confirm-again rights are the server owner check');
+  assert.match(source, /canRetire=\{review\.canRetire === true\}/);
+  for (const fn of ['confirmCalculator', 'rejectCalculator', 'retireCalculator']) assert.match(source, new RegExp(`\\b${fn}\\(`), `${fn} wired`);
+  assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
+  assert.doesNotMatch(source, /\bfetch\(|apiFetch/);
+  assert.match(source, /t\("Review generated calculators"\)/);
 });
