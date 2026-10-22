@@ -1053,7 +1053,8 @@ def test_every_query_constant_is_known_to_the_fake_and_the_marker_contract_holds
     assert queries["SAVE_QUERY"].startswith("MERGE (pc:PropertyCalculator")
     fake = _RowStore()
     for name in queries:
-        if name in ("CONTEXT_CLASS_QUERY", "UNLINK_QUERY", "PRUNE_QUERY"):
+        if name in ("CONTEXT_CLASS_QUERY", "PARTICIPANT_CLASS_QUERY", "CLASS_CATEGORIES_QUERY", "UNLINK_QUERY",
+                    "PRUNE_QUERY"):
             continue  # class linking is covered by test_property_scripts
         assert hasattr(fake, "_do_" + name.lower()), name
 
@@ -1078,3 +1079,74 @@ def test_confirm_and_retire_hold_the_catalogue_lock(monkeypatch):
                   actor="a", meaning="m", unit=None, contract_version=1)
     store.retire(_Session(), project=PROJECT, company=COMPANY, catalogue_id="CC-x", actor="a", reason="r")
     assert seen == ["enter", "write", "exit", "enter", "write", "exit"]
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Phase 1303-22 (D-62): READS_CLASS edges carry the relation of a participant
+# ---------------------------------------------------------------------------------------------------------------
+
+
+class _ClassSession:
+    """Records the class-linking statements of save_context_classes; ``existing`` are the project's class labels."""
+
+    def __init__(self, existing=(), categories=()):
+        self.existing = list(existing)
+        self.categories = list(categories)
+        self.calls = []
+
+    def run(self, query, **params):
+        self.calls.append((query, params))
+        if "revitCategories AS revitCategories" in query:
+            return _Result(self.categories)
+        if "coalesce(k.label, k.iri) AS label" in query:
+            return _Result([{"label": label} for label in self.existing])
+        return _Result([])
+
+    def links(self):
+        return [(q, p) for q, p in self.calls if "MERGE (k:Class" in q]
+
+
+def _slab(**extra):
+    return {"label": "Slab", "iri": "ex:Slab", "revitCategories": ["OST_Floors"], **extra}
+
+
+def test_a_participant_writes_its_relation_and_related_to_on_the_edge():
+    db = _ClassSession()
+    store.save_context_classes(db, PROJECT, IRI, [_slab(relation="hostedBy", relatedTo="Opening")])
+    (query, params), = db.links()
+    assert "r.relation = $relation" in query and "r.relatedTo = $relatedTo" in query
+    assert (params["relation"], params["relatedTo"], params["label"]) == ("hostedBy", "Opening", "Slab")
+    assert params["categories"] == ["OST_Floors"] and params["project"] == PROJECT
+
+
+def test_a_class_without_a_relation_is_linked_exactly_as_before():
+    db = _ClassSession()
+    store.save_context_classes(db, PROJECT, IRI, [_slab()])
+    (query, params), = db.links()
+    assert query.startswith(store.CONTEXT_CLASS_QUERY[:40]) and "$relation" not in query
+    assert "relation" not in params and "relatedTo" not in params
+
+
+def test_a_participant_of_a_concept_the_project_has_is_folded_onto_that_class_and_relatedto_follows():
+    """No second class for one concept: Slab is Floor, and the relation that points at Slab points at Floor."""
+    db = _ClassSession(existing=["Column", "Floor", "Opening"])
+    store.save_context_classes(db, PROJECT, IRI, [
+        _slab(relation="hostedBy", relatedTo="Opening"),
+        {"label": "Column", "iri": "ex:Column", "revitCategories": ["OST_Columns"], "relation": "projectsOnto",
+         "relatedTo": "Slab"}])
+    labels = [(p["label"], p["relatedTo"]) for _q, p in db.links()]
+    assert labels == [("Floor", "Opening"), ("Column", "Floor")]
+
+
+def test_a_class_that_already_has_the_exact_label_is_never_folded_onto_another_one():
+    db = _ClassSession(existing=["Floor", "Slab"])
+    store.save_context_classes(db, PROJECT, IRI, [_slab()])
+    assert [p["label"] for _q, p in db.links()] == ["Slab"]
+
+
+def test_the_project_classes_are_read_with_their_stored_revit_categories():
+    db = _ClassSession(categories=[{"label": "Floor", "revitCategories": ["OST_Floors"]},
+                                   {"label": "Wall", "revitCategories": None}])
+    assert store.load_class_categories(db, PROJECT) == {"Floor": ["OST_Floors"], "Wall": []}
+    query, params = db.calls[0]
+    assert params == {"project": PROJECT} and "$project" in query

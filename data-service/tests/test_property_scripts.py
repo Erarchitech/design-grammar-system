@@ -1123,3 +1123,89 @@ def test_ensure_rule_classes_links_the_multi_participant_rule_and_reports_a_head
                                                                         "OST_Floors"))
     assert [(e["ruleId"], e["dataPropertyIri"]) for e in out["linked"]] == [(ACCEPTANCE_ID, DG + ACCEPTANCE_PROP)]
     assert [(u["ruleId"], u["reason"]) for u in out["unsupported"]] == [("R_HEADLESS_V", "no subject")]
+
+
+def test_participants_become_the_calculator_read_classes(catalogue):
+    session = _Session(_acceptance_rows(), project_classes=[{"label": "Floor", "revitCategories": ["OST_Floors"]}])
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue, store=True,
+                      generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralColumns", "OST_Floors"))
+    entry = out["resolved"][0]
+    assert [c["label"] for c in entry["contextClasses"]] == ["Slab", "Column", "Wall"]
+    by_label = {c["label"]: c for c in entry["contextClasses"]}
+    assert by_label["Slab"]["revitCategories"] == ["OST_Floors"]  # Slab ~ Floor: same concept, class side
+    assert by_label["Column"]["revitCategories"] == ["OST_Columns", "OST_StructuralColumns"]
+    assert by_label["Wall"]["revitCategories"] == ["OST_Walls"]
+    assert out["warnings"] == []
+    written = {c["label"]: c for c in session.classes}
+    assert list(written) == ["Slab", "Column", "Wall"]
+    assert (written["Slab"]["relation"], written["Slab"]["relatedTo"]) == ("hostedBy", "Opening")
+    assert (written["Column"]["relation"], written["Column"]["relatedTo"]) == ("projectsOnto", "Slab")
+    assert (written["Wall"]["relation"], written["Wall"]["relatedTo"]) == ("projectsOnto", "Slab")
+
+
+def test_a_participant_of_a_concept_the_project_has_reuses_that_class(catalogue):
+    """No second class for a concept the project already has: Slab is Floor, and relatedTo follows."""
+    session = _Session(_acceptance_rows(), existing_classes=["Floor", "Column", "Wall", "Opening"])
+    ps.generate(session, PROJECT, None, catalogue=catalogue, store=True,
+                generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralColumns", "OST_Floors"))
+    written = {c["label"]: c for c in session.classes}
+    assert list(written) == ["Floor", "Column", "Wall"] and "Slab" not in written
+    assert written["Column"]["relatedTo"] == "Floor"
+    assert written["Floor"]["categories"] == ["OST_Floors"]
+
+
+def test_a_stored_calculator_that_disagrees_with_the_participants_is_reported_not_relinked(catalogue):
+    answer = _reading("OST_Walls", "OST_StructuralColumns", "OST_StructuralFraming")  # Wall, Column, Beam
+    session = _Session(_acceptance_rows(), stored=[_stored_record(answer)])
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue, store=True, generator=_no_llm)
+    assert out["resolved"][0]["resolvedBy"] == "stored"
+    mismatch = [w for w in out["warnings"] if isinstance(w, dict)]
+    assert mismatch == [{"code": "CALCULATOR_PARTICIPANT_MISMATCH", "ruleId": ACCEPTANCE_ID,
+                         "dataPropertyIri": DG + ACCEPTANCE_PROP, "extra": ["Beam"], "missing": ["Slab"]}]
+    assert session.saved == []  # nothing regenerated or rewritten
+    assert sorted(c["label"] for c in session.classes) == ["Column", "Slab", "Wall"]  # no READS_CLASS to Beam
+
+
+def test_the_mismatch_warning_is_stable_across_repeats(catalogue):
+    answer = _reading("OST_Walls", "OST_StructuralFraming")
+    first = ps.generate(_Session(_acceptance_rows(), stored=[_stored_record(answer)]), PROJECT, None,
+                        catalogue=catalogue, generator=_no_llm)
+    second = ps.generate(_Session(_acceptance_rows(), stored=[_stored_record(answer)]), PROJECT, None,
+                         catalogue=catalogue, generator=_no_llm)
+    assert first["warnings"] == second["warnings"] and len(first["warnings"]) == 1
+
+
+def test_a_participantless_rule_gets_no_participant_warning_and_keeps_the_bottom_up_classes(catalogue):
+    session = _Session(_rows())
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue, store=True)
+    assert out["warnings"] == []
+    by_rule = {r["ruleId"]: [c["label"] for c in r["contextClasses"]] for r in out["resolved"]}
+    assert by_rule["R_STR_OPENING_BEAM_V"] == ["Beam"]
+    assert by_rule["R_STR_OPENING_ABOVE_V"] == ["Door", "Wall", "Window"]
+    assert all("relation" not in c for c in session.classes)
+
+
+def test_rules_over_one_property_with_different_participants_give_the_union_and_a_warning(catalogue):
+    rows = (_acceptance_rows(rule_id="R_COL_V", participants=("Column",))
+            + _acceptance_rows(rule_id="R_WALL_V", participants=("Wall",)))
+    session = _Session(rows)
+    out = ps.generate(session, PROJECT, None, catalogue=catalogue, store=True,
+                      generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralColumns"))
+    assert sorted(c["label"] for c in session.classes) == ["Column", "Wall"]
+    differ = [w for w in out["warnings"] if isinstance(w, dict) and w["code"] == "CALCULATOR_PARTICIPANTS_DIFFER"]
+    assert len(differ) == 1
+    assert differ[0]["dataPropertyIri"] == DG + ACCEPTANCE_PROP
+    assert differ[0]["ruleIds"] == ["R_COL_V", "R_WALL_V"] and differ[0]["union"] == ["Column", "Wall"]
+    assert differ[0]["difference"] == ["Column", "Wall"]
+    per_rule = {r["ruleId"]: [c["label"] for c in r["contextClasses"]] for r in out["resolved"]}
+    assert per_rule == {"R_COL_V": ["Column"], "R_WALL_V": ["Wall"]}
+
+
+def test_rule_context_categories_for_the_acceptance_rule_are_the_participants_categories(catalogue, monkeypatch):
+    import app as app_module
+
+    generated = ps.generate(_Session(_acceptance_rows()), PROJECT, None, catalogue=catalogue,
+                            generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralFraming"))
+    monkeypatch.setattr(app_module, "_generate_property_scripts", lambda payload, **kw: generated)
+    assert app_module.rule_context_categories(PROJECT) == {
+        ACCEPTANCE_ID: {"OST_Floors", "OST_Columns", "OST_StructuralColumns", "OST_Walls"}}
