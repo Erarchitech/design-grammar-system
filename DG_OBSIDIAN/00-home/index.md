@@ -9,6 +9,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-22 Phase 1303 wave 10 — plans 21 and 22 executed|Session — Phase 1303 wave 10: plan 21 (conflict check on the written rule) and plan 22 (participants reach the property calculator) done]] (2026-10-22)
 - [[sessions/2026-10-22 Phase 1303 wave 9 — plan 20 done, plan 18 Task 1 and rollout done|Session — Phase 1303 wave 9: plan 20 done, plan 18 Task 1 and live rollout done]] (2026-10-22)
 - [[sessions/2026-10-22 Phase 1303 waves 7-9 — plans 15 SUMMARY, 16, 17, 19 executed, plan 20 started and stopped|Session — Phase 1303 executed in waves: plans 16, 17, 19 done, 15 SUMMARY partial, 20 started and stopped]] (2026-10-22)
 - [[sessions/2026-10-21 Multi-participant rules design, plans 1303-19 to 23 and Graph Viewer cap fix|Session — multi-participant rules design, plans 1303-19…23, OntoGraph analysis, Graph Viewer cap fix]] (2026-10-21)
