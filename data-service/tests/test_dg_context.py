@@ -938,3 +938,78 @@ class TestCompanyVocabulary:
         assert "IGNORE ALL PREVIOUS" not in json.dumps(context)
         assert {"property": "hasNewMm", "meaning": "tallest opening", "unit": "mm"} in \
             context["swrl_conventions"]["computable_form"]["computable_properties"]
+
+
+# ── Plan 1303-20 (D-61 / G5): Russian shape keywords + ObjectProperty domain ──
+
+
+class TestRussianShapeKeywordsAndObjectPropertyDomain:
+    SLAB_OPENING_RULE = (
+        "Отверстие в перекрытии не может быть ближе 500мм к контуру проекции колонн и стен на это перекрытие"
+    )
+
+    def test_slab_opening_rule_selects_min_limit_only(self):
+        assert dg_context._match_shape_ids(self.SLAB_OPENING_RULE) == ["min_limit"]
+
+    @pytest.mark.parametrize(
+        "phrase, shape_id",
+        [
+            ("Расстояние не ближе 500 мм", "min_limit"),
+            ("Площадь не менее 9 м2", "min_limit"),
+            ("Ширина не меньше 900 мм", "min_limit"),
+            ("Минимум 2 выхода", "min_limit"),
+            ("Высота не более 75 м", "max_limit"),
+            ("Высота не больше 75 м", "max_limit"),
+            ("Нагрузка не превышает 5 кПа", "max_limit"),
+            ("Максимум 75 метров", "max_limit"),
+            ("Расстояние не дальше 40 м", "max_limit"),
+            ("Ширина между 900 и 1200 мм", "range"),
+            ("Доля остекления 30", "ratio"),
+            ("Процент застройки 40", "ratio"),
+            ("Отношение высоты к ширине 2", "ratio"),
+            ("Здание должен иметь лифт", "boolean_requirement"),
+            ("Обязательно наличие лифта", "boolean_requirement"),
+            ("Количество этажей 5", "existence_count"),
+            ("Число выходов 2", "existence_count"),
+        ],
+    )
+    def test_each_russian_phrase_selects_its_shape(self, phrase, shape_id):
+        assert shape_id in dg_context._match_shape_ids(phrase)
+
+    def test_english_cases_are_unchanged(self):
+        assert dg_context._match_shape_ids("Maximum building height is 75 meters") == ["max_limit"]
+        assert dg_context._match_shape_ids("at least 3 m and between 2 and 4") == ["min_limit", "range"]
+        assert dg_context._match_shape_ids("how many floors") == ["existence_count"]
+        assert dg_context._match_shape_ids("list rules") == []
+        assert dg_context._match_shape_ids(None) == []
+
+    def test_catalog_keeps_exactly_six_shapes(self):
+        assert len(dg_context._SHAPE_ID_ORDER) == 6
+        assert set(dg_context._SHAPE_KEYWORD_PATTERNS) == set(dg_context._SHAPE_ID_ORDER)
+        assert len(dg_context.load_cypher_catalog()["shapes"]) == 6
+
+    def test_existing_entities_query_returns_domain(self):
+        assert "n.domain AS domain" in dg_context._EXISTING_ENTITIES_QUERY
+
+    def test_object_property_domain_is_carried_through(self):
+        rows = [
+            {"nodeLabel": "Class", "iri": "ex:Opening", "label": "Opening", "swrl_label": "", "range": "", "domain": ""},
+            {"nodeLabel": "ObjectProperty", "iri": "ex:hostedBy", "label": "hostedBy", "swrl_label": "",
+             "range": "ex:Slab", "domain": "ex:Opening"},
+        ]
+        entities = dg_context.fetch_existing_entities("fixture-proj", session=FixtureSession(rows=rows))
+        assert entities == rows
+        assert entities[1]["domain"] == "ex:Opening"
+
+    def test_assemble_context_is_byte_identical_without_the_endpoint(self):
+        rows = [
+            {"nodeLabel": "ObjectProperty", "iri": "ex:hostedBy", "label": "hostedBy", "swrl_label": "",
+             "range": "ex:Slab", "domain": "ex:Opening"},
+        ]
+        req = dg_context.ContextAssembleRequest(
+            type="rule_ingest", project="det-proj", rules_text=self.SLAB_OPENING_RULE, question=None
+        )
+        first = dg_context.assemble_context(req, session=FixtureSession(rows=rows))
+        second = dg_context.assemble_context(req, session=FixtureSession(rows=rows))
+        assert json.dumps(first, sort_keys=False) == json.dumps(second, sort_keys=False)
+        assert [s["id"] for s in first["selected_cypher_shapes"]] == ["min_limit"]
