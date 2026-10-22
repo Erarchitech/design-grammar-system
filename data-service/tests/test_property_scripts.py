@@ -23,11 +23,55 @@ RULE_PROPS = {
 }
 
 
+def _atom(rule_id, role, order, atom_type, ref_kind, ref, *args):
+    """One row of RULE_STRUCTURE_QUERY: an atom of a rule with its referent and arguments."""
+    return {"ruleId": rule_id, "role": role, "ord": order, "atomId": f"{rule_id}_{role}_{order}",
+            "atomType": atom_type, "refKind": ref_kind, "refIri": DG + ref, "refLabel": ref,
+            "args": [{"pos": k, "kind": kind, "value": value} for k, (kind, value) in enumerate(args, start=1)]}
+
+
 def _rows(rule_props=RULE_PROPS, box="OpeningBox"):
+    """RULE_ATOMS_QUERY rows plus the atoms that carry the subject: ClassAtom(?o) and a head on ?o."""
     rows = []
     for rule_id, prop in rule_props.items():
         rows.append({"ruleId": rule_id, "labels": ["Class"], "iri": DG + box, "label": box})
         rows.append({"ruleId": rule_id, "labels": ["DatatypeProperty"], "iri": DG + prop, "label": prop})
+        rows += [
+            _atom(rule_id, "HAS_BODY", 1, "ClassAtom", "Class", box, ("Var", "?o")),
+            _atom(rule_id, "HAS_BODY", 2, "DataPropertyAtom", "DatatypeProperty", prop, ("Var", "?o"), ("Var", "?v")),
+            _atom(rule_id, "HAS_HEAD", 1, "DataPropertyAtom", "DatatypeProperty", "hasViolation", ("Var", "?o"),
+                  ("Literal", "true")),
+        ]
+    return rows
+
+
+ACCEPTANCE_ID = "R_STR_OPENING_PROJECTION_CLEARANCE_500_V"
+ACCEPTANCE_PROP = "hasMinProjectionClearanceMm"
+
+
+def _acceptance_rows(box="Opening", rule_id=ACCEPTANCE_ID, prop=ACCEPTANCE_PROP, participants=("Slab", "Column", "Wall")):
+    """The acceptance rule of the multi-participant design: Opening(?o) ^ Slab(?s) ^ hostedBy(?o, ?s) ^
+    Column(?c) ^ projectsOnto(?c, ?s) ^ Wall(?w) ^ projectsOnto(?w, ?s) ^ prop(?o, ?d) ^ lessThan(?d, 500)
+    -> hasProjectionClearanceViolation(?o, true)."""
+    rows = [{"ruleId": rule_id, "labels": ["Class"], "iri": DG + c, "label": c} for c in (box,) + tuple(participants)]
+    rows.append({"ruleId": rule_id, "labels": ["DatatypeProperty"], "iri": DG + prop, "label": prop})
+    rows.append({"ruleId": rule_id, "labels": ["ObjectProperty"], "iri": DG + "hostedBy", "label": "hostedBy"})
+    var_of = {"Slab": "?s", "Column": "?c", "Wall": "?w"}
+    host = "?s" if "Slab" in participants else "?o"
+    body = [("ClassAtom", "Class", box, [("Var", "?o")])]
+    for name in participants:
+        body.append(("ClassAtom", "Class", name, [("Var", var_of[name])]))
+        if name == "Slab":
+            body.append(("ObjectPropertyAtom", "ObjectProperty", "hostedBy", [("Var", "?o"), ("Var", "?s")]))
+        else:
+            body.append(("ObjectPropertyAtom", "ObjectProperty", "projectsOnto",
+                         [("Var", var_of[name]), ("Var", host)]))
+    body.append(("DataPropertyAtom", "DatatypeProperty", prop, [("Var", "?o"), ("Var", "?d")]))
+    body.append(("BuiltinAtom", "Builtin", "lessThan", [("Var", "?d"), ("Literal", "500")]))
+    for order, (atom_type, kind, ref, args) in enumerate(body, start=1):
+        rows.append(_atom(rule_id, "HAS_BODY", order, atom_type, kind, ref, *args))
+    rows.append(_atom(rule_id, "HAS_HEAD", 1, "DataPropertyAtom", "DatatypeProperty",
+                      "hasProjectionClearanceViolation", ("Var", "?o"), ("Literal", "true")))
     return rows
 
 
@@ -40,6 +84,8 @@ def test_rows_group_into_rules_sorted_by_id():
     rules = ps.rules_from_rows(reversed(_rows()))
     assert [r["ruleId"] for r in rules] == sorted(RULE_PROPS)
     assert all(len(r["classes"]) == 1 and len(r["dataProperties"]) == 1 for r in rules)
+    assert all(r["subject"] == {"iri": DG + "OpeningBox", "label": "OpeningBox"} and r["participants"] == []
+               for r in rules)
 
 
 def test_four_opening_properties_resolve_by_alias(catalogue):
@@ -152,8 +198,11 @@ class _Result:
 class _Session:
     """Fake Neo4j session: rule atoms, stored calculators, and recorded saves."""
 
-    def __init__(self, rows, stored=(), catalogue=(), blocked=()):
-        self.rows = rows
+    def __init__(self, rows, stored=(), catalogue=(), blocked=(), project_classes=(), existing_classes=()):
+        self.rows = [r for r in rows if "atomId" not in r]
+        self.structure = [r for r in rows if "atomId" in r]
+        self.project_classes = list(project_classes)
+        self.existing_classes = list(existing_classes)
         self.stored = list(stored)
         self.catalogue = list(catalogue)
         self.blocked = list(blocked)
@@ -167,6 +216,12 @@ class _Session:
         self.calls.append((query, params))
         # Phase 1303-16 marker contract: the save-state read carries `reviewLock`; it also names
         # `rejectedSha256Json` and starts with MERGE, so it is answered before every other branch.
+        if "coalesce(k.label, k.iri) AS label" in query:  # save_context_classes: classes the project already has
+            return _Result([{"label": label} for label in self.existing_classes])
+        if "HAS_HEAD" in query:  # the structure read of plan 1303-22: atoms of the rule with their arguments
+            return _Result(self.structure)
+        if "revitCategories AS revitCategories" in query:  # classes of the project with their stored categories
+            return _Result(self.project_classes)
         if "reviewLock" in query:
             iri = params.get("dataPropertyIri")
             return _Result([r for r in self.stored if r.get("dataPropertyIri") == iri])
@@ -972,3 +1027,99 @@ def test_shared_save_refusal_becomes_a_warning(catalogue, monkeypatch):
     out = ps.generate(_Session(_rows(HEIGHT_RULES)), PROJECT, None, catalogue=catalogue,
                       generator=_generator(1, []), store=True)
     assert any("hasOpeningHeightMm" in w and "rejected source" in w for w in out["warnings"])
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Phase 1303-22 (D-62): subject and participants reach the calculator
+# ---------------------------------------------------------------------------------------------------------------
+
+
+def _reading(*categories):
+    """A finalized generated calculator that reads the given Revit categories."""
+    from property_calculator_llm import finalize
+
+    source = f"def calc_gen(ctx, box, params):\n    return len(ctx.intersecting(box, {list(categories)!r}))\n"
+    name, src = finalize(source)
+    return {"status": "ok", "function": name, "source": src, "provider": "fake", "model": "m"}
+
+
+def _stored_record(answer, prop=ACCEPTANCE_PROP):
+    import hashlib
+
+    digest = hashlib.sha256(answer["source"].encode()).hexdigest()
+    return {"dataPropertyIri": DG + prop, "calculator": f"generated:{digest[:10]}", "origin": "generated",
+            "paramsJson": "{}", "function": answer["function"], "source": answer["source"], "sha256": digest,
+            "provider": "fake", "model": "m", "createdAt": None, "createdBy": None}
+
+
+def _no_llm(*_args):
+    pytest.fail("the LLM must not be asked")
+
+
+def test_load_rules_reads_the_structure_after_the_rule_atoms():
+    session = _Session(_acceptance_rows())
+    rules = ps.load_rules(session, PROJECT, None)
+    assert session.calls[0][1] == {"project": PROJECT, "ruleIds": None}
+    assert "HAS_HEAD" in session.calls[1][0] and "SUPERSEDED_BY" in session.calls[1][0]
+    assert session.calls[1][1] == {"project": PROJECT, "ruleIds": None}
+    assert len(rules) == 1
+
+
+def test_acceptance_rule_has_a_subject_and_ordered_participants_with_their_relations():
+    rule = ps.rules_from_rows(_acceptance_rows())[0]
+    assert rule["subject"] == {"iri": DG + "Opening", "label": "Opening"}
+    assert rule["participants"] == [
+        {"iri": DG + "Slab", "label": "Slab", "relation": "hostedBy", "relationIri": DG + "hostedBy",
+         "relatedTo": "Opening"},
+        {"iri": DG + "Column", "label": "Column", "relation": "projectsOnto", "relationIri": DG + "projectsOnto",
+         "relatedTo": "Slab"},
+        {"iri": DG + "Wall", "label": "Wall", "relation": "projectsOnto", "relationIri": DG + "projectsOnto",
+         "relatedTo": "Slab"},
+    ]
+    assert [c["label"] for c in rule["classes"]] == ["Opening", "Slab", "Column", "Wall"]  # classes unchanged
+
+
+def test_a_rule_without_a_head_has_no_subject_and_no_participants():
+    rows = [r for r in _acceptance_rows() if r.get("role") != "HAS_HEAD"]
+    rule = ps.rules_from_rows(rows)[0]
+    assert rule["subject"] is None and rule["participants"] == []
+
+
+def test_a_variable_that_feeds_a_data_property_is_not_a_participant():
+    """RuleVariableRoles: context-only means only ClassAtom/ObjectPropertyAtom mention the variable."""
+    rows = _acceptance_rows() + [_atom(ACCEPTANCE_ID, "HAS_BODY", 20, "DataPropertyAtom", "DatatypeProperty",
+                                       "hasThickness", ("Var", "?w"), ("Var", "?t"))]
+    rule = ps.rules_from_rows(rows)[0]
+    assert [p["label"] for p in rule["participants"]] == ["Slab", "Column"]
+
+
+def test_participant_classes_never_count_towards_the_box_class(catalogue):
+    rules = ps.rules_from_rows(_acceptance_rows())
+    res = ps.resolve(rules, catalogue, None, generator=lambda dp, rs, box: _reading("OST_Walls"))
+    assert res["boxClass"] == {"iri": DG + "Opening", "label": "Opening"}
+
+
+def test_a_mixed_project_generates_without_box_class_ambiguity(catalogue):
+    rows = _rows() + _acceptance_rows(box="OpeningBox")
+    out = ps.generate(_Session(rows), PROJECT, None, catalogue=catalogue,
+                      generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralColumns", "OST_Floors"))
+    assert out["boxClass"] == {"iri": DG + "OpeningBox", "label": "OpeningBox"}
+    assert {r["ruleId"] for r in out["resolved"]} == set(RULE_PROPS) | {ACCEPTANCE_ID}
+
+
+def test_two_different_subject_classes_are_still_ambiguous(catalogue):
+    rules = ps.rules_from_rows(_rows() + _acceptance_rows(box="Opening"))
+    with pytest.raises(ps.PropertyScriptError) as err:
+        ps.resolve(rules, catalogue)
+    assert err.value.code == "BOX_CLASS_AMBIGUOUS"
+
+
+def test_ensure_rule_classes_links_the_multi_participant_rule_and_reports_a_headless_one(catalogue):
+    headless = [{"ruleId": "R_HEADLESS_V", "labels": ["Class"], "iri": DG + "Opening", "label": "Opening"},
+                {"ruleId": "R_HEADLESS_V", "labels": ["DatatypeProperty"], "iri": DG + "hasX", "label": "hasX"}]
+    session = _Session(_acceptance_rows() + headless)
+    out = ps.ensure_rule_classes(session, PROJECT, catalogue=catalogue,
+                                 generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralColumns",
+                                                                        "OST_Floors"))
+    assert [(e["ruleId"], e["dataPropertyIri"]) for e in out["linked"]] == [(ACCEPTANCE_ID, DG + ACCEPTANCE_PROP)]
+    assert [(u["ruleId"], u["reason"]) for u in out["unsupported"]] == [("R_HEADLESS_V", "no subject")]
