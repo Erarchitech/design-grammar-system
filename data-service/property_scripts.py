@@ -509,7 +509,8 @@ def _rejected(blocked: dict[str, dict] | None, iri: str, sha256: str | None) -> 
 
 def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
             stored: dict[str, dict] | None = None, generator: Generator | None = None,
-            shared: dict[str, dict] | None = None, blocked: dict[str, dict] | None = None) -> dict:
+            shared: dict[str, dict] | None = None, blocked: dict[str, dict] | None = None,
+            project_classes: dict[str, list[str]] | None = None) -> dict:
     """Bind every body DataProperty, in the order of D-54 point 5: the vetted file catalogue (alias, chooser), the
     confirmed calculators of the company (``shared``, by propertyKey), the project's stored calculator (scripts
     persist across rule updates and Design States), and last the optional LLM generator.
@@ -517,7 +518,11 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
     A shared entry and a stored generated calculator are verified (sha256, contract) before they bind; a failing one
     is skipped with a warning and never reaches an assembled script. ``blocked`` (load_blocked) holds the rejected
     and retired rows of the project: such a property is unsupported without a generator call until an explicit
-    regenerate, and a source whose sha256 the project rejected is never bound, whatever its origin."""
+    regenerate, and a source whose sha256 the project rejected is never bound, whatever its origin.
+
+    The generator receives ``dp`` with a ``participants`` list (label, relation, relatedTo, revitCategories) when the
+    rules that test the property have context participants (D-62); ``project_classes`` supplies the stored Revit
+    categories of the project's classes for them. A generator that ignores the key is called as before."""
     import property_calculator_store
 
     shared = shared or {}
@@ -573,8 +578,12 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
                 continue
             if binding is None and generator is not None:
                 request_dp = dp
+                participants = merge_participants([r for r in rules_by_dp[dp["iri"]] if r.get("participants")],
+                                                  catalogue, project_classes)
+                if participants:
+                    request_dp = {**dp, "participants": participants}
                 if block and block.get("regenerate") and block.get("status") == property_calculator_store.STATUS_REJECTED:
-                    request_dp = {**dp, "rejectedReason": block.get("reason") or "rejected by the operator"}
+                    request_dp = {**request_dp, "rejectedReason": block.get("reason") or "rejected by the operator"}
                 answer = generator(request_dp, rules_by_dp[dp["iri"]], box_label)
                 if answer.get("status") == "ok":
                     digest = hashlib.sha256(answer["source"].encode("utf-8")).hexdigest()
@@ -787,7 +796,7 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
         by_class.setdefault((rule["subject"]["iri"], rule["subject"]["label"]), []).append(rule)
     for (class_iri, _label), group in sorted(by_class.items()):
         resolution = resolve(group, catalogue, None, stored=stored, generator=generator, shared=shared,
-                             blocked=blocked)
+                             blocked=blocked, project_classes=project_classes)
         warnings.extend(resolution["warnings"])
         prefix = iri_prefix_of(class_iri)
         classes_of = assign_context_classes(resolution["resolved"], group, catalogue, prefix, project_classes, warnings)
@@ -827,7 +836,7 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
     blocked = property_calculator_store.load_blocked(session, project)
     project_classes = property_calculator_store.load_class_categories(session, project)
     resolution = resolve(rules, catalogue, chooser, stored=stored, generator=generator, shared=shared,
-                         blocked=blocked)
+                         blocked=blocked, project_classes=project_classes)
     warnings: list[Any] = list(resolution["warnings"])
     if resolution["unsupported"] and not resolution["resolved"]:
         raise PropertyScriptError("NOTHING_TO_COMPUTE", "No rule DataProperty resolved to a catalogue calculator")

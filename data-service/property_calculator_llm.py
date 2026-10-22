@@ -172,12 +172,27 @@ def verify_stored_source(source: Any, function: Any, sha256: Any) -> Optional[st
     return None
 
 
-def build_prompt(data_property: Mapping, rules: list[Mapping], class_label: str) -> str:
+def participants_block(participants: list[Mapping]) -> str:
+    """The "Participants:" block of the prompt (Phase 1303-22, D-62): one line per class the rules relate to the
+    element being checked, with the relation that ties it and the Revit categories its elements have."""
+    lines = []
+    for participant in participants:
+        tie = " ".join(str(x) for x in (participant.get("relation"), participant.get("relatedTo")) if x)
+        categories = ", ".join(participant.get("revitCategories") or []) or "none known"
+        lines.append(f"- {participant.get('label')}: " + (f"{tie}; " if tie else "") + f"Revit categories: {categories}")
+    return "Participants:\n" + "\n".join(lines)
+
+
+def build_prompt(data_property: Mapping, rules: list[Mapping], class_label: str,
+                 participants: Optional[list[Mapping]] = None) -> str:
+    """The generation prompt. With ``participants`` (the context classes of the rules that test the property) a
+    "Participants:" block follows the rules; without them the prompt is byte-identical to the Phase 1303-16 pin."""
     rule_lines = "\n".join(f"- {r.get('ruleId')}: {r.get('text') or ''} | SWRL: {r.get('swrl') or ''}" for r in rules)
+    block = f"{participants_block(participants)}\n\n" if participants else ""
     prompt = (
         f"Element class: {class_label}\n"
         f"Property to compute: {data_property.get('label')} ({data_property.get('iri')})\n"
-        f"Rules that test it:\n{rule_lines}\n\n{CONTEXT_API}\n"
+        f"Rules that test it:\n{rule_lines}\n\n{block}{CONTEXT_API}\n"
         "Write calc_gen so that the rules above can be evaluated on this property."
     )
     reason = data_property.get("rejectedReason")
@@ -210,7 +225,7 @@ def generate_calculator(data_property: Mapping, rules: list[Mapping], class_labe
     Returns {status: ok | invalid | unavailable, function, source, unit, explanation, provider, model, error}.
     ``complete(prompt, system) -> (text, provider, model)`` replaces the gateway in tests.
     """
-    prompt = build_prompt(data_property, rules, class_label)
+    prompt = build_prompt(data_property, rules, class_label, data_property.get("participants"))
     _GENERATION_LOG.info("property calculator LLM generation requested: %s", data_property.get("iri"))
     try:
         if complete is None:
