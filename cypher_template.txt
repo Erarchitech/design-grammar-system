@@ -46,7 +46,8 @@ GRAPH SCHEMA (from dataset_schema v3)
                   project, graph='OntoGraph'
 
   ObjectProperty — key: iri (ex:<propertyName>)
-           props: label, range, project, graph='OntoGraph'
+           props: label, domain, range (domain/range are class IRIs written as
+                  plain strings, e.g. 'ex:Opening' / 'ex:Slab'), project, graph='OntoGraph'
 
   Builtin — key: iri (swrlb:<builtinName>)
            props: label, project, graph='Metagraph'
@@ -282,3 +283,58 @@ QUALITY CHECKS
 - Rule SWRL body property is named SWRL (not text).
 - Relationship properties `order` and `pos` are written WITHOUT backticks.
 - Cypher must execute in Neo4j 5.
+
+PARTICIPANTS AND RELATIONS
+- Every other object class a rule names (besides the one subject it constrains) is a
+  PARTICIPANT: one ClassAtom on its own variable, plus one ObjectPropertyAtom that relates
+  it to the subject or to another participant.
+- The measured quantity stays ONE numeric DataPropertyAtom of the subject, compared with ONE
+  swrlb builtin. A participant variable never appears in a DataPropertyAtom, a BuiltinAtom
+  or the head atom.
+- An ObjectProperty is a camelCase verb (hostedBy, projectsOnto, adjacentTo). Reuse an
+  existing ObjectProperty from the EXISTING ENTITIES list when one fits; do not invent a synonym.
+- Write ObjectProperty with label, domain and range (class IRIs as plain strings). They are
+  annotations on the node, not OWL axioms.
+- Derived geometric notions (outline, projection, clearance, edge, distance) are NEVER
+  classes; they stay part of the subject's numeric property name.
+- Only classes the rule actually names are participants. A rule that names one class stays
+  a one-class rule.
+
+PARTICIPANT MERGE EXAMPLE
+
+MERGE (C_Main:Class {iri: 'ex:<CLASS_NAME>', project: $project, graph: 'OntoGraph'})
+SET C_Main.label = '<CLASS_NAME>'
+
+MERGE (C_Host:Class {iri: 'ex:<PARTICIPANT_CLASS>', project: $project, graph: 'OntoGraph'})
+SET C_Host.label = '<PARTICIPANT_CLASS>'
+
+MERGE (OP_Rel:ObjectProperty {iri: 'ex:<RELATION_NAME>', project: $project, graph: 'OntoGraph'})
+SET OP_Rel.label = '<RELATION_NAME>',
+    OP_Rel.domain = 'ex:<CLASS_NAME>',
+    OP_Rel.range = 'ex:<PARTICIPANT_CLASS>'
+
+MERGE (r:Rule {Rule_Id: '<RULE_ID>', project: $project, graph: 'Metagraph'})
+
+MERGE (vEntity:Var {name: '?<ENTITY_VAR>', project: $project, graph: 'Metagraph'})
+
+MERGE (vHost:Var {name: '?<PARTICIPANT_VAR>', project: $project, graph: 'Metagraph'})
+
+MERGE (a1:Atom {Atom_Id: '<RULE_ID>_A1', project: $project, graph: 'Metagraph'})
+SET a1.type = 'ClassAtom',
+    a1.iri = 'ex:<PARTICIPANT_CLASS>',
+    a1.SWRL_label = '<PARTICIPANT_CLASS>'
+
+MERGE (a2:Atom {Atom_Id: '<RULE_ID>_A2', project: $project, graph: 'Metagraph'})
+SET a2.type = 'ObjectPropertyAtom',
+    a2.iri = 'ex:<RELATION_NAME>',
+    a2.SWRL_label = '<RELATION_NAME>'
+
+MERGE (r)-[:HAS_BODY {order: 1}]->(a1)
+MERGE (r)-[:HAS_BODY {order: 2}]->(a2)
+
+MERGE (a1)-[:REFERS_TO]->(C_Host)
+MERGE (a2)-[:REFERS_TO]->(OP_Rel)
+
+MERGE (a1)-[:ARG {pos: 1}]->(vHost)
+MERGE (a2)-[:ARG {pos: 1}]->(vEntity)
+MERGE (a2)-[:ARG {pos: 2}]->(vHost);

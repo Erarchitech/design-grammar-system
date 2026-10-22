@@ -205,6 +205,7 @@ Login with `neo4j / 12345678` unless changed.
   - Cross-layer bridge: `ATTRIBUTE_OF` (Metagraph `Atom` [type `DataPropertyAtom`] → Computgraph `Parameter`), project-scoped, derived from `inputBindings` at `POST /computgraph/publish` time — never authored by rule ingestion
 - Key properties:
   - Class/DatatypeProperty/ObjectProperty: `iri`, `label`
+  - ObjectProperty also carries `domain`/`range` (class IRIs, annotations only). A rule keeps one subject with one numeric data property; other object classes it names are participants (`ClassAtom` + `ObjectPropertyAtom`)
   - Rule: `Rule_Id`, `SWRL` (SWRL expression), `RuleName`, `RuleDescription`, `kind` (violation)
   - Atom: `Atom_Id`, `type` (ClassAtom|DataPropertyAtom|ObjectPropertyAtom|BuiltinAtom)
   - Var: `name` (e.g. `?b`), Literal: `lex`, `datatype`

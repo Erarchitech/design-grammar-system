@@ -61,6 +61,20 @@
         }
       },
       {
+        "label": "ObjectProperty",
+        "_note": "Relation between a rule's subject and a participant class (D-61, Phase 1303). domain/range are class IRIs written as plain strings; they are annotations, not exported as rdfs:domain/rdfs:range (see spec/LPG-OWL-MAPPING.md). A participant is any other object class the rule names: it gets one ClassAtom on its own variable plus one ObjectPropertyAtom relating it to the subject or another participant, and its variable never appears in a DataPropertyAtom, a BuiltinAtom or the head.",
+        "key": {
+          "iri": "ex:<relationName>"
+        },
+        "props": {
+          "label": "<relationName>",
+          "domain": "ex:<ClassName>",
+          "range": "ex:<ClassName>",
+          "project": "default-project",
+          "graph": "OntoGraph"
+        }
+      },
+      {
         "label": "Builtin",
         "key": {
           "iri": "swrlb:<builtinName>"

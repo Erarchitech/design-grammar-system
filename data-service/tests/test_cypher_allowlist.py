@@ -1497,6 +1497,31 @@ class TestModelFacingExamplesAreValidAllowlistInput:
     def test_cypher_template_txt_block_passes_the_write_profile(self):
         assert write_check(_instantiate(_template_block())) == []
 
+    def test_cypher_template_participants_section_passes_the_write_profile(self):
+        """Plan 1303-20 (D-61): the PARTICIPANTS AND RELATIONS section sits after
+        QUALITY CHECKS (so _template_block() is unchanged) and its participant
+        MERGE example is valid allowlist input once instantiated."""
+        text = (_repo_root() / "cypher_template.txt").read_text(encoding="utf-8").replace("\r\n", "\n")
+        assert text.index("QUALITY CHECKS") < text.index("PARTICIPANTS AND RELATIONS")
+        section = text[text.index("PARTICIPANTS AND RELATIONS"):]
+        assert "PARTICIPANT MERGE EXAMPLE" not in _template_block()
+        for needle in ("ObjectPropertyAtom", "domain", "range", "outline", "never"):
+            assert needle.lower() in section.lower(), needle
+        example = section[section.index("PARTICIPANT MERGE EXAMPLE") + len("PARTICIPANT MERGE EXAMPLE"):].strip()
+        samples = {
+            "CLASS_NAME": "Opening",
+            "PARTICIPANT_CLASS": "Slab",
+            "RELATION_NAME": "hostedBy",
+            "RULE_ID": "R_STR_OPENING_CLEARANCE_MIN_500_V",
+            "ENTITY_VAR": "o",
+            "PARTICIPANT_VAR": "s",
+        }
+        for key, value in samples.items():
+            example = example.replace(f"<{key}>", value)
+        assert "<" not in example, example
+        assert "OP_Rel.domain = 'ex:Opening'" in example and "OP_Rel.range = 'ex:Slab'" in example
+        assert write_check(example) == []
+
     def test_every_catalog_worked_example_passes_the_full_ingest_validator(self):
         for shape in dg_context.load_cypher_catalog()["shapes"]:
             result = dg_context.validate_cypher(shape["worked_example"], "rule_ingest", project="p")

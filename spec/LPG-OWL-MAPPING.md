@@ -53,7 +53,7 @@ Every Metagraph node maps to a standard W3C SWRL RDF vocabulary term. The mappin
 | `Rule` node | `swrl:Imp` | `rdfs:label` = `Rule_Id`. `Rule.kind`, `Rule.RuleName`, `Rule.RuleDescription` become `dg:`-namespace annotation properties (no SWRL equivalent). |
 | `Atom {type: 'ClassAtom'}` | `swrl:ClassAtom` | `swrl:classPredicate` points to the `REFERS_TO` target (an `owl:Class`). `ARG pos:1` => `swrl:argument1` (the individual variable). |
 | `Atom {type: 'DataPropertyAtom'}` | `swrl:DatavaluedPropertyAtom` | `swrl:propertyPredicate` points to the `REFERS_TO` target (`owl:DatatypeProperty`). Arguments: `swrl:argument1` (entity), `swrl:argument2` (value). |
-| `Atom {type: 'ObjectPropertyAtom'}` | `swrl:IndividualPropertyAtom` | `swrl:propertyPredicate` points to the `REFERS_TO` target (`owl:ObjectProperty`). Arguments: `swrl:argument1` (subject), `swrl:argument2` (object). No `ObjectProperty` nodes exist in `v8-ui-smoke` live data, but the mapping is schema-legal per `cypher_template.txt`. |
+| `Atom {type: 'ObjectPropertyAtom'}` | `swrl:IndividualPropertyAtom` | `swrl:propertyPredicate` points to the `REFERS_TO` target (`owl:ObjectProperty`). Arguments: `swrl:argument1` (subject), `swrl:argument2` (object). `ObjectProperty` nodes are written by rule ingest for participant relations since D-61 (Phase 1303; none existed in `v8-ui-smoke` live data before), per `cypher_template.txt` section PARTICIPANTS AND RELATIONS. |
 | `Atom {type: 'BuiltinAtom'}` | `swrl:BuiltinAtom` | `swrl:builtin` points to the `REFERS_TO` target (a `swrl:Builtin`). Arguments via `swrl:arguments` (an `rdf:List`) -- universally, not `argument1`/`argument2` -- because builtin arity varies (see [BuiltinAtom subsection](#builtinatom-and-swrlarguments) below). |
 | `Var` node | `swrl:Variable` | Minted individual IRI. The leading `?` is stripped from `Var.name` for the IRI local part. |
 | `Literal` node | RDF typed literal | Becomes an `xsd:`-typed literal value, not a named individual. `Literal.lex` is the lexical form; `Literal.datatype` maps to `xsd:` matching (see [XSD type map](#literal-to-typed-literal)). |
@@ -273,6 +273,7 @@ The same audit found broader, systemic tagging drift: `phase14-smoke` has six `D
 | `Class` node | `owl:Class` | Reuses stored `iri` | Domain concept declaration. |
 | `DatatypeProperty` node | `owl:DatatypeProperty` | Reuses stored `iri` | Data-valued attribute declaration. |
 | `ObjectProperty` node | `owl:ObjectProperty` | Reuses stored `iri` | Object-relationship declaration. |
+| `ObjectProperty` `domain` / `range` properties | none (annotation only) | n/a | Class IRIs stored as plain strings. **NOT** exported as `rdfs:domain` / `rdfs:range` axioms: under RDFS semantics a domain/range axiom makes every individual that uses the property an instance of that class, which would silently infer class membership from a rule's wording. The flat-vocabulary rule below is kept: the export declares terms, never axioms. If ever exported, they are `rdfs:comment`-style annotations, never inference-bearing axioms. |
 
 ### Flatness of the Live OntoGraph
 
@@ -284,7 +285,7 @@ This means the live RDF export contributes only `owl:Class`, `owl:DatatypeProper
 2. **Live OntoGraph**: project-scoped class/property declarations
 3. **Curated disjointness**: design-time `owl:disjointWith` axioms added to the static TBox (the V7 export has zero, so consistency checking cannot meaningfully fail without them)
 
-ObjectPropertyAtom mapping is normatively specified (schema-legal per `cypher_template.txt`) even though no `ObjectProperty` nodes exist in `v8-ui-smoke` live data.
+ObjectPropertyAtom mapping is normatively specified (schema-legal per `cypher_template.txt`). `ObjectProperty` nodes now appear in live data whenever a rule names more than one object class (D-61, Phase 1303); their `domain`/`range` properties are annotations and are NOT exported as `rdfs:domain`/`rdfs:range` axioms, so the live export still contributes declarations only.
 
 ---
 

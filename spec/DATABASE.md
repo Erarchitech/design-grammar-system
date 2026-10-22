@@ -30,8 +30,19 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 
 **ObjectProperty** — Relationships between classes
 ```
-(:ObjectProperty {iri: "ex:locatedIn", label: "locatedIn", graph: "OntoGraph", project: "1"})
+(:ObjectProperty {iri: "ex:hostedBy", label: "hostedBy", domain: "ex:Opening", range: "ex:Slab", graph: "OntoGraph", project: "1"})
 ```
+
+`domain` and `range` are class IRIs stored as plain strings. They are annotations on the node and are not
+exported as `rdfs:domain`/`rdfs:range` axioms (`spec/LPG-OWL-MAPPING.md`).
+
+**Participants and context-only variables (D-61, Phase 1303).** A rule constrains one subject through one
+numeric `DataPropertyAtom` and one `swrlb` comparison. Every other object class the rule names is a
+*participant*: it contributes a `ClassAtom` on its own variable and an `ObjectPropertyAtom` relating it to the
+subject or to another participant. A participant variable never appears in a `DataPropertyAtom`, a
+`BuiltinAtom` or the head; it is context-only, asserted by the rule and not evaluated
+(`spec/SWRL-SUBSET.md` section 2). Derived geometric notions (outline, projection, clearance, edge,
+distance) are never classes; they stay part of the subject's numeric property name.
 
 ### Metagraph
 

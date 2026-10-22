@@ -20,7 +20,7 @@ Use the v4 schema as the source of truth for all code changes, prompts, generate
 ### Canonical node labels and properties
 - `Class`: key `iri`, display property `label`
 - `DatatypeProperty`: key `iri`, display property `SWRL_label`
-- `ObjectProperty`: key `iri`, display property `label`
+- `ObjectProperty`: key `iri`, display property `label`, plus `domain`/`range` (class IRIs as plain strings; annotations, not OWL axioms). Written for participant relations: a rule has one subject with one numeric `DataPropertyAtom`; every other object class it names is a participant (a `ClassAtom` plus an `ObjectPropertyAtom`), never used in a data property, builtin or head atom
 - `Builtin`: key `iri`, display property `label`
 - `Rule`: key `Rule_Id`, properties `SWRL`, `RuleName`, `RuleDescription`
 - `Atom`: key `Atom_Id`; required properties `Atom_Id`, `type`, `iri`, `SWRL_label`, `project`, `graph`
