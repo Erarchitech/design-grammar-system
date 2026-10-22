@@ -1,0 +1,113 @@
+{
+  "plan": "1303-18",
+  "task": "2",
+  "rolledOutAt": "2026-10-22",
+  "commit": "2a61d07dce89f0b2d581433214d8bf9c481e32a5",
+  "commit7": "2a61d07",
+  "releaseFolder": "D:\\dgb\\mapping-release-2a61d07",
+  "exportedWith": "git archive 2a61d07dce89f0b2d581433214d8bf9c481e32a5 (CRLF export; 46 data-service/*.py equal the normalized Git blobs, 0 mismatches)",
+  "gate": {
+    "dataServicePytest": "4 failed, 6409 passed, 35 skipped, 8 deselected, 25 errors: the 4 failures are test_dg_context endpoint tests (TestDeterminism x2, TestContextEndpoints x2); the 25 errors are the neo4j:7687 DNS errors (test_cg_structure_checks, test_computgraph_consult integration); no other failure name, no test_static_proxy_boundary failure",
+    "de01Pytest": "1 failed, 173 passed: only test_de01_runner_against_golden_fixture_has_zero_silent_disagreements; the scope-drift test is green",
+    "uiTest": "363 tests, 363 pass, 0 fail, 0 skipped",
+    "uiBuild": "exit 0"
+  },
+  "imageIds": {
+    "dataService": "sha256:eedd68b3f2e25a019c885b40feaa7a1e7e9c1ab8cec399a10164f0a694ecfce9",
+    "ui": "sha256:65fca04d2ebadaecf1e5aaf00677da1265737e40942e808e1dd3c048e2252227",
+    "previousDataService": "sha256:f449369430d1799b3ba55930ec75195f01dff140fa7f00de67ed311ea0153c2d",
+    "previousUi": "sha256:3c1996f078473e54bf21d4005af812ece1117cfa733790bae8b6c1500139af8a"
+  },
+  "runningImages": {
+    "dataService": "dg-mapping-data-service:2a61d07",
+    "ui": "dg-mapping-ui:2a61d07",
+    "dgReasoner": "dg-mapping-dg-reasoner:e600716 (unchanged, not recreated)"
+  },
+  "previousRunningImages": {
+    "dataService": "dg-mapping-data-service:093ea13",
+    "ui": "dg-mapping-ui:b7bcbf0",
+    "note": "The plan named D:\\dgb\\mapping-release-4cd7298 as the previous override; the stack actually ran the 093ea13 data-service and the b7bcbf0 UI (overrides in mapping-release-093ea13 and mapping-release-b7bcbf0), so those IDs were tagged."
+  },
+  "rollbackTags": {
+    "dataService": "dg-mapping-data-service:pre-1303-16",
+    "ui": "dg-mapping-ui:pre-1303-16",
+    "rollbackOverride": "D:\\dgb\\mapping-release-2a61d07\\compose.mapping-rollback.yml",
+    "rollbackCommand": "docker compose -p design-grammar-system -f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\docker-compose.yml -f D:\\dgb\\mapping-release-2a61d07\\compose.mapping-rollback.yml up -d --no-build --no-deps data-service design-grammars"
+  },
+  "composeOverride": "D:\\dgb\\mapping-release-2a61d07\\compose.mapping-images.yml",
+  "recreatedServices": ["data-service", "design-grammars"],
+  "otherServicesRecreated": false,
+  "composeBlocksEqualToMainCheckout": {"data-service": true, "design-grammars": true},
+  "backendRoot": 200,
+  "uiRoot": 200,
+  "anonymousCandidates": 401,
+  "anonymousCandidatesCode": "AUTH_REQUIRED",
+  "anonymousConfirm": 401,
+  "anonymousConfirmCode": "AUTH_REQUIRED",
+  "anonymousConfirmHeaders": "X-DG-CSRF: 1",
+  "servedCodeMatchesArchive": true,
+  "servedCodeFiles": [
+    "property_calculator_store.py",
+    "property_scripts.py",
+    "property_calculator_review.py",
+    "property_calculator_llm.py",
+    "dg_context.py",
+    "route_policy.py",
+    "app.py"
+  ],
+  "servedCodeSha256": {
+    "property_calculator_store.py": "e23cc6e6da101f8a58d7c9790459fbf4d3b2e8c4be64592758d3ab29619b9a97",
+    "property_scripts.py": "1b8db5eba0fd0c7c507f667f92c6a21517548b58facab08c2658a0587cfbfdf3",
+    "property_calculator_review.py": "9513722426c04a67079f0f2790281aab2e1a4e9a779c6fb2d5c41f11126c3fc8",
+    "property_calculator_llm.py": "a53c371333fadfa5ff6183ddf6a847989530e7156df11679369ec1087dc1a23a",
+    "dg_context.py": "22b8999f42ddfbea6052f2e80b897d241a11ae42d6ec14382065e4ae262812e1",
+    "route_policy.py": "a424d5808a8a25c72d6eb55cf9adba39a64eca110f428b3a9a8c5095f25023f5",
+    "app.py": "fd0b2f7f3c0149de6f387ae731c04c42428444f61c91c3d614a9b349a0dc93bf"
+  },
+  "policyRows": [
+    {"route": "GET /scripts/property-calculators/candidates", "principals": ["member", "delegated"], "projectSource": "query", "minRole": "viewer"},
+    {"route": "POST /scripts/property-calculators/confirm", "principals": ["member"], "projectSource": "body", "minRole": "editor"},
+    {"route": "POST /scripts/property-calculators/reject", "principals": ["member"], "projectSource": "body", "minRole": "editor"},
+    {"route": "POST /scripts/property-calculators/retire", "principals": ["member"], "projectSource": "body", "minRole": "owner"}
+  ],
+  "uiBundleHasReviewString": true,
+  "uiBundleFiles": ["/usr/share/nginx/html/assets/App-BzIBmSoP.js", "/usr/share/nginx/html/assets/PropertiesTable-C8I6YlfP.js"],
+  "vocabularyBaseline": [
+    "hasBeamIntersectionCount",
+    "hasColumnIntersectionCount",
+    "hasWallIntersectionCount",
+    "hasFloorIntersectionCount",
+    "hasOpeningsBelowCount",
+    "hasMinOpeningClearanceMm"
+  ],
+  "vocabularyProbe": {"project": "str-openings-01", "type": "rule_ingest", "httpStatus": 200, "note": "file vocabulary only; no catalogue entry is confirmed yet"},
+  "companies": {
+    "str-openings-01": null,
+    "v12-hexagonal-facade-01": "UAT-A",
+    "degram-uat-b": "UAT-B"
+  },
+  "companiesNote": "str-openings-01 has NO company yet. Before step 4 of the owner's script an admin assigns it to a company (for example UAT-A, the company of v12-hexagonal-facade-01, which can then serve as the second project). Existing Phase 1301 company management; not changed by this rollout.",
+  "storeProbe": {
+    "project": "probe-1303-16",
+    "passed": true,
+    "steps": {
+      "preExistingNodes": 0,
+      "saveA": true,
+      "rejectWithRegenerate": true,
+      "saveARefusedAfterReject": true,
+      "blockedListsRejectedRow": true,
+      "activeExcludesRejectedRow": true,
+      "saveBRegenerated": true,
+      "activeAgainWithB": true,
+      "blockedRemembersAOnActiveRow": true,
+      "saveARefusedAgain": true,
+      "cleanupZero": true
+    },
+    "remainingNodes": 0,
+    "probeScriptRemovedFromContainer": true
+  },
+  "notes": [
+    "Neo4j emitted a benign 'property catalogueId does not exist' warning on the active-rows query: no PropertyCalculator row carries a catalogueId yet, since nothing is confirmed.",
+    "No credential, cookie or service credential is stored here; the vocabulary probe read the service credential inside the container and never printed it."
+  ]
+}
