@@ -271,13 +271,30 @@ _SHAPE_ID_ORDER: tuple[str, ...] = (
     "existence_count",
 )
 
+# G5 (plan 1303-20): each shape also carries lowercase Russian stems, matched as
+# plain substrings exactly like the English ones. "не ближе" (not closer than)
+# is a minimum distance -> min_limit; "не дальше" (not farther than) is a
+# maximum distance -> max_limit; the verbal forms "не может/должен быть
+# ближе|дальше" carry the same meaning (the slab-opening rule says "не может
+# быть ближе", never the bare "не ближе"). The catalog keeps exactly six shapes.
 _SHAPE_KEYWORD_PATTERNS: dict[str, tuple[str, ...]] = {
-    "max_limit": ("maximum", "at most", "no more than", "not exceed", "shall not exceed", "up to"),
-    "min_limit": ("minimum", "at least", "no less than", "not less than"),
-    "range": ("between",),
-    "ratio": ("ratio", "percentage", "proportion", "window-to-wall", "wwr"),
-    "boolean_requirement": ("must have", "shall have", "required to have", "mandatory", "must be provided"),
-    "existence_count": ("number of", "count of", "quantity of", "how many"),
+    "max_limit": (
+        "maximum", "at most", "no more than", "not exceed", "shall not exceed", "up to",
+        "не более", "не больше", "не превыш", "максимум", "не дальше",
+        "не может быть дальше", "не должен быть дальше", "не должна быть дальше", "не должно быть дальше",
+    ),
+    "min_limit": (
+        "minimum", "at least", "no less than", "not less than",
+        "не ближе", "не менее", "не меньше", "минимум",
+        "не может быть ближе", "не должен быть ближе", "не должна быть ближе", "не должно быть ближе",
+    ),
+    "range": ("between", "между"),
+    "ratio": ("ratio", "percentage", "proportion", "window-to-wall", "wwr", "доля", "процент", "отношение"),
+    "boolean_requirement": (
+        "must have", "shall have", "required to have", "mandatory", "must be provided",
+        "должен иметь", "обязательн",
+    ),
+    "existence_count": ("number of", "count of", "quantity of", "how many", "количество", "число"),
 }
 
 
@@ -320,7 +337,8 @@ _EXISTING_ENTITIES_QUERY = (
     "AND n.graph = 'OntoGraph' AND n.project = $project "
     "RETURN labels(n)[0] AS nodeLabel, n.iri AS iri, "
     "coalesce(n.label, '') AS label, coalesce(n.SWRL_label, '') AS swrl_label, "
-    "coalesce(n.range, '') AS range "
+    "coalesce(n.range, '') AS range, "
+    "n.domain AS domain "
     "ORDER BY nodeLabel, iri"
 )
 
