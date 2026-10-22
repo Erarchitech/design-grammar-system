@@ -6,15 +6,15 @@ current_phase: 1303
 current_phase_name: pravilo-gh-obekt
 current_plan: 14
 status: executing
-stopped_at: Completed 1303-16-PLAN.md
-last_updated: "2026-10-22T07:05:12.951Z"
+stopped_at: Completed 1303-19-PLAN.md
+last_updated: "2026-10-22T07:10:53.877Z"
 last_activity: 2026-10-18
 last_activity_desc: Revit live act 3 awaits owner installation/open/sign-in; see 1303-14-CHECKPOINT.md
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 93
-  completed_plans: 71
+  completed_plans: 72
   percent: 11
 state_head: f1b5ac83e0c11815e465e0e547abe886dcef3dfd
 ---
@@ -207,6 +207,7 @@ The 3 in-Rhino acceptance checks for 824 (valid-token heartbeat → Auth OK; bad
 | Phase 1308 P16 | 55min | 2 tasks | 9 files |
 | Phase 1308 P13 | 55min | 2 tasks | 16 files |
 | Phase 1303 P16 | 2h | 3 tasks | 11 files |
+| Phase 1303 P19 | 45min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -573,6 +574,7 @@ Shipped from Phase 20 Plan 02:
 - [Phase ?]: 1308-16: grant-request defaults 'DeGram access'/'Requested access' stay English payload data (allow-listed), not display text
 - [Phase ?]: 1308-13: the retired dgc_ connector token authenticates nowhere (resolver accepts only dgk_); heartbeat is a connector row, capture stays the only connector-self route
 - [Phase ?]: 1303-16: retire rights and confirming again follow D-59/D-60; reactivation of a retired entry always needs allow_reconfirm (owner), and a source confirmed for another DataProperty is refused (CATALOGUE_PROPERTY_TAKEN)
+- [Phase ?]: 1303-19: context-atom disclosure pinned as ' Asserted by the rule, not verified: <atoms>.' appended to Passed/Failed message only; no new field or status
 
 ### Research Flags (carry into planning)
 
@@ -671,8 +673,8 @@ Shipped from Phase 20 Plan 02:
 
 ## Session Continuity
 
-Last session: 2026-10-22T07:05:12.937Z
-Stopped at: Completed 1303-16-PLAN.md
+Last session: 2026-10-22T07:10:53.865Z
+Stopped at: Completed 1303-19-PLAN.md
 Resume file: None
 
 ## Performance Metrics
