@@ -37,6 +37,24 @@ RULE_ATOMS_QUERY = (
     "ORDER BY ruleId, iri"
 )
 
+# Plan 1303-22 (D-62): the atoms of the same rules with their arguments, head included, so the subject and the
+# context participants can be derived the way RuleVariableRoles does. Var nodes are MERGEd by name per project, so
+# the identity of a variable is taken from the atoms' own ARG edges, never from a shared Var node.
+RULE_STRUCTURE_QUERY = (
+    "MATCH (r:Rule {graph:'Metagraph', project:$project}) "
+    "WHERE ($ruleIds IS NULL OR r.Rule_Id IN $ruleIds) AND NOT EXISTS { (r)-[:SUPERSEDED_BY]->() } "
+    "MATCH (r)-[rel:HAS_BODY|HAS_HEAD]->(a:Atom) "
+    "OPTIONAL MATCH (a)-[:REFERS_TO]->(ref) "
+    "OPTIONAL MATCH (a)-[ar:ARG]->(arg) "
+    "WITH r, rel, a, ref, collect(CASE WHEN ar IS NULL THEN NULL ELSE {pos: ar.pos, "
+    "kind: CASE WHEN arg:Var THEN 'Var' WHEN arg:Literal THEN 'Literal' ELSE 'Other' END, "
+    "value: coalesce(arg.name, arg.lex)} END) AS args "
+    "RETURN r.Rule_Id AS ruleId, type(rel) AS role, rel.order AS ord, a.Atom_Id AS atomId, a.type AS atomType, "
+    "CASE WHEN ref IS NULL THEN NULL ELSE labels(ref)[0] END AS refKind, ref.iri AS refIri, "
+    "coalesce(ref.label, ref.SWRL_label, ref.iri, '') AS refLabel, args "
+    "ORDER BY ruleId, role, ord"
+)
+
 Chooser = Callable[[dict, dict], "dict | None"]
 
 
@@ -66,12 +84,113 @@ def local_name(iri_or_label: str) -> str:
     return text
 
 
-def rules_from_rows(rows: Iterable[dict]) -> list[dict]:
-    """Group RULE_ATOMS_QUERY rows into [{ruleId, classes, dataProperties}] sorted by ruleId."""
+_ATOM_TYPE_OF_REFERENT = {"Class": "ClassAtom", "DatatypeProperty": "DataPropertyAtom",
+                          "ObjectProperty": "ObjectPropertyAtom", "Builtin": "BuiltinAtom"}
+
+
+def _norm_var(name: Any) -> str:
+    text = str(name or "").strip()
+    return (text[1:] if text.startswith("?") else text).lower()
+
+
+def _atom_type(row: dict) -> str:
+    return row.get("atomType") or _ATOM_TYPE_OF_REFERENT.get(row.get("refKind") or "", "")
+
+
+def _var_at(row: dict, pos: int) -> str:
+    for arg in row.get("args") or []:
+        if arg.get("pos") == pos and arg.get("kind") == "Var":
+            return _norm_var(arg.get("value"))
+    return ""
+
+
+def _variables(row: dict) -> set[str]:
+    return {_norm_var(a.get("value")) for a in row.get("args") or [] if a.get("kind") == "Var"
+            and _norm_var(a.get("value"))}
+
+
+def _sorted_atoms(rows: list[dict], role: str) -> list[dict]:
+    atoms = [r for r in rows if r.get("atomId") and r.get("role") == role]
+    return sorted(atoms, key=lambda a: (a.get("ord") is None, a.get("ord") or 0, str(a["atomId"])))
+
+
+def rule_roles(structure_rows: Iterable[dict]) -> dict:
+    """The subject and the context participants of ONE rule from its atom rows (RULE_STRUCTURE_QUERY).
+
+    Python mirror of ``DG/src/DG.Core/Parsing/RuleVariableRoles.cs`` (Phase 1303 plan 19, D-61); keep the two in step:
+    the subject is the variable at position 1 of the first head atom; a context-only variable is not the subject,
+    appears in a body atom, in no head atom, and every body atom that mentions it is a ClassAtom or an
+    ObjectPropertyAtom. ``subject`` is the class of the subject variable ({iri, label}), None when the rule has no
+    head atom, no variable subject or no ClassAtom on it. ``participants`` are the body ClassAtoms of context-only
+    variables in body order, each with the relation that ties it to the subject or to another participant (the
+    first ObjectPropertyAtom between them) and the class it is related to."""
+    rows = list(structure_rows)
+    body, head = _sorted_atoms(rows, "HAS_BODY"), _sorted_atoms(rows, "HAS_HEAD")
+    subject_var = _var_at(head[0], 1) if head else ""
+    if not subject_var:
+        return {"subject": None, "participants": []}
+    head_vars: set[str] = set()
+    for atom in head:
+        head_vars |= _variables(atom)
+    body_vars: set[str] = set()
+    for atom in body:
+        body_vars |= _variables(atom)
+    context_only = {
+        var for var in body_vars
+        if var != subject_var and var not in head_vars
+        and all(_atom_type(a) in ("ClassAtom", "ObjectPropertyAtom") for a in body if var in _variables(a))}
+
+    class_of: dict[str, dict] = {}
+    for atom in body:
+        var = _var_at(atom, 1)
+        if _atom_type(atom) == "ClassAtom" and atom.get("refKind") == "Class" and atom.get("refIri") and var:
+            class_of.setdefault(var, {"iri": atom["refIri"], "label": atom.get("refLabel") or atom["refIri"]})
+    subject = class_of.get(subject_var)
+    if subject is None:
+        return {"subject": None, "participants": []}
+
+    def relation_of(var: str) -> tuple[dict | None, str | None]:
+        for atom in body:
+            if _atom_type(atom) != "ObjectPropertyAtom" or atom.get("refKind") != "ObjectProperty":
+                continue
+            args = [a for a in atom.get("args") or [] if a.get("kind") == "Var"]
+            if len(atom.get("args") or []) != 2 or len(args) != 2:
+                continue
+            names = [_norm_var(a.get("value")) for a in args]
+            if var not in names or any(n != subject_var and n not in context_only for n in names):
+                continue
+            other = names[1] if names[0] == var else names[0]
+            return atom, (class_of.get(other) or {}).get("label")
+        return None, None
+
+    participants: list[dict] = []
+    for atom in body:
+        var = _var_at(atom, 1)
+        if (_atom_type(atom) == "ClassAtom" and atom.get("refKind") == "Class" and atom.get("refIri")
+                and var in context_only and all(p["iri"] != atom["refIri"] for p in participants)):
+            relation, related_to = relation_of(var)
+            participants.append({
+                "iri": atom["refIri"], "label": atom.get("refLabel") or atom["refIri"],
+                "relation": local_name(relation.get("refLabel") or relation["refIri"]) if relation else None,
+                "relationIri": relation["refIri"] if relation else None,
+                "relatedTo": local_name(related_to) if related_to else None})
+    return {"subject": subject, "participants": participants}
+
+
+def rules_from_rows(rows: Iterable[dict], structure_rows: Iterable[dict] = ()) -> list[dict]:
+    """Group RULE_ATOMS_QUERY rows into [{ruleId, classes, dataProperties, subject, participants}] sorted by ruleId.
+
+    ``structure_rows`` are RULE_STRUCTURE_QUERY rows (rows that carry an ``atomId`` are taken from ``rows`` too):
+    they decide ``subject`` and ``participants`` (see rule_roles); a rule without them has subject None."""
+    all_rows = list(rows)
+    structure: dict[tuple, dict] = {}
+    for row in list(structure_rows) + [r for r in all_rows if "atomId" in r]:
+        structure.setdefault((row.get("ruleId"), row.get("role"), row.get("atomId")), row)
     rules: dict[str, dict] = {}
-    for row in rows:
+    for row in (r for r in all_rows if "atomId" not in r):
         rule = rules.setdefault(row["ruleId"], {"ruleId": row["ruleId"], "text": row.get("text") or "",
-                                                "swrl": row.get("swrl") or "", "classes": [], "dataProperties": []})
+                                                "swrl": row.get("swrl") or "", "classes": [], "dataProperties": [],
+                                                "subject": None, "participants": []})
         labels = set(row.get("labels") or [])
         entry = {"iri": row.get("iri") or "", "label": row.get("label") or row.get("iri") or ""}
         if "Class" in labels:
@@ -82,12 +201,17 @@ def rules_from_rows(rows: Iterable[dict]) -> list[dict]:
             continue
         if entry not in bucket:
             bucket.append(entry)
+    for rule_id, rule in rules.items():
+        rule.update(rule_roles(r for key, r in structure.items() if key[0] == rule_id))
     return [rules[k] for k in sorted(rules)]
 
 
 def load_rules(session: Any, project: str, rule_ids: list[str] | None) -> list[dict]:
+    """The rules of the project with their classes, DataProperties, subject and context participants. The rule
+    atoms are the first session call, the structure read the second."""
     rows = session.run(RULE_ATOMS_QUERY, project=project, ruleIds=rule_ids or None).data()
-    return rules_from_rows(rows)
+    structure = session.run(RULE_STRUCTURE_QUERY, project=project, ruleIds=rule_ids or None).data()
+    return rules_from_rows(rows, structure)
 
 
 def _validate_params(catalogue: dict, calculator_id: str, params: dict) -> dict:
@@ -278,11 +402,13 @@ def resolve(rules: list[dict], catalogue: dict, chooser: Chooser | None = None,
     warnings: list[str] = []
     if not rules:
         raise PropertyScriptError("NO_RULES", "The project has no rules with DataProperty atoms to compute")
-    classes = sorted({(c["iri"], c["label"]) for r in rules for c in r["classes"]})
+    # D-62: the box class is the class of the rule's subject (the element the property is computed for); the
+    # participant classes of a rule are context, never a second box class.
+    classes = sorted({(r["subject"]["iri"], r["subject"]["label"]) for r in rules if r.get("subject")})
     if len(classes) != 1:
         raise PropertyScriptError(
             "BOX_CLASS_AMBIGUOUS",
-            f"The rules must test exactly one element class; found {[c[1] for c in classes] or 'none'}")
+            f"The rules must check exactly one subject class; found {[c[1] for c in classes] or 'none'}")
     box_label = local_name(classes[0][1])
     stored = stored or {}
     rules_by_dp: dict[str, list[dict]] = {}
@@ -512,7 +638,7 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
     """Owner 2026-10-20: DG creates every class a rule takes part in when the rule is created. The rule ingest
     writes the classes its atoms name (OpeningBox); a class the rule only implies through its property
     ("no openings in columns" -> hasColumnIntersectionCount -> Column) is created here, together with the
-    property's calculator. Runs per element class, so a project whose rules test several classes is fine.
+    property's calculator. Runs per subject class, so a project whose rules check several classes is fine.
     Never raises for rules it cannot resolve; returns what it created and what stayed unsupported."""
     import property_calculator_store
 
@@ -524,11 +650,17 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
     blocked = property_calculator_store.load_blocked(session, project)
     warnings: list[str] = []
     by_class: dict[tuple, list[dict]] = {}
-    for rule in rules:
-        if len(rule["classes"]) == 1 and rule["dataProperties"]:
-            by_class.setdefault((rule["classes"][0]["iri"], rule["classes"][0]["label"]), []).append(rule)
     created: list[dict] = []
     unsupported: list[dict] = []
+    for rule in rules:
+        if not rule["dataProperties"]:
+            continue
+        if not rule.get("subject"):
+            for dp in rule["dataProperties"]:
+                unsupported.append({"ruleId": rule["ruleId"], "dataPropertyIri": dp["iri"],
+                                    "dataPropertyLabel": dp["label"], "reason": "no subject"})
+            continue
+        by_class.setdefault((rule["subject"]["iri"], rule["subject"]["label"]), []).append(rule)
     for (class_iri, _label), group in sorted(by_class.items()):
         resolution = resolve(group, catalogue, None, stored=stored, generator=generator, shared=shared,
                              blocked=blocked)

@@ -2115,7 +2115,7 @@ def _generate_property_scripts(payload: PropertyScriptRequest, *, store: bool = 
     except property_scripts.PropertyScriptError as exc:
         hints = {
             "NO_RULES": "Ingest the project's rules first; only body DataProperty atoms are computed.",
-            "BOX_CLASS_AMBIGUOUS": "Pass ruleIds for rules that test one element class.",
+            "BOX_CLASS_AMBIGUOUS": "Pass ruleIds for rules that check one subject class (the class of the head atom's first variable).",
             "NOTHING_TO_COMPUTE": "No rule DataProperty has a stored, catalogue or generated calculator; see unsupported.",
         }
         raise _structured_error_response(
