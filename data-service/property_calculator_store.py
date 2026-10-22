@@ -294,3 +294,363 @@ def save(session: Any, project: str, entry: dict, actor: str | None) -> dict:
     catalogueId and authorship (a rejected calculator stays rejected through every later save); a different
     sha256 starts again as active and pending. A generated source the project already rejected is not stored."""
     return session.execute_write(_save_tx, project, entry, actor)
+
+
+# --------------------------------------------------------------------------------------------------------------
+# Phase 1303-16: company catalogue (D-54, D-56) and the locked confirm / reject / retire transactions
+# --------------------------------------------------------------------------------------------------------------
+
+_CATALOGUE_MATCH = f"(c:{CATALOGUE_LABEL} {{graph:'{CATALOGUE_GRAPH}', company:$company"
+
+# Reads: every statement matches the company, so a project of another company (or none) never sees a row.
+CATALOGUE_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}}}) WHERE c.status = 'active' "
+    "RETURN c.catalogueId AS catalogueId, c.propertyKey AS propertyKey, c.propertyName AS propertyName, "
+    "c.sha256 AS sha256, c.source AS source, c.function AS function, c.unit AS unit, c.meaning AS meaning, "
+    "c.readCategories AS readCategories, c.contractVersion AS contractVersion, c.provider AS provider, "
+    "c.model AS model, c.status AS status "
+    "ORDER BY propertyKey, sha256"
+)
+# The vocabulary text source is the operator-entered meaning and the unit, never the LLM explanation.
+VOCABULARY_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}}}) WHERE c.status = 'active' "
+    "RETURN c.propertyKey AS propertyKey, c.propertyName AS propertyName, c.meaning AS meaning, "
+    "c.unit AS unit, c.status AS status "
+    "ORDER BY propertyKey, c.sha256"
+)
+CATALOGUE_ENTRIES_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}}}) WHERE c.status = 'active' "
+    "RETURN c.catalogueId AS catalogueId, c.propertyKey AS propertyKey, c.propertyName AS propertyName, "
+    "c.dataPropertyIri AS dataPropertyIri, c.function AS function, c.sha256 AS sha256, c.unit AS unit, "
+    "c.meaning AS meaning, c.readCategories AS readCategories, c.contractVersion AS contractVersion, "
+    "c.provider AS provider, c.model AS model, c.sourceProject AS sourceProject, c.sourceRunId AS sourceRunId, "
+    "c.confirmedBy AS confirmedBy, c.confirmedAt AS confirmedAt, c.status AS status "
+    "ORDER BY propertyKey, c.sha256"
+)
+CATALOGUE_KEY_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}, propertyKey:$propertyKey}}) WHERE c.status = 'active' "
+    "RETURN c.catalogueId AS catalogueId, c.sha256 AS sha256"
+)
+# No status filter: a retired entry is seen, so it can be confirmed again (D-59).
+CATALOGUE_BY_ID_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}, catalogueId:$catalogueId}}) RETURN properties(c) AS entry"
+)
+CATALOGUE_CREATE_QUERY = (
+    f"MERGE {_CATALOGUE_MATCH}, catalogueId:$catalogueId}}) "
+    "ON CREATE SET c.propertyKey = $propertyKey, c.propertyName = $propertyName, "
+    "c.dataPropertyIri = $dataPropertyIri, c.function = $function, c.source = $source, c.sha256 = $sha256, "
+    "c.unit = $unit, c.meaning = $meaning, c.readCategories = $readCategories, "
+    "c.contractVersion = $contractVersion, c.provider = $provider, c.model = $model, "
+    "c.sourceProject = $sourceProject, c.sourceRunId = $sourceRunId, c.sourceRunCreatedAt = $sourceRunCreatedAt, "
+    "c.confirmedBy = $confirmedBy, c.confirmedAt = $confirmedAt, c.status = 'active', c.historyJson = $historyJson "
+    "RETURN properties(c) AS entry"
+)
+RETIRE_ENTRY_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}, catalogueId:$catalogueId}}) "
+    "SET c.status = 'retired', c.retiredBy = $by, c.retiredAt = $at, c.retiredReason = $reason, "
+    "c.historyJson = $historyJson "
+    "RETURN c.catalogueId AS catalogueId"
+)
+REACTIVATE_ENTRY_QUERY = (
+    f"MATCH {_CATALOGUE_MATCH}, catalogueId:$catalogueId}}) "
+    "SET c.status = 'active', c.reconfirmedBy = $by, c.reconfirmedAt = $at, c.reconfirmedRunId = $runId, "
+    "c.meaning = $meaning, c.unit = $unit, c.historyJson = $historyJson "
+    "RETURN properties(c) AS entry"
+)
+
+# Project rows. REVIEW_LOCK_QUERY only MATCHes (never creates) and increments the write lock.
+REVIEW_LOCK_QUERY = (
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
+    "SET pc.reviewLock = coalesce(pc.reviewLock, 0) + 1 "
+    "RETURN pc.dataPropertyIri AS dataPropertyIri, pc.origin AS origin, pc.status AS status, "
+    "pc.reviewStatus AS reviewStatus, pc.catalogueId AS catalogueId, pc.sha256 AS sha256, "
+    "pc.function AS function, pc.source AS source, pc.unit AS unit, pc.provider AS provider, pc.model AS model, "
+    "pc.createdAt AS createdAt, pc.createdBy AS createdBy, pc.reviewedBy AS reviewedBy, "
+    "pc.reviewedAt AS reviewedAt, pc.reviewReason AS reviewReason, "
+    "pc.regenerateRequested AS regenerateRequested, pc.rejectedSha256Json AS rejectedSha256Json"
+)
+CONFIRM_ROW_QUERY = (
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
+    "SET pc.status = 'active', pc.reviewStatus = 'confirmed', pc.catalogueId = $catalogueId, "
+    "pc.reviewedBy = $by, pc.reviewedAt = $at, pc.sourceRunId = $runId, pc.regenerateRequested = false, "
+    "pc.reviewReason = null "
+    "RETURN pc.dataPropertyIri AS dataPropertyIri"
+)
+REJECT_ROW_QUERY = (
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
+    "SET pc.status = 'rejected', pc.reviewStatus = 'rejected', pc.reviewedBy = $by, pc.reviewedAt = $at, "
+    "pc.reviewReason = $reason, pc.regenerateRequested = $regenerate, pc.rejectedSha256Json = $rejectedSha256Json "
+    "RETURN pc.dataPropertyIri AS dataPropertyIri"
+)
+# Copies by catalogueId (the id embeds the company hash). SET only, never DELETE.
+RETIRE_COPIES_QUERY = (
+    "MATCH (pc:PropertyCalculator {catalogueId:$catalogueId}) WHERE pc.status = 'active' "
+    "SET pc.status = 'retired', pc.reviewReason = $reason "
+    "RETURN count(pc) AS retiredCopies"
+)
+REACTIVATE_COPIES_QUERY = (
+    "MATCH (pc:PropertyCalculator {catalogueId:$catalogueId}) WHERE pc.status = 'retired' AND pc.sha256 = $sha256 "
+    "SET pc.status = 'active', pc.reviewStatus = 'confirmed', pc.reviewReason = null "
+    "RETURN count(pc) AS reactivatedCopies"
+)
+CANDIDATES_QUERY = (
+    "MATCH (pc:PropertyCalculator {project:$project}) WHERE pc.origin = 'generated' AND "
+    "((coalesce(pc.status, 'active') = 'active' AND pc.catalogueId IS NULL "
+    "AND coalesce(pc.reviewStatus, 'pending') = 'pending') "
+    "OR (pc.status = 'retired' AND pc.catalogueId IS NOT NULL)) "
+    "RETURN pc.dataPropertyIri AS dataPropertyIri, pc.function AS function, pc.source AS source, "
+    "pc.sha256 AS sha256, pc.unit AS unit, pc.explanation AS explanation, pc.provider AS provider, "
+    "pc.model AS model, pc.createdAt AS createdAt, pc.createdBy AS createdBy, pc.catalogueId AS catalogueId, "
+    "pc.sourceRunId AS sourceRunId, pc.status AS status "
+    "ORDER BY dataPropertyIri"
+)
+VERDICT_COUNTS_QUERY = (
+    "MATCH (ve:ValidationEntity {graph:'ValidGraph', project:$project, runId:$runId}) "
+    "WHERE ve.ruleId IN $ruleIds "
+    "RETURN ve.ruleId AS ruleId, ve.status AS status, count(ve) AS count "
+    "ORDER BY ruleId, status"
+)
+
+
+def load_catalogue(session: Any, company: str | None) -> dict[str, dict]:
+    """The active entries of the company by propertyKey (D-56). A falsy company runs no statement."""
+    if not company:
+        return {}
+    out: dict[str, dict] = {}
+    for row in session.run(CATALOGUE_QUERY, company=company).data():
+        row = dict(row)
+        if row.get("status") != STATUS_ACTIVE:
+            continue
+        if not all(row.get(k) for k in ("catalogueId", "propertyKey", "sha256", "source", "function")):
+            continue
+        if row["propertyKey"] in out:
+            logger.warning("company catalogue has two active entries for %s; keeping the first", row["propertyKey"])
+            continue
+        out[row["propertyKey"]] = row
+    return out
+
+
+def vocabulary_rows(session: Any, company: str | None) -> list[dict]:
+    """``{property, meaning, unit}`` of the company's active entries, for the LLM vocabulary. Never the LLM
+    explanation. A falsy company runs no statement; any failure gives []."""
+    if not company:
+        return []
+    try:
+        rows = session.run(VOCABULARY_QUERY, company=company).data()
+        return [{"property": r["propertyName"], "meaning": r["meaning"], "unit": r.get("unit") or ""}
+                for r in rows
+                if r.get("status", STATUS_ACTIVE) == STATUS_ACTIVE
+                and r.get("propertyKey") and r.get("propertyName") and r.get("meaning")]
+    except Exception:  # noqa: BLE001 - the vocabulary is advisory; generation must not fail on it
+        logger.warning("company vocabulary read failed", exc_info=True)
+        return []
+
+
+def load_catalogue_entries(session: Any, company: str | None) -> list[dict]:
+    """The active entries of the company with their provenance, ordered by propertyKey."""
+    if not company:
+        return []
+    return [dict(r) for r in session.run(CATALOGUE_ENTRIES_QUERY, company=company).data()
+            if r.get("status") == STATUS_ACTIVE]
+
+
+def load_candidates(session: Any, project: str) -> list[dict]:
+    """Generated calculators awaiting review (active, no catalogueId, pending) plus the project's retired copies of
+    catalogue entries, flagged ``retired: true`` so they can be confirmed again (D-59)."""
+    out = []
+    for row in session.run(CANDIDATES_QUERY, project=project).data():
+        row = dict(row)
+        status = row.pop("status", None) or STATUS_ACTIVE
+        retired = status == STATUS_RETIRED and bool(row.get("catalogueId"))
+        pending = status == STATUS_ACTIVE and not row.get("catalogueId")
+        if not (retired or pending):
+            continue
+        row["retired"] = retired
+        out.append(row)
+    return out
+
+
+def load_verdict_counts(session: Any, project: str, run_id: str, rule_ids: list[str]) -> list[dict]:
+    """Verdict counts of one run per rule and status: ``{ruleId, status, count}``."""
+    if not run_id or not rule_ids:
+        return []
+    return [dict(r) for r in session.run(VERDICT_COUNTS_QUERY, project=project, runId=run_id,
+                                         ruleIds=list(rule_ids)).data()]
+
+
+def _history(entry: dict | None) -> list[dict]:
+    try:
+        value = json.loads((entry or {}).get("historyJson") or "[]")
+    except ValueError:
+        return []
+    return [e for e in value if isinstance(e, dict)] if isinstance(value, list) else []
+
+
+def _event(event: str, actor: str | None, at: str, project: str, **extra: Any) -> dict:
+    out = {"event": event, "by": actor, "at": at, "project": project}
+    out.update({k: v for k, v in extra.items() if v})
+    return out
+
+
+def _lock_row(tx: Any, project: str, iri: str) -> dict | None:
+    return next((r for r in tx.run(REVIEW_LOCK_QUERY, project=project, dataPropertyIri=iri).data()
+                 if r.get("dataPropertyIri") == iri), None)
+
+
+def _local_name(iri: str) -> str:
+    import property_scripts
+
+    return property_scripts.local_name(iri)
+
+
+def _confirm_tx(tx: Any, project: str, company: str, iri: str, sha256: str, run: dict, actor: str | None,
+                meaning: str | None, unit: str | None, contract_version: Any, allow_reconfirm: bool) -> dict:
+    import property_calculator_llm
+
+    row = _lock_row(tx, project, iri)
+    if not row or row.get("origin") != "generated":
+        raise CalculatorReviewError("CALCULATOR_NOT_FOUND", 404, "no generated calculator for this property")
+    status = row.get("status") or STATUS_ACTIVE
+    row_cid = catalogue_id(company, row.get("sha256") or "")
+    held_cid = row.get("catalogueId")
+    retired_copy = status == STATUS_RETIRED and held_cid == row_cid
+    if (status == STATUS_REJECTED or row.get("reviewStatus") == REVIEW_REJECTED
+            or (status == STATUS_RETIRED and not retired_copy) or (held_cid and held_cid != row_cid)):
+        raise CalculatorReviewError("CALCULATOR_NOT_PENDING", 409,
+                                    "the calculator is rejected or belongs to another entry")
+    if retired_copy and allow_reconfirm is not True:
+        raise CalculatorReviewError("CATALOGUE_RECONFIRM_OWNER_REQUIRED", 403,
+                                    "only an owner confirms a retired calculator again")
+    if row.get("sha256") != sha256:
+        raise CalculatorReviewError("CALCULATOR_CHANGED", 409, "the calculator changed since it was shown")
+    problem = property_calculator_llm.verify_stored_source(row.get("source"), row.get("function"), row.get("sha256"))
+    if problem:
+        raise CalculatorReviewError("CALCULATOR_INTEGRITY", 409, problem)
+    run = run or {}
+    if not created_after(run.get("createdAt"), row.get("createdAt")):
+        raise CalculatorReviewError("CALCULATOR_RUN_INVALID", 422,
+                                    "the validation run is not newer than the calculator")
+
+    key = property_key(iri)
+    taken = tx.run(CATALOGUE_KEY_QUERY, company=company, propertyKey=key).data()
+    if any(e.get("sha256") != sha256 for e in taken):
+        raise CalculatorReviewError("CATALOGUE_PROPERTY_TAKEN", 409,
+                                    "the company already has a calculator for this property")
+    existing = next(iter(tx.run(CATALOGUE_BY_ID_QUERY, company=company, catalogueId=row_cid).data()),
+                    {}).get("entry")
+    if existing and existing.get("propertyKey") != key:
+        raise CalculatorReviewError("CATALOGUE_PROPERTY_TAKEN", 409,
+                                    "this calculator is already confirmed for another property")
+
+    now = utc_now()
+    result = {"catalogueId": row_cid, "entry": existing, "alreadyConfirmed": False, "reconfirmed": False,
+              "reactivatedCopies": 0}
+    if existing and existing.get("status") == STATUS_ACTIVE:
+        result["alreadyConfirmed"] = True
+    elif existing:
+        # D-59: a retired entry is confirmed again through the same gates; D-60: only with the owner flag, also
+        # when the project's own row is a fresh pending copy of the same source.
+        if allow_reconfirm is not True:
+            raise CalculatorReviewError("CATALOGUE_RECONFIRM_OWNER_REQUIRED", 403,
+                                        "only an owner confirms a retired calculator again")
+        history = _history(existing) + [_event("reconfirmed", actor, now, project, runId=run.get("runId"))]
+        result["entry"] = next(iter(tx.run(
+            REACTIVATE_ENTRY_QUERY, company=company, catalogueId=row_cid, by=actor, at=now,
+            runId=run.get("runId"), meaning=meaning, unit=(unit or existing.get("unit")),
+            historyJson=json.dumps(history, sort_keys=True)).data()), {}).get("entry")
+        copies = tx.run(REACTIVATE_COPIES_QUERY, catalogueId=row_cid, sha256=sha256).data()
+        result["reactivatedCopies"] = int(copies[0]["reactivatedCopies"]) if copies else 0
+        result["reconfirmed"] = True
+    else:
+        history = [_event("confirmed", actor, now, project, runId=run.get("runId"))]
+        result["entry"] = next(iter(tx.run(
+            CATALOGUE_CREATE_QUERY, company=company, catalogueId=row_cid, propertyKey=key,
+            propertyName=_local_name(iri), dataPropertyIri=iri, function=row.get("function"),
+            source=row.get("source"), sha256=sha256, unit=(unit or row.get("unit") or None), meaning=meaning,
+            readCategories=property_calculator_llm.categories_in(row.get("source") or ""),
+            contractVersion=contract_version, provider=row.get("provider"), model=row.get("model"),
+            sourceProject=project, sourceRunId=run.get("runId"), sourceRunCreatedAt=run.get("createdAt"),
+            confirmedBy=actor, confirmedAt=now,
+            historyJson=json.dumps(history, sort_keys=True)).data()), {}).get("entry")
+    tx.run(CONFIRM_ROW_QUERY, project=project, dataPropertyIri=iri, catalogueId=row_cid, by=actor, at=now,
+           runId=run.get("runId")).consume()
+    return result
+
+
+def confirm(session: Any, *, project: str, company: str, data_property_iri: str, sha256: str, run: dict,
+            actor: str | None, meaning: str | None, unit: str | None, contract_version: Any,
+            allow_reconfirm: bool = False) -> dict:
+    """Promote a pending generated calculator of ``project`` into the company catalogue, or confirm a retired entry
+    again (D-59). ``run`` is ``{"runId", "createdAt"}`` of the validation run that justified it.
+
+    One locked write transaction re-checks every gate on the row it locks (D-58): generated and not rejected, the
+    exact shown sha256, the stored-source integrity, a run newer than the calculator, a free property key. A
+    retired copy needs ``allow_reconfirm=True`` (D-60; the route sets it from the owner role, the store reads no
+    roles). Every refusal raises ``CalculatorReviewError`` and writes nothing.
+    Returns ``{catalogueId, entry, alreadyConfirmed, reconfirmed, reactivatedCopies}``."""
+    if not company:
+        raise CalculatorReviewError("CATALOGUE_COMPANY_REQUIRED", 403, "the project has no company")
+    with _CATALOGUE_LOCK:
+        return session.execute_write(_confirm_tx, project, company, data_property_iri, sha256, run, actor, meaning,
+                                     unit, contract_version, allow_reconfirm)
+
+
+def _reject_tx(tx: Any, project: str, iri: str, sha256: str, actor: str | None, reason: str | None,
+               regenerate: bool) -> dict:
+    row = _lock_row(tx, project, iri)
+    if not row or row.get("origin") != "generated":
+        raise CalculatorReviewError("CALCULATOR_NOT_FOUND", 404, "no generated calculator for this property")
+    status = row.get("status") or STATUS_ACTIVE
+    if row.get("catalogueId") and status in (STATUS_ACTIVE, STATUS_RETIRED):
+        # Retire cascades to every active copy, so an active row with a catalogueId names an active entry; a
+        # retired copy's hash is paused, not rejected (D-59, D-60).
+        raise CalculatorReviewError("CALCULATOR_IN_CATALOGUE", 409,
+                                    "the calculator belongs to the company catalogue; retire the entry instead")
+    if row.get("sha256") != sha256:
+        raise CalculatorReviewError("CALCULATOR_CHANGED", 409, "the calculator changed since it was shown")
+    hashes = set(_hash_list(row.get("rejectedSha256Json")))
+    already = status == STATUS_REJECTED and sha256 in hashes
+    hashes.add(sha256)
+    tx.run(REJECT_ROW_QUERY, project=project, dataPropertyIri=iri,
+           by=(row.get("reviewedBy") if already else actor),
+           at=(row.get("reviewedAt") if already else utc_now()),
+           reason=(reason or (row.get("reviewReason") if already else None)), regenerate=bool(regenerate),
+           rejectedSha256Json=json.dumps(sorted(hashes))).consume()
+    return {"alreadyRejected": already, "regenerate": bool(regenerate), "rejectedSha256s": sorted(hashes)}
+
+
+def reject(session: Any, *, project: str, data_property_iri: str, sha256: str, actor: str | None,
+           reason: str | None, regenerate: bool) -> dict:
+    """Reject the calculator of ``project`` that was shown with ``sha256``. Durable: the hash joins the row's
+    ``rejectedSha256Json`` and stays there when a regenerated source makes the row active again. A catalogue copy,
+    active or retired, is refused (``CALCULATOR_IN_CATALOGUE``). Runs no catalogue statement.
+    Returns ``{alreadyRejected, regenerate, rejectedSha256s}``."""
+    return session.execute_write(_reject_tx, project, data_property_iri, sha256, actor, reason, regenerate)
+
+
+def _retire_tx(tx: Any, project: str, company: str, cid: str, actor: str | None, reason: str | None) -> dict:
+    entry = next(iter(tx.run(CATALOGUE_BY_ID_QUERY, company=company, catalogueId=cid).data()), {}).get("entry")
+    if not entry:
+        raise CalculatorReviewError("CATALOGUE_ENTRY_NOT_FOUND", 404, "no such catalogue entry")
+    if entry.get("status") == STATUS_RETIRED:
+        return {"catalogueId": cid, "retiredCopies": 0, "alreadyRetired": True}
+    now = utc_now()
+    history = _history(entry) + [_event("retired", actor, now, project, reason=reason)]
+    tx.run(RETIRE_ENTRY_QUERY, company=company, catalogueId=cid, by=actor, at=now, reason=reason,
+           historyJson=json.dumps(history, sort_keys=True)).consume()
+    copies = tx.run(RETIRE_COPIES_QUERY, catalogueId=cid,
+                    reason=f"retired from the company catalogue: {reason or ''}".rstrip()).data()
+    return {"catalogueId": cid, "retiredCopies": int(copies[0]["retiredCopies"]) if copies else 0,
+            "alreadyRetired": False}
+
+
+def retire(session: Any, *, project: str, company: str, catalogue_id: str, actor: str | None,
+           reason: str | None) -> dict:
+    """Retire a company catalogue entry and its active project copies (D-59): status only, nothing is deleted and
+    ``historyJson`` keeps the event. A request from any project of the entry's company works; the store reads no
+    roles (plan 1303-17 gates the route to the owner role of the requesting project). Another company's id reads
+    as an unknown id. Returns ``{catalogueId, retiredCopies, alreadyRetired}``."""
+    if not company:
+        raise CalculatorReviewError("CATALOGUE_ENTRY_NOT_FOUND", 404, "no such catalogue entry")
+    with _CATALOGUE_LOCK:
+        return session.execute_write(_retire_tx, project, company, catalogue_id, actor, reason)
