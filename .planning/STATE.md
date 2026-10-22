@@ -8,8 +8,8 @@ current_plan: 14
 status: executing
 stopped_at: Completed 1303-19-PLAN.md
 last_updated: "2026-10-22T07:10:53.877Z"
-last_activity: 2026-10-18
-last_activity_desc: Revit live act 3 awaits owner installation/open/sign-in; see 1303-14-CHECKPOINT.md
+last_activity: 2026-10-22
+last_activity_desc: Wave 7 — plans 1303-16 (calculator review store) and 1303-19 (context-only participants in the C# validator) executed; 1303-15 SUMMARY reconstructed (partial); next 1303-17 then 20, 18
 progress:
   total_phases: 9
   completed_phases: 1
@@ -37,9 +37,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 Phase: 1303 (pravilo-gh-obekt) — MVP slice EXECUTING (2026-10-17)
 Current Phase: 1303
 Current Phase Name: pravilo-gh-obekt
-Current Plan: 14
-Total Plans in Phase: 14 (MVP slice; 07 optional; 10 proposal cards/DeGram; 11–14 owner-authorized Revit connector/server/DeGram/live act)
-Plan: 11 of 14 complete (01–05, 08–13); 06 live demo open; 07 cut line; 14 blocked at installation/open/sign-in checkpoint
+Current Plan: 17 (next in order; 14 stays blocked on the owner)
+Total Plans in Phase: 23 (MVP slice 01–14; 15 MEP opening check; 16–18 D-54 calculator review; 19–23 DGOPN-06 multi-participant rules)
+Plan: 14 of 23 complete (01–05, 08–13, 16, 19) plus 15 implemented with SUMMARY status partial (acceptance evidence open); 06 live demo open; 07 cut line; 14 blocked at installation/open/sign-in checkpoint; 17, 18, 20–23 not started
 Status: GH rehearsal through proposal answers/undo, apply, placement and VALIDATOR V1/V2 recorded in 1303-10-SUMMARY.md. Revit connector/server/DeGram implementation and build complete, but real Revit reads, writes, transfer and gold metrics remain unverified. Prior pyRevit installation was denied and has not been retried. Demo profiles remain retired; 1309 continues separately; 1300 gates remain open for full 1303 acceptance.
 Last activity: 2026-10-18 — plans 11–13 implemented; data-service 82378ca1 from committed export, connector 400 tests and mapping 63 tests passed; DeGram 1aa3b39c built (exit 0), launched isolated; bundled MCP lists 54 tools and status returns BRIDGE_OFF (Revit not running)
 Last Activity Description: Revit live act 3 awaits owner installation/open/sign-in; see 1303-14-CHECKPOINT.md
