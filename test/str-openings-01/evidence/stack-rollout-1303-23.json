@@ -1,0 +1,86 @@
+{
+  "plan": "1303-23",
+  "tasks": "1-2 (Task 3 DG.gha install is an owner step, not performed)",
+  "rolledOutAt": "2026-10-22",
+  "commit": "f0e27a10f145539fec67dd163db3c47b3c6aefd3",
+  "commit7": "f0e27a1",
+  "releaseFolder": "D:\\dgb\\mapping-release-f0e27a1",
+  "exportedWith": "git archive f0e27a10f145539fec67dd163db3c47b3c6aefd3 (CRLF export; 47 data-service/*.py in the container equal the archive files after line-ending normalization, 0 mismatches)",
+  "trackedSourceStateAtBuild": "clean: only .planning/STATE.md and .planning/config.json modified, no tracked source change",
+  "gate": {
+    "dataServicePytest": "4 failed, 6477 passed, 35 skipped, 8 deselected, 25 errors (334 s). The 4 failures: tests/test_dg_context.py::TestContextEndpoints::test_get_debug_matches_post_assemble_body, ::test_post_assemble_returns_200_for_valid_type, TestDeterminism::test_get_debug_and_post_assemble_are_equal_for_graph_query, ::test_repeated_assemble_calls_are_byte_identical. The 25 errors: failed DNS resolve of neo4j:7687 (test_cg_structure_checks 20, test_computgraph_consult 5). Same names as the 1303-18 baseline; no new failure name.",
+    "de01Pytest": "1 failed, 173 passed: only test_de01_runner.py::test_de01_runner_against_golden_fixture_has_zero_silent_disagreements (baseline).",
+    "dgTests": "Release net9.0: 5 failed, 811 passed, 0 skipped (816). All 5 environmental, not touched by plans 19-22: DG.Tests.FrameAblatedCorpusEmitterTests.EmitFrameAblatedCorpus_MatchesCommittedGoldenFiles (FindRepoRoot expects a .git directory, the worktree has a .git file); DG.Tests.E2E.DesignStateValidationFlowTests: LegacyNoState_FlowStillWorks, ReinstateFailureModes_ProduceActionableMessages, Filtering_StateAndRule, HappyPath_StatePublishAndRetrieve (live Neo4j on localhost:7687 refuses the hard-coded test password: AuthenticationException).",
+    "uiTest": "370 tests, 370 pass, 0 fail, 0 skipped",
+    "uiBuild": "exit 0"
+  },
+  "imageIds": {
+    "dataService": "sha256:af1b1deb422eccdc51473ba28264bc2d6f0b9b562428f0c4517e82f0bd056f75",
+    "ui": "sha256:6861c7c00dbc19e92d7c6873d9ea921f4ea86308c7aef3be87a8419c5d3577be",
+    "previousDataService": "sha256:eedd68b3f2e25a019c885b40feaa7a1e7e9c1ab8cec399a10164f0a694ecfce9",
+    "previousUi": "sha256:65fca04d2ebadaecf1e5aaf00677da1265737e40942e808e1dd3c048e2252227"
+  },
+  "buildCommands": [
+    "docker build --no-cache -t dg-mapping-data-service:f0e27a1 D:\\dgb\\mapping-release-f0e27a1\\data-service",
+    "docker build --no-cache -t dg-mapping-ui:f0e27a1 D:\\dgb\\mapping-release-f0e27a1\\ui-v2"
+  ],
+  "runningImages": {
+    "dataService": "dg-mapping-data-service:f0e27a1",
+    "ui": "dg-mapping-ui:f0e27a1",
+    "dgReasoner": "dg-mapping-dg-reasoner:e600716 (unchanged, not recreated)"
+  },
+  "composeOverride": "D:\\dgb\\mapping-release-f0e27a1\\compose.mapping-images.yml",
+  "rolloutCommand": "docker compose -p design-grammar-system -f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\docker-compose.yml -f D:\\dgb\\mapping-release-f0e27a1\\compose.mapping-images.yml up -d --no-build --no-deps data-service design-grammars",
+  "recreatedServices": ["data-service", "design-grammars"],
+  "otherServicesRecreated": false,
+  "composeBlocksEqualToMainCheckout": {"data-service": true, "design-grammars": true},
+  "previousRunningImages": {
+    "dataService": "dg-mapping-data-service:2a61d07",
+    "ui": "dg-mapping-ui:2a61d07",
+    "previousOverride": "D:\\dgb\\mapping-release-2a61d07\\compose.mapping-images.yml"
+  },
+  "rollback": {
+    "overrideFile": "D:\\dgb\\mapping-release-f0e27a1\\compose.mapping-rollback.yml",
+    "command": "docker compose -p design-grammar-system -f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\docker-compose.yml -f D:\\dgb\\mapping-release-f0e27a1\\compose.mapping-rollback.yml up -d --no-build --no-deps data-service design-grammars",
+    "furtherBack": "D:\\dgb\\mapping-release-2a61d07\\compose.mapping-rollback.yml (tags pre-1303-16)",
+    "configValidated": true
+  },
+  "backendRoot": 200,
+  "uiRoot": 200,
+  "anonymousCandidates": 401,
+  "anonymousConfirm": 401,
+  "servedCodeMatchesArchive": true,
+  "servedCodeSha256": {
+    "app.py": "ec85048de0a337c8841cf9ccc5e6d6a70d69a3eda7a44f4089160d3501a6d56c",
+    "rule_conflicts.py": "86f1bcedd34af72e9868e6aea75cc0c13a81a68499e116e141a17e30ddbd9241",
+    "property_scripts.py": "770f3d9a789be3e28312bc9c44ae4a5e34150758fe8581f3a9759d2327008e74",
+    "property_calculator_store.py": "51fcda6f29976e139cfb22b286cb76a6c7753a5974a4b95f245ea0b81fb7e154",
+    "property_calculator_llm.py": "1fd8b7e1a2691e9465d686071dc937d035f79447a4174c23c5d882c7d632475a",
+    "property_calculator_review.py": "9513722426c04a67079f0f2790281aab2e1a4e9a779c6fb2d5c41f11126c3fc8",
+    "dg_context.py": "22b8999f42ddfbea6052f2e80b897d241a11ae42d6ec14382065e4ae262812e1",
+    "route_policy.py": "b5e1790100070ce27b066661430972d204018b4e7736c330d8fefd82db4abf52"
+  },
+  "conflictsRoutePolicy": {"route": "GET /rules/{project}/{rule_id}/conflicts", "principals": ["member"], "projectSource": "path", "minRole": "viewer", "loadedInContainer": true},
+  "uiBundleHasConflictDialogString": true,
+  "uiBundleHasReviewString": true,
+  "uiBundleFiles": ["/usr/share/nginx/html/assets/App-DZhMU6dJ.js", "/usr/share/nginx/html/assets/PropertiesTable-ez6CGanv.js"],
+  "serviceTokenProbe": {"GET /graph/str-openings-01": 403, "GET /rules/str-openings-01/R_PROBE_NONE/conflicts": 403, "note": "service principal is refused on member-only routes (policy loaded, not 401); the data read was confirmed with a read-only in-container Neo4j count instead"},
+  "projectReadProbe": {"project": "str-openings-01", "nodes": 71949, "rules": ["R_OpeningAboveDoorWindow", "R_OpeningMinClearanceToHostOpening", "R_OpeningNotInBeam", "R_OpeningNotInColumns"], "note": "R_OpeningSlabEdgeClearance500 is absent (the owner deleted it on 2026-10-21 to re-ingest it); probe scripts were removed from the container"},
+  "dgGha": {
+    "builtFrom": "f0e27a1 via git archive folder, dotnet build DG\\DG.sln -c Release --no-incremental -p:RhinoInstallDir=\"C:\\Program Files\\Rhino 8\" (0 errors, 38 warnings)",
+    "artifactDir": "D:\\dgb\\mapping-release-f0e27a1\\DG\\src\\DG.Grasshopper\\bin\\Release\\net48",
+    "dgGhaSha256": "02788a2218c4e5772d3aa620611033a2e6bb14b075e84049e5f24a1922b5123b",
+    "dgCoreDllSha256": "09af8d0d9c05d92deedf2eb33662a17389fe4676aecfcf2bc66829d1e9df7057",
+    "installedBefore": {
+      "dgGhaSha256": "ce9d8792432a1207668f4da0698524f5ce2e0697f2e920e1b2e47cedb72c9e8d",
+      "dgCoreDllSha256": "a7c2170f50c2def4e3ab7af875e0e8b3e6b9c421cae4a6ace9f15aba53fd76e6"
+    },
+    "installed": false,
+    "backupOfInstalledPlugin": "D:\\dgb\\plugin-backup\\DG-20261022-pre-f0e27a1 (read-only copy of %APPDATA%\\Grasshopper\\Libraries\\DG, 18 files)",
+    "installScript": "D:\\dgb\\mapping-release-f0e27a1\\install-dg-gha.ps1 (not executed; refuses to run while Rhino is open)"
+  },
+  "notes": [
+    "No credential, cookie or service credential is stored here; the service token was read inside the container and never printed.",
+    "Plan 1303-18 Task 3 (owner live check of V13) is still pending; this stack contains plan 18's V13 code."
+  ]
+}
