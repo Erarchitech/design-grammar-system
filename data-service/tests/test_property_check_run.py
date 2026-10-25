@@ -136,3 +136,33 @@ def test_a_listener_without_the_counter_is_not_polled(monkeypatch):
         app_module.post_property_check_run(_request(send=False), request=None)
     assert bridge.status_calls == 1  # the guard read only: no poll without the counter
     assert "did not finish" in " ".join(err.value.detail["problems"])
+
+
+def test_the_end_of_a_run_is_its_verdict_not_the_first_solution_end(monkeypatch):
+    """Phase 1303-25 (D-70), live 2026-10-25: after a fresh placement the first solution had no rules (METAGRAPH loads
+    asynchronously); the listener keeps the one-shot armed (oneShotPending) until the solution with the verdict."""
+    run = {"finished": False, "send": False, "clear": False, "paint": True, "status": None, "solutionsEndedBefore": 4}
+    no_rules = {"toggles": {"SendValid": False}, "solutionsEnded": 5, "oneShotPending": True, "boxes": 313,
+                "violations": [], "validationRunId": [], "messages": ["error VALIDATOR: Rule input is required."]}
+    verdict = {"toggles": {"SendValid": False}, "solutionsEnded": 6, "oneShotPending": False, "boxes": 313,
+               "violations": [], "validationRunId": [], "messages": []}
+    bridge = _Bridge(monkeypatch, run, [IDLE, no_rules, verdict])
+    out = app_module.post_property_check_run(_request(send=False), request=None)
+    assert len(bridge.runs) == 1 and bridge.status_calls == 3
+    assert out["finished"] is True and out["status"]["solutionsEnded"] == 6 and out["summary"]["ok"] is True
+
+
+def test_the_status_is_read_again_once_the_published_runs_are_found(monkeypatch):
+    """Phase 1303-25 (D-70): the status the run answered can be older than the publishing solution; a stale error
+    must not fail a check whose runs were published."""
+    stale = {"boxes": 313, "violations": [], "validationRunId": ["", ""], "ruleNames": ["R1", "R2"],
+             "messages": ["error VALIDATOR: Rule input is required."]}
+    run = {"finished": True, "send": True, "clear": False, "paint": True, "status": stale, "solutionsEndedBefore": 4}
+    fresh = {"toggles": {"SendValid": False}, "solutionsEnded": 7, "oneShotPending": False, "boxes": 313,
+             "violations": [], "validationRunId": ["", ""], "ruleNames": ["R1", "R2"], "messages": []}
+    bridge = _Bridge(monkeypatch, run, [IDLE, fresh])
+    monkeypatch.setattr(app_module, "read_many", lambda query, params=None: [{"runId": "VR-1"}, {"runId": "VR-2"}])
+    monkeypatch.setattr(app_module, "_record_check_source", lambda project, runs, report: None)
+    out = app_module.post_property_check_run(_request(), request=None)
+    assert out["summary"]["ok"] is True and out["summary"]["validationRunIds"] == ["VR-1", "VR-2"]
+    assert out["status"]["solutionsEnded"] == 7 and len(bridge.runs) == 1

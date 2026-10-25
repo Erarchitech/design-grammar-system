@@ -763,8 +763,11 @@ public sealed class CanvasListenerComponent : GH_Component
             // SendValid/Paint left on made every Rhino.Inside re-solve publish and paint again, so the listener turns
             // them off after this run's solution. Armed only now, with no solution running, so the next solution end
             // is this run's own (armed earlier, a running solution's end reset SendValid before it could publish).
-            _oneShotDoc = (send || paint) && !clear ? doc : null;
+            // Phase 1303-25 (D-70): armed for every run that is not a clear, and released only by the solution that
+            // produced the verdict (VerdictGate), so the run's end is the verdict, not the first solution end.
+            _oneShotDoc = !clear ? doc : null;
             _oneShotAfter = before;
+            _verdictGate.Clear();
 
             foreach (var toggle in members.OfType<GH_BooleanToggle>())
             {
@@ -797,7 +800,7 @@ public sealed class CanvasListenerComponent : GH_Component
         while (DateTime.UtcNow < deadline)
         {
             Thread.Sleep(400);
-            if (Interlocked.Read(ref _solutionsEnded) > before)
+            if (Interlocked.Read(ref _solutionsEnded) > before && _oneShotDoc is null)
             {
                 finished = true;
                 break;
@@ -817,8 +820,9 @@ public sealed class CanvasListenerComponent : GH_Component
         return new { finished, paint, clear, send, status, solutionsEndedBefore = before, solutionsEnded };
     }
 
-    private GH_Document? _oneShotDoc;
+    private volatile GH_Document? _oneShotDoc;
     private long _oneShotAfter;
+    private readonly VerdictGate _verdictGate = new();
 
     private void OnPropertyCheckSolutionEnd(object sender, GH_SolutionEventArgs e)
     {
@@ -826,7 +830,15 @@ public sealed class CanvasListenerComponent : GH_Component
         var doc = _oneShotDoc;
         if (doc is not null && ended > _oneShotAfter)
         {
-            // This run's own solution ended: SendValid and Paint go off (the listener-armed one-shot).
+            // This run's solution ended. Live 2026-10-25: after a fresh placement METAGRAPH delivered its rules one
+            // solution later, VALIDATOR had no rule ("Rule input is required") and the one-shot switched SendValid off
+            // before anything was published. The one-shot is released by the solution that produced the verdict
+            // (Phase 1303-25, D-70); the gate bounds the wait.
+            if (!_verdictGate.Observe(VerdictProduced(doc), DateTime.UtcNow))
+            {
+                return;
+            }
+
             _oneShotDoc = null;
             _sendValidGuard.Observe(IsSendValidOn(doc), DateTime.UtcNow);
             ScheduleToggleOff(doc, includePaint: true);
@@ -834,9 +846,21 @@ public sealed class CanvasListenerComponent : GH_Component
         }
 
         // SendValid is one-shot also when the operator set it by hand: a value left True made every Rhino.Inside
-        // re-solve publish again (live 2026-10-25: 50 runs in 54 minutes, canvas frozen). Phase 1303-24, D-67.
+        // re-solve publish again (live 2026-10-25: 50 runs in 54 minutes, canvas frozen). Phase 1303-24, D-67. It is
+        // switched off at the end of the solution that produced the verdict, as for a listener run (D-70).
         var guarded = _solutionCounterDoc;
-        if (guarded is not null && _sendValidGuard.Observe(IsSendValidOn(guarded), DateTime.UtcNow))
+        if (guarded is null)
+        {
+            return;
+        }
+
+        if (!IsSendValidOn(guarded))
+        {
+            _verdictGate.Clear();
+            return;
+        }
+
+        if (_verdictGate.Observe(VerdictProduced(guarded), DateTime.UtcNow) && _sendValidGuard.Observe(true, DateTime.UtcNow))
         {
             ScheduleToggleOff(guarded, includePaint: false);
         }
@@ -845,6 +869,20 @@ public sealed class CanvasListenerComponent : GH_Component
     private static bool IsSendValidOn(GH_Document doc) =>
         PropertyCheckGroups(doc, string.Empty).SelectMany(g => GroupMembers(doc, g)).OfType<GH_BooleanToggle>()
             .Any(t => t.NickName == "SendValid" && t.Value);
+
+    /// <summary>
+    /// The check produced its verdict in the solution that just ended: every VALIDATOR of the property-check group
+    /// has a RuleName output, i.e. it received a rule (VALIDATOR publishes synchronously in that same SolveInstance
+    /// when SendValid is on). A VALIDATOR without a rule leaves its outputs empty.
+    /// </summary>
+    private static bool VerdictProduced(GH_Document doc)
+    {
+        var validators = PropertyCheckGroups(doc, string.Empty).SelectMany(g => GroupMembers(doc, g)).OfType<IGH_Component>()
+            .Where(c => c.ComponentGuid == PropertyScriptPlacement.DgComponentTypes["VALIDATOR"])
+            .ToList();
+        return validators.Count > 0 && validators.All(v =>
+            v.Params.Output.FirstOrDefault(p => p.Name == "RuleName")?.VolatileData.IsEmpty == false);
+    }
 
     private static void ScheduleToggleOff(GH_Document doc, bool includePaint)
     {
@@ -982,6 +1020,7 @@ public sealed class CanvasListenerComponent : GH_Component
                 messages,
                 solutionsEnded = Interlocked.Read(ref _solutionsEnded),
                 sendValidGuard = new { disarmed = _sendValidGuard.Disarmed, loopSuspected = _sendValidGuard.LoopSuspected },
+                oneShotPending = _oneShotDoc is not null,
             };
         }, timeoutMs);
     }

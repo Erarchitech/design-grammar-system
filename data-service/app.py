@@ -2217,11 +2217,14 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
             # BUSY while it published and failed the whole check with 502.
             published = _wait_for_published_runs(payload.project, started_at, result)
             if published:
-                if not (result.get("status") or {}).get("boxes"):
-                    try:  # the run's own answer was lost to the bridge timeout: read the reports now
-                        result["status"] = gh_bridge.get_property_check_status(payload.project)
-                    except HTTPException:
-                        pass
+                # The run's own answer can be lost to the bridge timeout or older than the publishing solution
+                # (live 2026-10-25: a first solution without rules); read the reports once more now.
+                try:
+                    fresh = gh_bridge.get_property_check_status(payload.project)
+                except HTTPException:
+                    fresh = None
+                if isinstance(fresh, dict) and (fresh.get("boxes") or not (result.get("status") or {}).get("boxes")):
+                    result["status"] = fresh
                 status = result.setdefault("status", {})
                 status["validationRunId"] = published
                 result["finished"] = True
@@ -2404,7 +2407,10 @@ def _await_check_end(project: str, result: dict) -> None:
             if _bridge_code(exc) != "BUSY":
                 return
             status = None
-        if isinstance(status, dict) and int(status.get("solutionsEnded") or 0) > int(before):
+        # Phase 1303-25 (D-70): the run has ended when its verdict was produced; a solution without one (METAGRAPH
+        # still loading after a fresh placement) keeps the listener's one-shot pending.
+        if (isinstance(status, dict) and int(status.get("solutionsEnded") or 0) > int(before)
+                and not status.get("oneShotPending")):
             result["status"] = status
             result["finished"] = True
             return
