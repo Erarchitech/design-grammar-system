@@ -59,6 +59,18 @@
     "backupOfInstalledPlugin": "D:\\dgb\\plugin-backup\\DG-20261025-pre-23ed720 (copy of %APPDATA%\\Grasshopper\\Libraries\\DG, 18 files)",
     "installScript": "D:\\dgb\\mapping-release-23ed720\\install-dg-gha.ps1 (not executed; refuses to run while Rhino or Revit is running, checks the backup, copies, verifies the hash of DG.gha and DG.Core.dll)"
   },
+  "followUpRollout": {
+    "commit7": "25297dd",
+    "change": "CONTEXT_API line 'Write no import statements' (two live generations were refused for from-import)",
+    "releaseFolder": "D:\\dgb\\mapping-release-25297dd",
+    "dataServiceImage": "dg-mapping-data-service:25297dd",
+    "dataServiceImageId": "sha256:6ea5b97a58b69d852cd11373f5c3660392aa561f324027fb364209a8333afe6e",
+    "imageCreated": "2026-10-25T14:59:23Z",
+    "containerStarted": "2026-10-25T14:59:48Z",
+    "uiUnchanged": "dg-mapping-ui:23ed720",
+    "rollback": "D:\\dgb\\mapping-release-25297dd\\compose.mapping-rollback.yml (data-service back to dg-mapping-data-service:23ed720)",
+    "recordedAt": "2026-10-25 (next session; read from docker image inspect)"
+  },
   "notes": [
     "No credential, cookie or token is stored here.",
     "ValidationRun nodes and Speckle versions of 2026-10-25 (50 each) were counted, not deleted: the owner chose to keep them for now.",

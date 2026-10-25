@@ -1,0 +1,76 @@
+{
+  "plan": "1303-24 (live acceptance of D-66/D-67) and input for plan 1303-25",
+  "date": "2026-10-25",
+  "stack": {
+    "dataService": "dg-mapping-data-service:25297dd",
+    "ui": "dg-mapping-ui:23ed720",
+    "dgGhaSha256": "96796214bc5594afb7eb5f41301b4ffe1934267e2aac5ce8d550599947c0bb9a",
+    "canvas": "C:\\Users\\Admin\\Downloads\\phase1303-test-revit.gh in Rhino.Inside.Revit (Revit bridge port 48884, listener 8720)",
+    "revitDocument": "Likino_KR_GP_R24_CH10-dg-openings (detached copy; the original model was not opened)"
+  },
+  "generation": {
+    "authorizedBy": "owner, one paid call",
+    "at": "2026-10-25T15:27:14Z",
+    "dataProperty": "ex:hasMinProjectionClearanceMm",
+    "rule": "R_STR_OPENING_CLEARANCE_MIN_500_V",
+    "promptCheckedBeforeCall": "built offline without LLM and without writes: participants Slab (OST_Floors), Column (OST_Columns, OST_StructuralColumns), Wall (OST_Walls), the rejection reason and the no-import line were present; one property to generate",
+    "result": "ok, contract passed",
+    "provider": "openai",
+    "function": "calc_gen_089ee7be48",
+    "sha256": "d9d205dcbd22e363ccb4c5a7c8e014bca66ccf845b008e4cdb4a28208623a02e",
+    "reviewStatus": "pending",
+    "warnings": [],
+    "participantMismatch": false,
+    "returnsNoneWhenNothingFound": true,
+    "readsCategories": ["OST_Floors", "OST_Columns", "OST_StructuralColumns", "OST_Walls"],
+    "weakness": "columns and walls are read with ctx.intersecting(box, ...), i.e. only elements whose solid intersects the opening box; an element 200 mm away is never found, so the value is 0 (overlap) or None (nothing intersecting) and the 500 mm threshold is not measured. The slab only chooses the projection plane."
+  },
+  "runCheck": {
+    "startedFrom": "DeGram 0.1.11 (DG page, Run check), one request",
+    "endpoint": "POST /scripts/property-check/run",
+    "answeredAt": "2026-10-25T15:36:06Z",
+    "http": 422,
+    "error": "The check did not run correctly; no verdict: error VALIDATOR: Rule input is required.",
+    "chainReplaced": true,
+    "calculatorSha256OnCanvas": "b62af766ad580d7b47469a53c9840a5c2f6a9b26e9808d967c3571197144ba7b",
+    "calculatorReport": {
+      "R_OpeningAboveDoorWindow": "n=313 nodata=0 min=0 max=1",
+      "R_OpeningMinClearanceToHostOpening": "n=313 nodata=0 min=730.0 max=100000.0",
+      "R_OpeningNotInBeam": "n=313 nodata=0 min=0 max=1",
+      "R_OpeningNotInColumns": "n=313 nodata=0 min=0 max=1",
+      "R_STR_OPENING_CLEARANCE_MIN_500_V": "n=0 nodata=313 min=- max=-",
+      "inventory": "OST_StructuralColumns 0, OST_Columns 0, OST_Walls 394, OST_Floors 37, OST_StructuralFraming 86"
+    },
+    "publishedRuns": 0,
+    "sendValidGuard": "disarmed 1 after the run (SendValid was on at the end of the run's own solution)",
+    "probableCause": "METAGRAPH loads rules asynchronously (StartLoad, then ScheduleSolution on completion); after a fresh placement the run's first solution had no rules at VALIDATOR, the listener one-shot switched SendValid off at that solution's end, and the next solution (with rules) no longer published. Supported by the manual publish below; not observed solution by solution."
+  },
+  "manualPublish": {
+    "by": "owner: SendValid True, one F5, Paint False",
+    "publishRequests": 5,
+    "runs": [
+      {"runId": "338d3f61c29e45f280450cdc9d4dfa08", "rule": "R_OpeningAboveDoorWindow", "createdAt": "2026-10-25T15:50:12Z", "validStatus": {"True": 312, "False": 1}},
+      {"runId": "c259883505b040d2ae32c048db13aa42", "rule": "R_OpeningMinClearanceToHostOpening", "createdAt": "2026-10-25T15:50:45Z", "validStatus": {"True": 313}},
+      {"runId": "ccdf66b7bcfc4c97a765b12451f1e4b1", "rule": "R_OpeningNotInBeam", "createdAt": "2026-10-25T15:51:18Z", "validStatus": {"True": 312, "False": 1}},
+      {"runId": "13d8514d0a5f4cf99f7c49d65b7209b9", "rule": "R_OpeningNotInColumns", "createdAt": "2026-10-25T15:51:51Z", "validStatus": {"True": 309, "False": 4}},
+      {"runId": "12cf03bc567d45078355f2c6af60c215", "rule": "R_STR_OPENING_CLEARANCE_MIN_500_V", "createdAt": "2026-10-25T15:52:24Z", "validStatus": {"False": 313}, "evidenceEnvelope": "rule canonicalStatus unknown; 313 rows, all canonicalStatus unknown ('?d' has no value)"}
+    ],
+    "failingBoxIndices": {"R_OpeningAboveDoorWindow": [214], "R_OpeningNotInBeam": [217], "R_OpeningNotInColumns": [0, 1, 2, 157]},
+    "sendValidAfter": false,
+    "sendValidGuard": "disarmed 2, loopSuspected false",
+    "noLoop": "no further ValidationRun between 15:52:24 and 15:55:00"
+  },
+  "openProofsOfPlan24": {
+    "sendValidAutoOffDoesNotCutUpload": "closed: VALIDATOR publishes synchronously inside its solution; 5 of 5 runs arrived although the guard switched SendValid off at that solution's end",
+    "noneKeepsObjStatePairing": "partly: all 313 items were None and all 313 rows are unknown, R1-R4 verdicts are unchanged; a shift is only observable with a mix of None and values, which this calculator did not produce"
+  },
+  "newFindings": [
+    "Run check right after a fresh placement publishes nothing: the one-shot ends at the first solution, before METAGRAPH's asynchronous rules reach VALIDATOR (422 'Rule input is required').",
+    "unknown is shown as a violation outside the evidence envelope: ValidStatus maps only passed to True, the Revit highlighter colours every False item, and /validation/view objectSets buckets every non-passed status into failed (Model Viewer).",
+    "The generated calculator for hasMinProjectionClearanceMm measures nothing on this model (nodata=313)."
+  ],
+  "notes": [
+    "No credential, cookie or token is stored here.",
+    "A GH mapping session was applied during the session (POST /mapping/sessions/ms-7b075d732f82/apply from the GH host, about 15:53Z); not part of this check."
+  ]
+}
