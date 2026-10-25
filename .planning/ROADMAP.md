@@ -285,12 +285,12 @@ Plans:
 
 - [x] 1301-41-PLAN.md — DeGram 0.1.11: owner push, service rebuild with consent, build, Russian test guide
 
-**Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
-
-
 **Ближайший client follow-up — Developer Mode / Demo Mode (owner 2026-10-25):**
 
 - [ ] DGMODE-01..04 — подготовить executable plans из [1301-DUAL-MODE.md](phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md): A — mode config + environment isolation (component); B — selector + safe switching + real-path A→B→A tests (component, после A); C — published gitlink/docs + отдельно разрешённые build/install и localhost/Contabo UAT (framework, после A/B). Это capture/planning brief, не готовые PLAN и не execution/acceptance. Номера выделить после проверки текущего набора планов; 1301-16/full phase gates не закрывать автоматически.
+
+**Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
+
 **Verification evidence**: Clean-install protocol; живые GH/Revit read snapshots с document identity; записи context switch и bounded LLM payload без секретов; backend/model-access deny cases при revoke/logout и межпроектном/межкорпоративном доступе; live web navigation; cancel/reconnect/listener lifecycle evidence. Native calls выполняются с требуемым UI-thread marshalling.
 
 **Exit gate**: Все назначенные ID подтверждены, нет скрытого выбора документа/проекта и утечки scope. Basic существующая web surface доступна сейчас; расширенный contextual review/parity из 1304 не требуется для этого выхода и не подменяется заявлением, что он уже завершён.

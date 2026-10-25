@@ -179,6 +179,10 @@ Universal graph CRUD; arbitrary Revit/Python/C# execution из LLM; universal IF
 | DGCL-05 | 1301 | Pending (backend grant/session revocation leg delivered in 1301-30; end-to-end evidence pending) |
 | DGCL-06 | 1301 | Pending |
 | DGCL-07 | 1301 | Pending |
+| DGMODE-01 | 1301 | Pending — priority client follow-up, 2026-10-25 |
+| DGMODE-02 | 1301 | Pending — environment isolation |
+| DGMODE-03 | 1301 | Pending — safe switching and target propagation |
+| DGMODE-04 | 1301 | Pending — offline + authorized live evidence; 1309/HOST-05 integration |
 | DGKN-01 | 1302 | Pending |
 | DGKN-02 | 1302 | Pending |
 | DGKN-03 | 1302 | Pending |
@@ -190,10 +194,6 @@ Universal graph CRUD; arbitrary Revit/Python/C# execution из LLM; universal IF
 | DGKN-09 | 1302 | Pending |
 | DGKN-10 | 1302 | Pending |
 | DGBN-01 | 1303 | Pending |
-| DGMODE-01 | 1301 | Pending — priority client follow-up, 2026-10-25 |
-| DGMODE-02 | 1301 | Pending — environment isolation |
-| DGMODE-03 | 1301 | Pending — safe switching and target propagation |
-| DGMODE-04 | 1301 | Pending — offline + authorized live evidence; 1309/HOST-05 integration |
 | DGBN-02 | 1303 | Pending |
 | DGBN-03 | 1303 | Pending |
 | DGBN-04 | 1303 | Pending |
