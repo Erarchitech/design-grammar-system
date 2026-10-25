@@ -9,6 +9,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-25 Phase 1309 DG stand live on Contabo VPS|Phase1309 latest — DG test stand LIVE on a Contabo VPS (HTTPS, admin login, project isolation, LLM, n8n verified; object upload/restore not)]] (2026-10-25). Decision [[knowledge/decisions/Hosted stand first and recovery proof in parallel|stand first, recovery proof in parallel]]; traps [[knowledge/debugging/Fresh-server deployment traps found on the first real Linux run|found on the first real Linux run]]. Next-session prompt: `C:/Users/Admin/DG-session-handoffs/2026-10-25-server-update/CONTINUE.md`.
+
 - [[sessions/2026-10-16 Phase 1309 two-store recovery PASS and offline multi-store preparation|Phase1309 session — two-store v3 PASS, offline multi-store90/90, continuation handoff]] (2026-10-16)
 - Phase 1309 latest: synthetic two-store recovery v3 owner-run PASS/exit0, exact ZIP/revision and typed checks reconciled; native Neo4j dump/load + full API state restored to a fresh same-daemon project with cleanup. Retained labelled transcription: `deploy/hosted/recovery-test/evidence/c82b92b-v3-owner-success.json`. Full multi-store/off-machine/hosted/registry/freeze remain open; [[00-home/Current priorities|priorities]].
 - Phase 1309 latest: four-image runtime v2 owner report completed, readiness/smoke/cleanup matched to issued ZIP; process exit unknown (empty `$LASTEXITCODE`), no rerun solely for exit. Retained transcription/disposition: `deploy/hosted/image-runtime/evidence/`. Full hosted/registry/recovery/freeze remain open; [[00-home/Current priorities|priorities]].
@@ -59,6 +61,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/debugging/DeGram reopened chats came back empty because the transcript read is REST-locked|DeGram reopened chats came back empty: REST transcript read locked (F-02, fixed in 0.1.9)]] (2026-10-11)
 
 ### Decisions
+- [[knowledge/decisions/Hosted stand first and recovery proof in parallel|Decision: Phase 1309 hosted stand first with test data; full multi-store recovery proof afterwards on the server]] (2026-10-25)
 - [[knowledge/decisions/Phase 1302 source vocabulary and revision boundaries|Phase 1302 — source, vocabulary, rule revision and lessons-learned boundaries]] (2026-10-14)
 - [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|SVOD name; ALNST + Tektur design system; uppercase headings without full stops; crescent ring and drawn hero]] (2026-10-13)
 - [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54, Phase 1308)]] (2026-10-12)
@@ -147,6 +150,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/1204-09 scoped to rule-ingest only, recognition prompt construction deferred|Phase 1204 (v12.0): 1204-09 scoped to rule-ingest only — faithfully reproducing recognition's internal prompt construction deferred]]
 
 ### Debugging
+- [[knowledge/debugging/Fresh-server deployment traps found on the first real Linux run|Fresh-server deployment traps: MinIO image gone, Speckle bootstrap SQL, SIGPIPE under pipefail, n8n publish, LLM model null]] (2026-10-25)
 - [[knowledge/debugging/docker compose build alone leaves the old design-grammars container running|docker compose build alone leaves the old design-grammars container running; recreate it after a build]] (2026-10-13, resolved)
 - [[knowledge/debugging/DeGram chat stays on the first scope profile after a project or company change|DeGram chat stays on the first scope profile; other projects fail closed with CREDENTIALS_MISSING (G-7)]] (2026-10-09, open)
 - [[knowledge/debugging/DeGram Revit adapter could not load under pyRevit IronPython 3.4|DeGram Revit adapter unloadable under pyRevit IronPython 3.4: disabled by default, async def, implicit imports, urllib, JSON body (G-8..G-12)]] (2026-10-09, fixed in working tree)

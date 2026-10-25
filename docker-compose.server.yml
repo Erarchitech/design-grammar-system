@@ -1,0 +1,72 @@
+# Server-stand profile: ВСЕГДА четвёртым, после base + multi-user + hosted.
+#   docker compose -f docker-compose.yml -f docker-compose.multi-user.yml \
+#                  -f docker-compose.hosted.yml -f docker-compose.server.yml ...
+# Требуется Compose >=2.24.4 (!override). Два отличия от hosted-профиля:
+#  1) edge публикуется наружу (80 для ACME/редиректа, 443) и сам получает сертификаты (ACME);
+#  2) speckle-postgres не монтирует bootstrap-local.sql в первую инициализацию: на пустой базе
+#     он вставляет строки в таблицы, которых ещё нет, и инициализация падает (при перезапуске
+#     контейнер стартует уже без init-скриптов, и bootstrap молча не применяется). Скрипт
+#     deploy/hosted/server/deploy.sh применяет его после создания схемы Speckle.
+#  3) у каждого сервиса restart: unless-stopped, чтобы стенд поднимался после перезагрузки VPS;
+#  4) динамические адреса сети hosted_edge выдаются из верхней половины подсети, поэтому
+#     статический адрес edge (HOSTED_EDGE_IP) не может быть занят раньше запуска Caddy.
+# Это профиль стенда с тестовыми данными, а не замороженный релиз: образы Speckle берутся по
+# плавающим тегам из базового файла.
+services:
+  neo4j:
+    restart: unless-stopped
+  dg-reasoner:
+    restart: unless-stopped
+  data-service:
+    restart: unless-stopped
+  n8n:
+    restart: unless-stopped
+  design-grammars:
+    restart: unless-stopped
+  speckle-redis:
+    restart: unless-stopped
+  speckle-minio:
+    # minio/minio is no longer pullable from Docker Hub (nor quay.io/minio/minio:latest); Chainguard
+    # publishes a source build of MinIO (runs as uid 65532, /data is world-writable in the image).
+    # Floating tag, newer than the MinIO used on the owner's PC: Speckle only needs the S3 API.
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+  speckle-server:
+    restart: unless-stopped
+  speckle-frontend-2:
+    restart: unless-stopped
+  speckle-preview-service:
+    restart: unless-stopped
+  speckle-webhook-service:
+    restart: unless-stopped
+  speckle-fileimport-service:
+    restart: unless-stopped
+  speckle-ingress:
+    restart: unless-stopped
+  speckle-postgres:
+    restart: unless-stopped
+    volumes: !override
+      - speckle_postgres_data:/var/lib/postgresql/data
+
+  hosted-edge:
+    restart: unless-stopped
+    ports: !override
+      - "80:80/tcp"
+      - "443:443/tcp"
+    environment:
+      HOSTED_ACME_EMAIL: ${HOSTED_ACME_EMAIL:?set ACME contact e-mail}
+    volumes: !override
+      - ./deploy/hosted/server/Caddyfile.acme:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+networks:
+  hosted_edge:
+    ipam:
+      config: !override
+        - subnet: ${HOSTED_EDGE_CIDR:?set approved private Docker edge CIDR}
+          ip_range: ${HOSTED_EDGE_DYNAMIC_RANGE:?set dynamic range outside HOSTED_EDGE_IP}
+
+volumes:
+  caddy_data:
+  caddy_config:
