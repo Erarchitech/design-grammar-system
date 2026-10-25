@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-25 DeGram Developer and Demo modes captured in GSD|Session — Developer/Demo modes captured, DGMODE-01..04, Phase1301 priority; executable planning next]] (2026-10-25)
+- [[knowledge/decisions/DeGram Developer Mode uses localhost and Demo Mode uses Contabo|Decision — Developer = localhost, Demo = Contabo; isolated state and safe switching, delivery1301 / hosted1309]] (2026-10-25)
+
 - [[sessions/2026-10-25 Stand update and milestone13 consolidation|Session — stand at2447295, master merge and DeGram publication, milestone13 cleanup/WIP pushed, pending review]] (2026-10-25)
 - [[knowledge/decisions/Milestone13 cleanup preserves pending source changes and excludes generated evidence|Decision — backed-up scoped cleanup; Phase1309 WIP on milestone13, old source/evidence pending]] (2026-10-25)
 - [[knowledge/debugging/Pending source review found stale v12 paths and duplicate MERGE rejection|Debugging — stale retained-report paths, idempotent MERGE false rejection, evidence drift; fixes not applied]] (2026-10-25)
