@@ -179,4 +179,38 @@ public sealed class ValidStatusMapperTests
 
         Assert.Equal(new[] { false, true, false }, status);
     }
+
+    // Phase 1303-25 (D-71), live 2026-10-25: 313 boxes without data were unknown in the evidence but false in
+    // ValidStatus, and the Revit highlighter painted all of them as violations. VALIDATOR's Status output carries the
+    // canonical status per ObjState so a consumer can tell a non-verdict from a failure.
+    [Fact]
+    public void Status_CarriesTheCanonicalWireNamePerObjState()
+    {
+        var outcomes = new[]
+        {
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 3 }, EvidenceStatus.Passed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 1 }, EvidenceStatus.Unsupported, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 0 }, EvidenceStatus.Failed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 2 }, EvidenceStatus.Unknown, null),
+        };
+
+        Assert.Equal(new[] { "failed", "unsupported", "unknown", "passed", "" },
+            ValidStatusMapper.PerObjStateStatus(5, outcomes));
+    }
+
+    [Fact]
+    public void Status_IsEmptyOutsideThePopulationAndAgreesWithValidStatus()
+    {
+        var outcomes = new[]
+        {
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 1 }, EvidenceStatus.Passed, null),
+            new BindingEvaluationResult(new BindingRow(), EvidenceStatus.Failed, null),
+            new BindingEvaluationResult(new BindingRow { SourceObjStateIndex = 9 }, EvidenceStatus.Failed, null),
+        };
+
+        var status = ValidStatusMapper.PerObjStateStatus(3, outcomes);
+        Assert.Equal(new[] { "", "passed", "" }, status);
+        Assert.Equal(ValidStatusMapper.PerObjState(3, outcomes), status.Select(s => s == "passed").ToList());
+        Assert.Equal(new[] { "", "" }, ValidStatusMapper.PerObjStateStatus(2, null));
+    }
 }

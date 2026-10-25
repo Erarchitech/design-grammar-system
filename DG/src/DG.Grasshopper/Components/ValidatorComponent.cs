@@ -48,6 +48,8 @@ public sealed class ValidatorComponent : GH_Component
         pManager.AddTextParameter("SendStatus", "SendStatus", "Speckle publish status (published / Not requested / error message)", GH_ParamAccess.item);
         pManager.AddTextParameter("ValidationRunId", "ValidationRunId", "Validation run identifier returned by DG backend", GH_ParamAccess.item);
         pManager.AddTextParameter("ModelViewerUrl", "ModelViewerUrl", "Model Viewer URL returned by DG backend", GH_ParamAccess.item);
+        // Phase 1303-25 (D-71): appended, so the indices above and the wires of saved canvases stay as they were.
+        pManager.AddTextParameter("Status", "Status", "Per-ObjState canonical status (passed, failed, unknown, ...; empty outside the rule population), index-matched to ValidStatus. Tells a non-verdict (no data) from a failure.", GH_ParamAccess.list);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -187,6 +189,9 @@ public sealed class ValidatorComponent : GH_Component
         da.SetData(5, sendStatus);
         da.SetData(6, validationRunId);
         da.SetData(7, modelViewerUrl);
+        da.SetDataList(8, designState is not null
+            ? ValidStatusMapper.PerObjStateStatus(designState.ObjStates.Count, result.BindingResults)
+            : new List<string>());
         Message = designState is not null
             ? $"{validStatus.Count(v => v)} / {validStatus.Count} pass | {sendStatus}"
             : "No DesignState";
