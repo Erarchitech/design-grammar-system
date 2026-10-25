@@ -254,6 +254,10 @@ When changing graph structure, update ALL: `cypher_template.txt`, `dataset_schem
 
 **SWRL subset boundary:** `spec/SWRL-SUBSET.md` governs which SWRL atom types the parser recognizes, which builtins the C# evaluator implements, and which status each unsupported construct yields — consult it before adding a builtin, adding an atom type, or changing which construct yields which status, and update it (including its two machine-checked fenced blocks) if such a change shifts the boundary.
 
+**Reproducibility contract:** `spec/REPRODUCIBILITY.md` governs the determinism boundary — the three determinism classes, the measured/unmeasured scope table, the projection + closed exclusion list, the provenance field list, and the reproducibility classes — consult it before adding an LLM call site or claiming a path is deterministic, and update its machine-checked fenced block if such a change shifts the scope.
+
+**Security boundary contract:** `spec/SECURITY-BOUNDARY.md` governs the trust zones, the local and multi-user deployment profiles, the three principal types, the public-route allowlist and full route-policy table, the known-default secret list and the rotation runbook — consult it before adding a route, a principal, a published port or a secret, and update its machine-checked fenced blocks if such a change shifts the boundary.
+
 ## Common Commands
 
 ```bash
@@ -271,6 +275,7 @@ dotnet build .\DG\DG.sln -c Release
 
 # Run C# tests
 dotnet test .\DG\tests\DG.Tests\
+
 # DeGram workspace (submodule apps/degram)
 git submodule update --init apps/degram          # fresh clone
 python tools/degram/workspace.py verify           # preflight before any DeGram task
@@ -343,6 +348,46 @@ python -m unittest discover -s tools/degram/tests -v
 
 Если изменений нет — коммит не создавать.
 
+# DSH Subagent Delegation (dsh-crew)
+
+Implementation subtasks go to **DeepSeek Harness (DSH) workers**, not to Claude subagents. The `dsh-crew` plugin (user scope) provides two agent types and the `dsh_*` MCP tools:
+
+| Agent | Tier | Delegate |
+|---|---|---|
+| `dsh-crew:ds-flash` | flash — fast, cheap | Mechanical, well-scoped work: renames, small scripts, config lookups, a unit test in an existing style, straightforward fixes |
+| `dsh-crew:ds-pro` | pro — stronger reasoning | Multi-file changes, debugging, refactors, anything needing analysis |
+
+When in doubt start with `ds-flash`. For fan-out use `dsh_spawn_worker` + `dsh_worker_result` instead of blocking `dsh_run_worker`.
+
+### When NOT to use DSH
+
+- **GSD / superpowers workflows** that spawn their own typed agents (`gsd-executor`, `gsd-planner`, `gsd-verifier`, …) keep those agent types — their protocols live in the agent definitions. The standing preference for inline GSD work over subagents still applies.
+- **Claude-specific agents** (`claude-code-guide`, `statusline-setup`, `scientific-paper-revision:*`) and read-only codebase sweeps (`Explore`) stay on Claude.
+- **Anything touching secrets**: never put `.secrets/` contents, API keys, `.credentials.yaml`, or tokens into a brief, and tell the worker not to read `.secrets/`. Briefs and the files a worker reads leave the machine to the DeepSeek API.
+- **Unpublished PhD material** (`Publications/`, `DG_OBSIDIAN/dissemination/`, manuscript drafts) — ask the user before delegating.
+- **Hub unreachable** (`dsh_worker_config` reports `hub_reachable: false`): fall back to a Claude subagent and tell the user. Standalone mode is not configured (no `~/.config/dsh-crew/.env`).
+
+### Writing the brief
+
+The worker has **zero conversation context**. Every brief must carry:
+- Absolute paths (`C:\Users\Admin\source\repos\design-grammar-system\...`) for every file and directory involved.
+- Exact acceptance criteria and the verify command (`dotnet test .\DG\tests\DG.Tests\`, `npm --prefix ui-v2 run build`, `pytest`, …).
+- What NOT to touch: `DG/src/*/bin/`, `DG/src/*/obj/`, lockfiles, `graphify-out/`, `.planning/milestones/`, `DG_OBSIDIAN/archive/`.
+- The relevant project rules — Schema Change Propagation list, `#if GRASSHOPPER_SDK` guards, graph schema v4 — when the task touches them.
+- **"Do not commit, push, or publish."** Commits follow the session protocol above and are made by Claude.
+
+### Parallelism and verification
+
+- **One writer per repo.** The cwd lock refuses a second dispatch into a held workspace (it names the holder). Parallel writers need disjoint file territories plus a named owner for each seam; `allow_concurrent_cwd: true` is for read-only tasks only.
+- **Trust artifacts, not the worker's summary.** After every worker: `git status` / `git diff`, then run the verify command yourself before reporting success. Report unverified claims as unverified.
+- Worker nesting is capped at depth 3 — do not brief a worker to spawn another worker.
+
+### Environment
+
+- The hub runs inside **DSH Desktop** at `http://127.0.0.1:43129` (set in `~/.config/dsh-crew/config.json`, not the plugin's `3080` default). DSH Desktop must be running.
+- Start DSH Desktop from the Start menu, **not** from a VS Code terminal: the inherited `ELECTRON_RUN_AS_NODE` makes it exit silently with code 0. Closing its window only hides it to the tray — quit from the tray icon to restart.
+- Session switches: `/dsh-crew:status`, `/dsh-crew:config`, `/dsh-crew:off`, `/dsh-crew:on`, `/dsh-crew:playbook`.
+
 <!-- PERPLEXITY-MCP-START -->
 # Perplexity MCP Server
 
@@ -391,3 +436,27 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+# Jev routing policy
+
+Use Jev automatically when the task involves choosing a model, classifying
+the task, estimating the next step, or deciding whether a task requires
+deep reasoning.
+
+For ordinary conversation, translation, short factual answers, and simple
+formatting, do not call Jev explicitly unless routing middleware already
+handles the request.
+
+For model selection:
+- Prefer `jev_route` with `apply: false` when only a recommendation is needed.
+- Use `apply: true` only when changing the model for the current turn is useful.
+- Never treat a Jev result as permission to execute commands, modify files,
+  send messages, or make external changes.
+
+For bounded judgments:
+- Use `jev_evaluate` with `task_triage` for task classification.
+- Use `next_step` to choose the next action.
+- Use `relevance` to filter candidate information or actions.
+
+Avoid sending secrets, API keys, credentials, or unnecessary private project
+content to Jev.
