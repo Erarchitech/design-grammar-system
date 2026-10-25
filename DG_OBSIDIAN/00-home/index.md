@@ -9,6 +9,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[knowledge/decisions/DeGram is developed in the submodule on degram-milestone13 and the build clone only pulls|Decision — DeGram developed only in the submodule on `degram/milestone13`; framework on `gsd/milestone13`; build clone pulls only]] (2026-10-25)
 - [[sessions/2026-10-25 Phase 1303 plan 24 executed — no-data calculators, run check, regenerate retired, derived edges, rollout 23ed720|Session — Phase 1303 plan 24 executed and rolled out (23ed720/25297dd); calculator for hasMinProjectionClearanceMm still missing, act 5 open]] (2026-10-25)
 - [[knowledge/decisions/Calculators return None for nothing found, SendValid is one-shot and a retired calculator can be regenerated (Phase 1303-24, D-66 to D-68)|Decision — D-66 None for nothing found, D-67 one run and one-shot SendValid, D-68 regenerate a retired calculator]] (2026-10-25)
 - [[knowledge/debugging/Generated calculators answered with from-import and were refused by the contract (Phase 1303-24)|Debugging — generated calculators answered with from-import (2 paid calls refused)]] (2026-10-25)

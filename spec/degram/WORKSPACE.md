@@ -53,6 +53,10 @@ A cross-repository change is not atomic: verify the child, publish its explicitl
 
 Before any Desktop launch/build, the separate runtime home, Electron userData, app identity and update channel must be in place and tested. Phase 1301 implements them on `degram/phase-1301` (see Product identity and isolation surface); install acceptance is claimed only from Phase 1301 UAT, never from a build alone. Prefer supported plugin/adapter seams over core edits. Preserve upstream MIT notices; DeGram is not an official Nous product.
 
+### Development branches and the build clone (owner decision 2026-10-25)
+
+Component work happens only in this submodule on `degram/milestone13` (framework branch `gsd/milestone13`). The build clone `D:\dgb\src` is build-only: it pulls `degram/milestone13` from the submodule and never carries its own commits (four Phase 1303 commits made there were folded into `degram/milestone13`, `b619e02e`). The separate clone `C:\Users\Admin\source\repos\degram` (fork `main`, no DeGram code) is not a working base. Decision: `DG_OBSIDIAN/knowledge/decisions/DeGram is developed in the submodule on degram-milestone13 and the build clone only pulls.md`.
+
 ## Product identity and isolation surface
 
 DeGram runs beside an installed Hermes on the same PC. Every fork file that carries its identity or its isolation is listed here, so an upstream merge knows which conflicts are DeGram's own. Edits are gated on the `degram` variant (`HERMES_DESKTOP_VARIANT=degram`); stock variants stay byte-identical in behaviour, and tests assert both sides.

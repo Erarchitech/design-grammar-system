@@ -6,6 +6,7 @@ tags: [degram, framework, moc]
 DeGram is the Hermes-derived Desktop component of Design Grammars, not an independent framework or a replacement for its server.
 
 - [[degram/Repository topology|Accepted repository topology and context ownership]]
+- [[knowledge/decisions/DeGram is developed in the submodule on degram-milestone13 and the build clone only pulls|Where DeGram is developed: submodule on `degram/milestone13`, build clone pulls only (2026-10-25)]]
 - Product plan: framework `.planning/STATE.md`, `ROADMAP.md`, `REQUIREMENTS.md`; phases 1300–1307 retain their owners.
 - Workspace/contract entry point: `spec/degram/WORKSPACE.md`.
 - Machine-readable routing: `integration/degram/workspace.json`.
