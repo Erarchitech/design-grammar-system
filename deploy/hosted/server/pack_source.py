@@ -28,6 +28,14 @@ KIT_PATHS = [
     "test/smoke_graph_query.sh",
 ]
 TEMPLATE = ".env.example"          # the only dot-env name allowed in the archive
+# Runtime files of branches ahead of the release allowlist. They ship when present and are skipped
+# when absent (the release policy stays untouched until a release freeze decides on them).
+# data-service/property_scripts.py reads the catalogue and the *.py.tmpl templates at run time and
+# the image is built from the archive alone, so leaving them out would only fail at first use.
+OPTIONAL_PATHS = [
+    "data-service/property_calculators/catalogue.json",
+    "data-service/property_calculators/*.py.tmpl",
+]
 
 
 def fail(message):
@@ -72,10 +80,11 @@ def main(argv=None):
     selected = {}
     specs = [(item["path"], item.get("exclude", [])) for item in allowlist["inputs"]]
     specs += [(path, []) for path in KIT_PATHS] + [(TEMPLATE, [])]
+    specs += [(path, []) for path in OPTIONAL_PATHS]
     for pattern, excluded in specs:
         found = [p for p in candidates if core.matches(p, pattern)
                  and not any(core.matches(p, e) for e in excluded)]
-        if not found:
+        if not found and pattern not in OPTIONAL_PATHS:
             fail(f"allowlisted input matches nothing: {pattern}")
         for path in found:
             if path in symlinks:

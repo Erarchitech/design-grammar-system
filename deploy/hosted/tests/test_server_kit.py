@@ -358,6 +358,46 @@ class PackSourceTests(unittest.TestCase):
             self.assertIn("matches nothing: absent.txt", done.stderr)
             self.assertFalse((Path(directory) / "out.tar.gz").exists())
 
+    def test_pack_ships_mapping_runtime_files_that_the_release_allowlist_does_not_name(self):
+        # data-service/property_scripts.py reads property_calculators/catalogue.json and the *.py.tmpl
+        # templates at run time; the image is built from the archive alone (COPY . .), so a silent
+        # omission would only surface when a property check runs. Absent on branches without the
+        # mapping code (the real repo here), so the stand list is optional, never required.
+        import tarfile
+        with tempfile.TemporaryDirectory() as directory:
+            fake = Path(directory) / "repo"
+            files = {
+                "deploy/hosted/release-allowlist.json": json.dumps({
+                    "schemaVersion": 1, "inputs": [{"path": "data-service/app.py", "purpose": "x"}]}),
+                "data-service/app.py": "app = 1\n",
+                "data-service/property_calculators/catalogue.json": "{}\n",
+                "data-service/property_calculators/calculator_shell.py.tmpl": "shell\n",
+                "data-service/property_calculators/notes.md": "not runtime\n",
+                "data-service/property_calculators/.secrets/key.py.tmpl": "private\n",
+                "docker-compose.server.yml": "services: {}\n",
+                "deploy/hosted/server/deploy.sh": "#!/bin/sh\n",
+                "tools/security/check_env_file.py": "pass\n",
+                "test/smoke_rules_ingest.sh": "#!/bin/sh\n",
+                "test/smoke_graph_query.sh": "#!/bin/sh\n",
+                ".env.example": "A=1\n",
+            }
+            for name, text in files.items():
+                (fake / name).parent.mkdir(parents=True, exist_ok=True)
+                (fake / name).write_text(text, encoding="utf-8")
+            for command in (["init", "-q"], ["add", "-A"],
+                            ["-c", "user.name=Fixture", "-c", "user.email=f@example.invalid", "commit", "-qm", "f"]):
+                subprocess.run(["git", "-C", str(fake), *command], check=True, capture_output=True)
+            output = Path(directory) / "out.tar.gz"
+            done = subprocess.run([sys.executable, "-I", "-B", str(self.PACK), "--repo", str(fake),
+                                   "--output", str(output)], capture_output=True, text=True, timeout=60)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            with tarfile.open(output) as tar:
+                names = {member.name for member in tar.getmembers()}
+            self.assertIn("data-service/property_calculators/catalogue.json", names)
+            self.assertIn("data-service/property_calculators/calculator_shell.py.tmpl", names)
+            self.assertNotIn("data-service/property_calculators/notes.md", names)
+            self.assertNotIn("data-service/property_calculators/.secrets/key.py.tmpl", names)
+
 
 def hashlib_sha256(data):
     import hashlib
