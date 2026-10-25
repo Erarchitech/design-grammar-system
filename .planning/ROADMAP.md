@@ -4,6 +4,8 @@
 
 **Статус:** ACTIVE — owner scope revision 2026-10-04. Phase 1300 incomplete / scope revision; независимый read-only client slice 1301 в `ui-v2` — in progress, не готов к выпуску. Все 51 ID и ownership 1300–1307 сохранены; ни одна фаза не объявлена завершённой.
 
+**Новый ближайший client-приоритет владельца 2026-10-25:** DeGram должен явно поддерживать **Developer Mode → DG localhost** и **Demo Mode → реальный DG stand на Contabo**. Delivery owner — **Phase 1301**, hosted integration — **1309/HOST-05**; требования **DGMODE-01..04** вне исходных 51 ID. Следующий bounded DeGram client follow-up, не ожидающий всей цепочки 1302–1307 или полного HOST-04; прежняя отсрочка оставшихся работ 1301 не откладывает этот новый slice. Brief/порядок пакетов и acceptance matrix: [1301-DUAL-MODE.md](phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md). Сейчас captured / executable plans pending, не реализовано; security/live/publication gates сохраняются, текущая работа 1303 и recovery 1309 не объявляются закрытыми.
+
 **Приоритет владельца 2026-10-20:** демо 19.10 прошло; ближайший приоритет — кейс «задание на отверстия ИОС → КР» (план 1303-15, DGOPN-01…04): DG генерирует и размещает скрипт расчёта свойств боксов, VALIDATOR проверяет R1–R4, боксы с нарушениями подсвечиваются в Revit.
 
 **Приоритет владельца 2026-10-17 (ветка `feature/mapping-mvp`):** до демо 2026-10-19 приоритет — MVP-срез автоматизированного меппинга GH/Revit → DG в Phase 1303 (раздел «MVP-срез 1303» ниже, DGMAP-01…06 вне 51 MVP ID, `phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`). Отложены до после демо: 1302 (включая gate 1302-08), оставшиеся работы 1300/1301 (в т.ч. live UAT плана 1301-16), 1304–1307, активация v14 и Phase 35. Phase 1309 не откладывается: она продолжается в параллельной сессии на ветке `feature/hosting-dg-pilot`; срез ведётся в отдельном worktree `C:\Users\Admin\source\repos\dg-mapping` и сливается после демо и точки фиксации 1309. Нумерация 1300–1307 и ownership сохраняются; новых фаз нет.
@@ -285,6 +287,10 @@ Plans:
 
 **Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
 
+
+**Ближайший client follow-up — Developer Mode / Demo Mode (owner 2026-10-25):**
+
+- [ ] DGMODE-01..04 — подготовить executable plans из [1301-DUAL-MODE.md](phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md): A — mode config + environment isolation (component); B — selector + safe switching + real-path A→B→A tests (component, после A); C — published gitlink/docs + отдельно разрешённые build/install и localhost/Contabo UAT (framework, после A/B). Это capture/planning brief, не готовые PLAN и не execution/acceptance. Номера выделить после проверки текущего набора планов; 1301-16/full phase gates не закрывать автоматически.
 **Verification evidence**: Clean-install protocol; живые GH/Revit read snapshots с document identity; записи context switch и bounded LLM payload без секретов; backend/model-access deny cases при revoke/logout и межпроектном/межкорпоративном доступе; live web navigation; cancel/reconnect/listener lifecycle evidence. Native calls выполняются с требуемым UI-thread marshalling.
 
 **Exit gate**: Все назначенные ID подтверждены, нет скрытого выбора документа/проекта и утечки scope. Basic существующая web surface доступна сейчас; расширенный contextual review/parity из 1304 не требуется для этого выхода и не подменяется заявлением, что он уже завершён.

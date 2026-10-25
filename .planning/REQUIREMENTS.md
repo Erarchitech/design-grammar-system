@@ -38,6 +38,15 @@
 - [ ] **DGCL-06**: Участник может отменить долгий запрос и продолжить работу; недоступный provider/сервер, timeout и lifecycle reconnect дают конкретную причину и способ восстановления, сохраняя отзывчивость native UI и корректное освобождение локального listener.
 - [ ] **DGCL-07**: Участник видит состав и ограничение отправляемого LLM selection context; whole-definition scope требует явного подтверждения, сокращение/отсутствие данных раскрывается, а чтение selection использует существующую сериализацию DG.
 
+### Два режима DeGram (Phase 1301, вне 51 MVP ID) — DGMODE
+
+Источник: приоритетный запрос владельца 2026-10-25; planning brief `phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md`. Client delivery owner — 1301; hosted integration — 1309/HOST-05. Это ближайший bounded client follow-up, без ожидания всех 1302–1307; исходные 51 ID/ownership не меняются. Реализация и приёмка ещё не выполнены.
+
+- [ ] **DGMODE-01**: Пользователь явно выбирает **Developer Mode** для DG на localhost либо **Demo Mode** для реального стенда DG на Contabo без редактирования исходников/пересборки; режим и фактический target видимы до входа и в работе, выбор сохраняется после перезапуска, существующая localhost-установка сохраняется совместимой миграцией.
+- [ ] **DGMODE-02**: Credentials/cookies, company/project selection, agent sessions/history/context, caches и document bindings изолированы по environment/origin; совпадающие user/project IDs не смешивают окружения. Developer → Demo → Developer возвращает собственное состояние каждого окружения, без неявного переноса данных или секретов на стенд.
+- [ ] **DGMODE-03**: Смена режима безопасно останавливает либо отклоняет переключение при активной операции, освобождает старый scope/backend, игнорирует поздние ответы и согласованно меняет embedded DG, auth, relay/tools и API target. Недоступность Contabo/TLS/access выдаёт явный отказ без fallback на localhost, обхода прав или повторной отправки операции другому target; native bridges остаются локальными и отдельно авторизованными.
+- [ ] **DGMODE-04**: Оператор получает воспроизводимые offline real-path A→B→A и negative/race tests, а после отдельного разрешения — live-проверку обоих режимов на localhost и Contabo с версиями клиента/DG и expected/actual evidence. Mocks/build success не заменяют runtime acceptance; Hermes profile/stock variant не изменены, HOST-05 и DGCL не закрываются автоматически.
+
 ### Источники, компания, проект и lessons learned — DGKN
 
 - [ ] **DGKN-01**: Автор может связать requirement/intent с доступной CDE SourceRevision: URI/идентификатор, редакция/хеш, фрагмент и applicability; неформализуемый intent сохраняется с явной границей проверки вместо выдуманного исполняемого правила.
@@ -181,6 +190,10 @@ Universal graph CRUD; arbitrary Revit/Python/C# execution из LLM; universal IF
 | DGKN-09 | 1302 | Pending |
 | DGKN-10 | 1302 | Pending |
 | DGBN-01 | 1303 | Pending |
+| DGMODE-01 | 1301 | Pending — priority client follow-up, 2026-10-25 |
+| DGMODE-02 | 1301 | Pending — environment isolation |
+| DGMODE-03 | 1301 | Pending — safe switching and target propagation |
+| DGMODE-04 | 1301 | Pending — offline + authorized live evidence; 1309/HOST-05 integration |
 | DGBN-02 | 1303 | Pending |
 | DGBN-03 | 1303 | Pending |
 | DGBN-04 | 1303 | Pending |
