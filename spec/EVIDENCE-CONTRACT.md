@@ -380,6 +380,10 @@ A display surface never shows a non-verdict as a violation. The legacy boolean `
   `ValidStatus` rule.
 - `/validation/view` `objectSets`: `passed`, `failed` (rolled-up `failed` or `error`) and `unknown` (every
   other rolled-up status); the Model Viewer draws the `unknown` set in a neutral colour and lists it apart.
+  The view and `/validation/view/{project}/{run}/entity/{id}` take a (rule, object) status from the run's
+  envelope rows (§5.1) when the run has an envelope; the `:ValidationEntity` rows stay the legacy projection
+  of the producer's pass/fail lists (which put every non-failing object, also one without data, under
+  passed) and are used only for a pair the envelope lacks.
 
 ### 5.1 Canonical per-object verdict source (Phase 1202 plan 05, D-10, ALGN12-10)
 

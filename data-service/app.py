@@ -1109,6 +1109,28 @@ def delete_validation_run_metadata(project: str, run_id: str) -> None:
     )
 
 
+def _envelope_statuses(project: str, run_id: str) -> dict[tuple[str, str], str]:
+    """{(ruleId, objectId): canonical status} from the run's evidence envelope rows, the canonical per-object source
+    (spec/EVIDENCE-CONTRACT.md 5.1); empty when the run has no envelope or it cannot be read. Phase 1303-25 (D-71):
+    the legacy ValidationEntity rows say passed for every non-failing object, including ones without data."""
+    try:
+        rows = read_many(
+            "MATCH (run:ValidationRun {graph:$graph, project:$project, runId:$runId}) "
+            "RETURN run.evidenceEnvelopeJson AS envelope",
+            {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id},
+        )
+        raw = rows[0].get("envelope") if rows else None
+        envelope = json.loads(raw) if isinstance(raw, str) else None
+    except Exception:  # noqa: BLE001 - the legacy rows still answer
+        logging.getLogger(__name__).warning("evidence envelope of run %s could not be read", run_id)
+        return {}
+    out: dict[tuple[str, str], str] = {}
+    for row in (envelope or {}).get("rows") or []:
+        if isinstance(row, dict) and row.get("ruleId") and row.get("objectId") and row.get("canonicalStatus"):
+            out[(row["ruleId"], row["objectId"])] = row["canonicalStatus"]
+    return out
+
+
 def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = None) -> dict[str, list]:
     """Roll up ValidationEntity rows to one verdict per dgEntityId.
 
@@ -1131,11 +1153,12 @@ def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = 
         """
         MATCH (ve:ValidationEntity {graph:$graph, project:$project, runId:$runId})
         WHERE $ruleId IS NULL OR ve.ruleId = $ruleId
-        RETURN ve.dgEntityId AS dgEntityId, ve.displayName AS displayName, ve.status AS status
+        RETURN ve.dgEntityId AS dgEntityId, ve.displayName AS displayName, ve.status AS status, ve.ruleId AS ruleId
         ORDER BY ve.dgEntityId
         """,
         {"graph": VALIDATION_GRAPH, "project": project, "runId": run_id, "ruleId": rule_id},
     )
+    canonical = _envelope_statuses(project, run_id)
 
     groups: dict[str, dict[str, Any]] = {}
     for row in rows:
@@ -1149,7 +1172,7 @@ def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = 
         if row.get("displayName"):
             group["displayName"] = row["displayName"]
 
-        status_raw = row.get("status")
+        status_raw = canonical.get((row.get("ruleId"), dg_entity_id), row.get("status"))
         try:
             status = evidence_contract.CanonicalStatus(status_raw)
         except ValueError:
@@ -6518,7 +6541,10 @@ def get_entity_statuses(project: str, run_id: str, dg_entity_id: str):
         ENTITY_STATUSES_QUERY,
         {"project": project, "runId": run_id, "dgEntityId": dg_entity_id},
     )
-    return {"statuses": [{"ruleId": row["ruleId"], "status": row["status"]} for row in rows]}
+    # Phase 1303-25 (D-71): the canonical status from the run's evidence envelope wins over the legacy row
+    canonical = _envelope_statuses(project, run_id)
+    return {"statuses": [{"ruleId": row["ruleId"],
+                          "status": canonical.get((row["ruleId"], dg_entity_id), row["status"])} for row in rows]}
 
 
 @router.get("/computgraph/candidates/{project}")

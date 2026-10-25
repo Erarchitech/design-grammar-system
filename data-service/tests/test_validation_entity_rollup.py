@@ -204,3 +204,54 @@ def test_a_failure_on_one_rule_outranks_no_data_on_another(rows_from):
     result = app.get_validation_entity_sets("P", "RUN_1")
 
     assert [e["dgEntityId"] for e in result["failed"]] == ["OBJ_1"] and result["unknown"] == []
+
+
+
+def test_the_view_reads_the_canonical_status_from_the_evidence_envelope(monkeypatch):
+    """Phase 1303-25 (D-71), live 2026-10-25 16:57: four boxes without data were unknown in the run's evidence
+    envelope, but the legacy ValidationEntity rows (built from passedRuleIds, which holds every non-failing object, and
+    kept as they are by contract) said passed. The envelope rows are the canonical per-object source (EVIDENCE-CONTRACT
+    5.1): the view takes a pair's status from them and falls back to ValidationEntity only for a pair they lack."""
+    import json
+
+    envelope = {"rows": [
+        {"ruleId": "R", "objectId": "BOX_U", "canonicalStatus": "unknown"},
+        {"ruleId": "R", "objectId": "BOX_F", "canonicalStatus": "failed"},
+        {"ruleId": "R", "objectId": "BOX_P", "canonicalStatus": "passed"},
+    ]}
+    entity_rows = [
+        {"dgEntityId": "BOX_U", "displayName": "u", "status": "passed", "ruleId": "R"},
+        {"dgEntityId": "BOX_F", "displayName": "f", "status": "failed", "ruleId": "R"},
+        {"dgEntityId": "BOX_P", "displayName": "p", "status": "passed", "ruleId": "R"},
+        {"dgEntityId": "OLD", "displayName": "o", "status": "passed", "ruleId": "R"},
+    ]
+
+    def fake_read_many(query, parameters=None):
+        return [{"envelope": json.dumps(envelope)}] if "evidenceEnvelopeJson" in query else entity_rows
+
+    monkeypatch.setattr(app, "read_many", fake_read_many)
+    result = app.get_validation_entity_sets("P", "RUN_1")
+
+    assert [e["dgEntityId"] for e in result["unknown"]] == ["BOX_U"]
+    assert [e["dgEntityId"] for e in result["failed"]] == ["BOX_F"]
+    assert sorted(e["dgEntityId"] for e in result["passed"]) == ["BOX_P", "OLD"]
+    assert result["unknown"][0]["displayName"] == "u"
+
+
+def test_a_run_without_an_envelope_keeps_the_validation_entity_status(monkeypatch):
+    monkeypatch.setattr(app, "read_many", lambda query, parameters=None: (
+        [{"envelope": None}] if "evidenceEnvelopeJson" in query
+        else [{"dgEntityId": "A", "displayName": "a", "status": "passed", "ruleId": "R"}]))
+    assert [e["dgEntityId"] for e in app.get_validation_entity_sets("P", "RUN_1")["passed"]] == ["A"]
+
+
+def test_the_picked_object_statuses_also_come_from_the_envelope(monkeypatch):
+    """The Model Viewer's per-rule list for a picked object read the same legacy rows (unknown shown as passed)."""
+    import json
+
+    envelope = {"rows": [{"ruleId": "R2", "objectId": "BOX", "canonicalStatus": "unknown"}]}
+    monkeypatch.setattr(app, "read_many", lambda query, parameters=None: (
+        [{"envelope": json.dumps(envelope)}] if "evidenceEnvelopeJson" in query
+        else [{"ruleId": "R1", "status": "failed"}, {"ruleId": "R2", "status": "passed"}]))
+    assert app.get_entity_statuses("P", "RUN_1", "BOX")["statuses"] == [
+        {"ruleId": "R1", "status": "failed"}, {"ruleId": "R2", "status": "unknown"}]
