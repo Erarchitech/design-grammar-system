@@ -228,6 +228,8 @@ export const ru = {
   "Only an owner of the project can confirm a retired calculator again.":
     "Подтвердить отозванный калькулятор снова может только владелец проекта.",
   "Ask DG for a new calculator": "Попросить DG написать новый калькулятор",
+  "Regenerate with DG": "Перегенерировать с DG",
+  "DG will write a new calculator on the next check.": "DG напишет новый калькулятор при следующей проверке.",
   "Company catalogue": "Каталог компании",
   Retire: "Отозвать",
   "Confirmed {date}": "Подтверждён {date}",

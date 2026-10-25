@@ -33,6 +33,7 @@ import {
   proposalItems,
   proposalTitle,
   questionText,
+  regenerateCalculator,
   rejectCalculator,
   retireCalculator,
   selectorEntries,
@@ -970,7 +971,7 @@ function verdictLine(verdict) {
   return [plain(verdict?.ruleId), counts.map(([status, n]) => `${status} ${plain(n)}`).join(", ")].filter(Boolean).join(" · ");
 }
 
-export function CalculatorReviewCard({ candidate, run, companyAssigned, canReconfirm, busy, error, onConfirm, onReject }) {
+export function CalculatorReviewCard({ candidate, run, companyAssigned, canReconfirm, busy, error, notice, onConfirm, onReject, onRegenerate }) {
   const { t } = useT();
   const [meaning, setMeaning] = React.useState("");
   const [unit, setUnit] = React.useState(typeof candidate.unit === "string" ? candidate.unit : "");
@@ -1048,6 +1049,21 @@ export function CalculatorReviewCard({ candidate, run, companyAssigned, canRecon
         </div>
       ) : (
         <div style={MUTED}>{t("Only an owner of the project can confirm a retired calculator again.")}</div>
+      )}
+      {retired && typeof onRegenerate === "function" && (
+        <div style={{ display: "grid", gap: 8, paddingTop: 10, borderTop: "1px solid var(--color-hairline)" }}>
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => onRegenerate({ dataPropertyIri: candidate.dataPropertyIri, sha256: candidate.sha256 })}
+            >
+              {t("Regenerate with DG")}
+            </Button>
+          </div>
+          {notice && <div style={MUTED}>{notice}</div>}
+        </div>
       )}
       {!retired && (
         <div style={{ display: "grid", gap: 8, paddingTop: 10, borderTop: "1px solid var(--color-hairline)" }}>
@@ -1151,6 +1167,7 @@ function PropertyCheckCard({ project, t }) {
   const [reviewErr, setReviewErr] = React.useState(null);
   const [acting, setActing] = React.useState(null);
   const [actErr, setActErr] = React.useState(null);
+  const [regenNotes, setRegenNotes] = React.useState({});
   const run = async () => {
     setBusy(true);
     setError(null);
@@ -1214,6 +1231,19 @@ function PropertyCheckCard({ project, t }) {
     setActErr(null);
     try {
       await retireCalculator(project, payload);
+      await loadCandidates();
+    } catch (err) {
+      setActErr({ key, err });
+    } finally {
+      setActing(null);
+    }
+  };
+  const regenerateRetired = async (key, payload) => {
+    setActing(key);
+    setActErr(null);
+    try {
+      await regenerateCalculator(project, payload);
+      setRegenNotes((notes) => ({ ...notes, [key]: t("DG will write a new calculator on the next check.") }));
       await loadCandidates();
     } catch (err) {
       setActErr({ key, err });
@@ -1291,8 +1321,10 @@ function PropertyCheckCard({ project, t }) {
                 canReconfirm={review.canRetire === true}
                 busy={acting !== null || reviewing}
                 error={rowError(key)}
+                notice={regenNotes[key]}
                 onConfirm={(payload) => confirmOne(key, payload)}
                 onReject={(payload) => rejectOne(key, payload)}
+                onRegenerate={(payload) => regenerateRetired(key, payload)}
               />
             );
           })}

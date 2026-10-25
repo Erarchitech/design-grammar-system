@@ -71,6 +71,39 @@ function captionOf(label, props) {
   return props.label || props.name || props.id || label;
 }
 
+const localName = (iri) => String(iri || "").split(/[#/:]/).pop();
+
+// Phase 1303-24 (D-69): the OntoGraph is a flat vocabulary, so an ObjectProperty keeps its domain and range as node
+// properties and no Class -> Class relationship is stored. One derived edge per property is drawn from them, as a
+// 4th element `true` on the ring edge; it is display only: no node or relationship is added to the fetched graph and
+// no degree changes.
+function deriveClassEdges(rings, nodes, nodeInfo) {
+  const ring = rings.find((r) => r.key === "OntoGraph");
+  if (!ring) return;
+  const byIri = new Map();
+  const byLocal = new Map();
+  for (const n of nodes) {
+    if (n.props.graph !== "OntoGraph" || !n.labels.includes("Class")) continue;
+    const info = nodeInfo.get(n.id);
+    if (!info) continue;
+    if (n.props.iri) byIri.set(String(n.props.iri), info.i);
+    byLocal.set(localName(n.props.iri || n.props.label), info.i);
+  }
+  const find = (ref) => (ref == null ? undefined : byIri.get(String(ref)) ?? byLocal.get(localName(ref)));
+  const drawn = new Set();
+  for (const n of nodes) {
+    if (n.props.graph !== "OntoGraph" || !n.labels.includes("ObjectProperty")) continue;
+    const from = find(n.props.domain);
+    const to = find(n.props.range);
+    const label = n.props.label || localName(n.props.iri);
+    if (from === undefined || to === undefined || from === to) continue;
+    const key = `${from}>${to}:${label}`;
+    if (drawn.has(key)) continue;
+    drawn.add(key);
+    ring.edges.push([from, to, label, true]);
+  }
+}
+
 export default function buildRings({ nodes, rels }) {
   // group nodes by layer (graph property; untagged nodes are skipped —
   // they are orphans pending the post-ingest tagging pass)
@@ -151,6 +184,7 @@ export default function buildRings({ nodes, rels }) {
       rings[b.g].nodes[b.i].deg++;
     }
   }
+  deriveClassEdges(rings, nodes, nodeInfo);
   const xPerRing = rings.map(() => 0);
   cross.forEach((x) => {
     xPerRing[x.r1]++;

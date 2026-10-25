@@ -38,6 +38,7 @@ import {
   proposalItems,
   proposalTitle,
   questionText,
+  regenerateCalculator,
   rejectCalculator,
   retireCalculator,
   selectorEntries,
@@ -924,15 +925,55 @@ test('PropertyCheckCard loads calculators only from the review button and after 
   const source = await readFile(new URL('../src/screens/MappingPanel.jsx', import.meta.url), 'utf8');
   assert.equal(count(source, /\blistCalculatorCandidates\(/g), 1, 'one call site');
   assert.match(source, /const loadCandidates = async \(\) => \{[\s\S]*?await listCalculatorCandidates\(project, check\?\.summary\?\.validationRunIds\?\.\[0\]\)/);
-  assert.equal(count(source, /\bloadCandidates\(/g), 4, 'the review button and the three post-action refreshes');
+  assert.equal(count(source, /\bloadCandidates\(/g), 5, 'the review button and the four post-action refreshes (confirm, reject, retire, regenerate)');
   assert.match(source, /onClick=\{\(\) => loadCandidates\(\)\}/);
   assert.equal(count(source, /\bload\(/g), 4, 'the mapping-session load count is unchanged');
   const card = source.slice(source.indexOf('function PropertyCheckCard'), source.indexOf('export default function MappingPanel'));
   assert.doesNotMatch(card, /useEffect|useLayoutEffect/, 'nothing runs on mount');
   assert.match(source, /canReconfirm=\{review\.canRetire === true\}/, 'D-60: confirm-again rights are the server owner check');
   assert.match(source, /canRetire=\{review\.canRetire === true\}/);
-  for (const fn of ['confirmCalculator', 'rejectCalculator', 'retireCalculator']) assert.match(source, new RegExp(`\\b${fn}\\(`), `${fn} wired`);
+  for (const fn of ['confirmCalculator', 'rejectCalculator', 'retireCalculator', 'regenerateCalculator']) assert.match(source, new RegExp(`\\b${fn}\\(`), `${fn} wired`);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
   assert.doesNotMatch(source, /\bfetch\(|apiFetch/);
   assert.match(source, /t\("Review generated calculators"\)/);
+});
+
+// ── Phase 1303-24 (D-68): regenerate a retired calculator ────────────────────────────────────────────────────────
+
+test('regenerateCalculator POSTs the shown sha256 and an optional reason, and refuses bad input without a request', async () => {
+  reply = [200, { regenerate: true, alreadyRequested: false }];
+  await regenerateCalculator(project, { dataPropertyIri: 'ex:p', sha256: SHA, reason: ' reads walls only ' });
+  await regenerateCalculator(project, { dataPropertyIri: 'ex:p', sha256: SHA });
+  assert.equal(calls[0].url, `${calcBase}/regenerate`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(calls[0].init.headers[CSRF_HEADER], '1');
+  assert.deepEqual(body(0), { project, dataPropertyIri: 'ex:p', sha256: SHA, reason: 'reads walls only' });
+  assert.deepEqual(body(1), { project, dataPropertyIri: 'ex:p', sha256: SHA }, 'no reason key when none was typed');
+  const before = calls.length;
+  for (const intent of [{ dataPropertyIri: 'ex:p', sha256: 'x' }, { dataPropertyIri: '', sha256: SHA }, { sha256: SHA }, undefined]) {
+    await assert.rejects(() => regenerateCalculator(project, intent), err => err.code === 'CALCULATOR_INPUT_INVALID');
+  }
+  assert.equal(calls.length, before);
+});
+
+const REGENERATE = 'Regenerate with DG';
+
+test('a retired calculator card offers Regenerate with DG to every member, a pending one does not', async () => {
+  const retired = calcCandidate({ retired: true, catalogueId: 'cat-1' });
+  for (const canReconfirm of [true, false]) {
+    const html = await render('CalculatorReviewCard', calcProps(retired, { canReconfirm, onRegenerate() {} }));
+    assert.ok(buttonTag(html, REGENERATE) !== undefined, `owner ${canReconfirm}`);
+    assert.doesNotMatch(buttonTag(html, REGENERATE), /disabled/);
+    assert.equal(buttonTag(html, 'Reject'), undefined, 'a retired copy is still never rejected (D-60)');
+  }
+  const ru = await render('CalculatorReviewCard', calcProps(retired, { onRegenerate() {} }), 'ru');
+  assert.ok(buttonTag(ru, 'Перегенерировать с DG') !== undefined);
+  assert.equal(buttonTag(await render('CalculatorReviewCard', calcProps(calcCandidate(), { onRegenerate() {} })), REGENERATE), undefined);
+  assert.match(buttonTag(await render('CalculatorReviewCard', calcProps(retired, { busy: true, onRegenerate() {} })), REGENERATE), /disabled=""/);
+});
+
+test('the card shows the note that a new calculator was requested', async () => {
+  const retired = calcCandidate({ retired: true, catalogueId: 'cat-1' });
+  const html = await render('CalculatorReviewCard', calcProps(retired, { onRegenerate() {}, notice: 'DG will write a new calculator on the next check.' }));
+  assert.ok(html.includes('DG will write a new calculator on the next check.'));
 });

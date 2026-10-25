@@ -1064,10 +1064,14 @@ export default class GraphEngine {
           [x2, y2] = posOf(act, n2);
         const mx = (x1 + x2) / 2,
           my = (y1 + y2) / 2;
+        // e[3]: an edge derived from an ObjectProperty's domain/range (buildRings), drawn dashed so it is never
+        // mistaken for a stored relationship
+        if (e[3]) ctx.setLineDash([3, 4]);
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.quadraticCurveTo(cx + (mx - cx) * 0.72, cy + (my - cy) * 0.72, x2, y2);
         ctx.stroke();
+        if (e[3]) ctx.setLineDash([]);
       }
       ctx.globalAlpha = 1;
     }
@@ -1085,10 +1089,12 @@ export default class GraphEngine {
         if (j < 0) continue;
         const [px, py] = this.nodePos(sel.r, j);
         ctx.strokeStyle = TH.signalDim;
+        if (e[3]) ctx.setLineDash([3, 4]);
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(px, py);
         ctx.stroke();
+        if (e[3]) ctx.setLineDash([]);
         ctx.strokeStyle = TH.signal;
         ctx.beginPath();
         ctx.arc(px, py, 5.5, 0, 6.29);

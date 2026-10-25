@@ -101,6 +101,15 @@ export function rejectCalculator(project, { dataPropertyIri, sha256, reason, reg
   });
 }
 
+// Phase 1303-24 (D-68): ask for a new calculator in place of a retired copy → { regenerate, alreadyRequested }.
+// Sets a flag only; the provider is called by the next "Generate check". `reason` travels only when non-empty.
+export function regenerateCalculator(project, { dataPropertyIri, sha256, reason } = {}) {
+  if (!text(dataPropertyIri) || typeof sha256 !== "string" || !SHA256.test(sha256)) return calculatorRefusal();
+  const body = { project, dataPropertyIri, sha256 };
+  if (text(reason)) body.reason = text(reason);
+  return apiFetch(calculatorUrl("regenerate"), { method: "POST", body });
+}
+
 // Owner role of the requesting project (D-59) → { catalogueId, retiredCopies, alreadyRetired }.
 export function retireCalculator(project, { catalogueId, reason } = {}) {
   if (!text(catalogueId) || !text(reason)) return calculatorRefusal();

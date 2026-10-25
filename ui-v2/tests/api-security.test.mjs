@@ -87,7 +87,8 @@ const cases = [
   ['mapping.listCalculatorCandidates', () => mapping.listCalculatorCandidates(project, 'run/1'), 'GET', `/data-service/scripts/property-calculators/candidates?project=${encoded}&runId=run%2F1`],
   ['mapping.confirmCalculator', () => mapping.confirmCalculator(project, { dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), runId: 'run/1', meaning: 'Window area', unit: 'm2' }), 'POST', '/data-service/scripts/property-calculators/confirm', { project, dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), runId: 'run/1', meaning: 'Window area', unit: 'm2' }],
   ['mapping.rejectCalculator', () => mapping.rejectCalculator(project, { dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), reason: 'too coarse', regenerate: true }), 'POST', '/data-service/scripts/property-calculators/reject', { project, dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), reason: 'too coarse', regenerate: true }],
-  ['mapping.retireCalculator', () => mapping.retireCalculator(project, { catalogueId: 'cat/1', reason: 'superseded' }), 'POST', '/data-service/scripts/property-calculators/retire', { project, catalogueId: 'cat/1', reason: 'superseded' }]
+  ['mapping.retireCalculator', () => mapping.retireCalculator(project, { catalogueId: 'cat/1', reason: 'superseded' }), 'POST', '/data-service/scripts/property-calculators/retire', { project, catalogueId: 'cat/1', reason: 'superseded' }],
+  ['mapping.regenerateCalculator', () => mapping.regenerateCalculator(project, { dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), reason: 'reads walls only' }), 'POST', '/data-service/scripts/property-calculators/regenerate', { project, dataPropertyIri: 'ex:hasWindowArea', sha256: 'a'.repeat(64), reason: 'reads walls only' }]
 ];
 for (const [name, invoke, method, url, body, mode] of cases) {
   for (const status of [200, 401, 403]) {
