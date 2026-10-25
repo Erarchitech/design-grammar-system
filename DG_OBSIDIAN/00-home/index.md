@@ -9,6 +9,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-25 Phase 1303 live acceptance of 18 and 23 — stack rolled to f0e27a1, acts 1-4, findings|Session — Phase 1303 live acceptance: stack at f0e27a1, acts 1–4 of 1303-23, calculator regeneration, publish-loop incident]] (2026-10-25)
+- [[Run check answers BUSY because the solution blocks the Rhino UI thread longer than 10 s, and SendValid left True loops publishing (Phase 1303)|Debugging — Run check BUSY and SendValid publish loop]] (2026-10-25)
+- [[Generated property calculators return 0.0 when no related element is found (Phase 1303)|Debugging — calculators return 0.0 for not found]] (2026-10-25)
+- [[Graph Viewer draws class-to-class edges derived from ObjectProperty domain and range (Phase 1303)|Decision — derived class edges in the Graph Viewer, no stored DOMAIN/RANGE edges]] (2026-10-25)
 - [[sessions/2026-10-22 Phase 1303 wave 10 — plans 21 and 22 executed|Session — Phase 1303 wave 10: plan 21 (conflict check on the written rule) and plan 22 (participants reach the property calculator) done]] (2026-10-22)
 - [[sessions/2026-10-22 Phase 1303 wave 9 — plan 20 done, plan 18 Task 1 and rollout done|Session — Phase 1303 wave 9: plan 20 done, plan 18 Task 1 and live rollout done]] (2026-10-22)
 - [[sessions/2026-10-22 Phase 1303 waves 7-9 — plans 15 SUMMARY, 16, 17, 19 executed, plan 20 started and stopped|Session — Phase 1303 executed in waves: plans 16, 17, 19 done, 15 SUMMARY partial, 20 started and stopped]] (2026-10-22)
