@@ -1,0 +1,62 @@
+# Server-stand edge: same route policy as deploy/hosted/edge/Caddyfile, but certificates are
+# obtained and renewed automatically (ACME / Let's Encrypt) instead of mounted files.
+# Needs public DNS A records for the three names and ports 80+443 reachable from the Internet.
+# The catch-all ":443" block of the reviewed file is dropped: it required a certificate file.
+{
+    email {$HOSTED_ACME_EMAIL}
+}
+
+{$HOSTED_DG_HOST} {
+
+    @blocked path /neo4j /neo4j/* /n8n /n8n/* /data-service/docs /data-service/redoc /data-service/openapi.json /data-service/degram/admin /data-service/degram/admin/* /data-service/settings/speckle /data-service/knowledge/ingest/folder /data-service/mcp /data-service/context /data-service/context/* /data-service/llm/generate /llm/generate /data-service/execution-result
+    handle @blocked {
+        respond 404
+    }
+    @dg_public path / /index.html /config.js /assets/* /dg-think-light.gif /dg-think-dark.gif /data-service/* /llm/* /reasoner/*
+    handle @dg_public {
+        reverse_proxy design-grammars:80 {
+            # Не передавать клиентский X-Forwarded-For как доверенный адрес.
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle {
+        respond 404
+    }
+}
+
+{$HOSTED_SPECKLE_HOST} {
+
+    @blocked path /admin /admin/* /api/admin/* /neo4j/* /n8n/*
+    handle @blocked {
+        respond 404
+    }
+    # Набор маршрутов Speckle требует проверки на закреплённом образе.
+    @speckle_public path / /auth/* /api/* /graphql /graphql/* /projects/* /models/* /streams/* /static/* /_nuxt/* /favicon.ico /favicon.png /robots.txt
+    handle @speckle_public {
+        reverse_proxy speckle-ingress:8080 {
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle {
+        respond 404
+    }
+}
+
+{$HOSTED_OBJECT_HOST} {
+
+    # Только path-style bucket speckle-server. Никаких strip_prefix,
+    # URI rewrite или изменения Host/query: это входы в S3-подпись.
+    @object_public {
+        method GET HEAD PUT OPTIONS
+        path /speckle-server /speckle-server/*
+    }
+    handle @object_public {
+        reverse_proxy speckle-minio:9000 {
+            header_up Host {host}
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle {
+        respond 404
+    }
+}
