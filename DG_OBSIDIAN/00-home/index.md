@@ -9,6 +9,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-25 Stand update and milestone13 consolidation|Session — stand at2447295, master merge and DeGram publication, milestone13 cleanup/WIP pushed, pending review]] (2026-10-25)
+- [[knowledge/decisions/Milestone13 cleanup preserves pending source changes and excludes generated evidence|Decision — backed-up scoped cleanup; Phase1309 WIP on milestone13, old source/evidence pending]] (2026-10-25)
+- [[knowledge/debugging/Pending source review found stale v12 paths and duplicate MERGE rejection|Debugging — stale retained-report paths, idempotent MERGE false rejection, evidence drift; fixes not applied]] (2026-10-25)
+
 - [[knowledge/decisions/DeGram is developed in the submodule on degram-milestone13 and the build clone only pulls|Decision — DeGram developed only in the submodule on `degram/milestone13`; framework on `gsd/milestone13`; build clone pulls only]] (2026-10-25)
 - [[sessions/2026-10-25 Phase 1303 plan 24 executed — no-data calculators, run check, regenerate retired, derived edges, rollout 23ed720|Session — Phase 1303 plan 24 executed and rolled out (23ed720/25297dd); calculator for hasMinProjectionClearanceMm still missing, act 5 open]] (2026-10-25)
 - [[knowledge/decisions/Calculators return None for nothing found, SendValid is one-shot and a retired calculator can be regenerated (Phase 1303-24, D-66 to D-68)|Decision — D-66 None for nothing found, D-67 one run and one-shot SendValid, D-68 regenerate a retired calculator]] (2026-10-25)
