@@ -18,6 +18,7 @@ import {
 } from "../components/index.js";
 import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses } from "../lib/modelApi.js";
 import { groupRunsByState, NO_STATE } from "../lib/runGroups.js";
+import { classifyObjectSets } from "../lib/objectSets.js";
 import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib/inputGenApi.js";
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 import { useT } from "../i18n/LanguageProvider.jsx";
@@ -67,6 +68,8 @@ function boxPath(b) {
 
 // v2: thumbnails captured before the background fill were black where the
 // (transparent) viewer canvas showed the page — drop them rather than show them.
+// Phase 1303-25 (D-71): objects without a verdict (no data) are drawn neutral, never in the fail colour.
+const NO_VERDICT_COLOR = "#94A3B8";
 const RUN_SHOTS_KEY = "dgv2_run_shots_v2";
 const LEGACY_RUN_SHOTS_KEY = "dgv2_run_shots";
 const PROJECT_SHOTS_KEY = "dgv2_project_shots";
@@ -241,6 +244,7 @@ export default function ModelScreen({ active, onBack, project }) {
   const [aContext, setAContext] = React.useState(DEFAULT_CONTEXT_OPACITY);
   const [failOpen, setFailOpen] = React.useState(true);
   const [passOpen, setPassOpen] = React.useState(false);
+  const [unknownOpen, setUnknownOpen] = React.useState(false);
   const [shaclViolationOpen, setShaclViolationOpen] = React.useState(true);
   const [shaclWarningOpen, setShaclWarningOpen] = React.useState(false);
   const [shaclInfoOpen, setShaclInfoOpen] = React.useState(false);
@@ -489,14 +493,12 @@ export default function ModelScreen({ active, onBack, project }) {
   const visibleRuns = stateKey ? runs.filter((r) => (r.state?.stateId || NO_STATE) === stateKey) : runs;
 
   /* ---- entities and map items ---- */
-  const failedIds = React.useMemo(() => new Set((view?.objectSets?.failed || []).map((e) => e.dgEntityId)), [view]);
-  const failedEntityIdList = React.useMemo(() => (view?.objectSets?.failed || []).map((e) => e.dgEntityId), [view]);
-  const passedEntityIdList = React.useMemo(() => (view?.objectSets?.passed || []).map((e) => e.dgEntityId), [view]);
-  const entities = React.useMemo(() => {
-    const all = [...(view?.objectSets?.failed || []), ...(view?.objectSets?.passed || [])];
-    all.sort((a, b) => a.dgEntityId.localeCompare(b.dgEntityId));
-    return all;
-  }, [view]);
+  // Phase 1303-25 (D-71): objects without a verdict (objectSets.unknown, e.g. no data) are neither failing nor passing.
+  const sets = React.useMemo(() => classifyObjectSets(view?.objectSets), [view]);
+  const failedIds = React.useMemo(() => new Set(sets.failedIds), [sets]);
+  const failedEntityIdList = sets.failedIds;
+  const passedEntityIdList = sets.passedIds;
+  const entities = sets.entities;
   const boxes = React.useMemo(() => layoutEntities(entities.map((e) => e.dgEntityId)), [entities]);
 
   React.useEffect(() => {
@@ -513,13 +515,14 @@ export default function ModelScreen({ active, onBack, project }) {
   let callout = null;
   for (const b of boxes) {
     const fail = failedIds.has(b.id);
+    const open = !fail && sets.statusOf(b.id) === "unknown";
     if ((fail && !mvFail) || (!fail && !mvPass) || hiddenSet.has(b.id) || (isolate && picked !== b.id)) continue;
     const selB = picked === b.id;
     items.push({
       id: b.id,
       d: boxPath(b),
       fill: selB ? "var(--color-signal-soft)" : fail ? "var(--color-signal-soft)" : "transparent",
-      stroke: selB ? "var(--color-signal)" : fail ? failColor : passColor,
+      stroke: selB ? "var(--color-signal)" : fail ? failColor : open ? NO_VERDICT_COLOR : passColor,
       sw: selB || fail ? 1.5 : 1,
       op: (fail ? aFail : aPass) / 100
     });
@@ -530,7 +533,7 @@ export default function ModelScreen({ active, onBack, project }) {
         ty1: b.y - b.h - 48,
         ty2: b.y - b.h - 34,
         name: b.id.toUpperCase(),
-        status: fail ? t("FAILING · {rule}", { rule: (ruleId || "").toUpperCase() }) : t("PASSING")
+        status: fail ? t("FAILING · {rule}", { rule: (ruleId || "").toUpperCase() }) : open ? t("NO VERDICT") : t("PASSING")
       };
     }
   }
@@ -601,13 +604,13 @@ export default function ModelScreen({ active, onBack, project }) {
       oy = 5;
     for (const b of boxes) {
       const fail = failedIds.has(b.id);
-      ctx.fillStyle = fail ? failColor : passColor;
+      ctx.fillStyle = fail ? failColor : sets.statusOf(b.id) === "unknown" ? NO_VERDICT_COLOR : passColor;
       ctx.fillRect(ox + b.x * sc, oy + (b.y - b.h) * sc, Math.max(2, b.w * sc), Math.max(2, b.h * sc));
     }
     ctx.strokeStyle = failColor;
     ctx.lineWidth = 1;
     ctx.strokeRect(ox + viewBox.x * sc, oy + viewBox.y * sc, viewBox.w * sc, viewBox.h * sc);
-  }, [boxes, viewBox, failedIds, failColor, passColor]);
+  }, [boxes, viewBox, failedIds, sets, failColor, passColor]);
 
   const onMapClick = (e) => {
     const rect = mapRef.current.getBoundingClientRect();
@@ -618,18 +621,10 @@ export default function ModelScreen({ active, onBack, project }) {
     setViewBox((vb) => ({ ...vb, x: wx - vb.w / 2, y: wy - vb.h / 2 }));
   };
 
-  const failItems = (view?.objectSets?.failed || []).map((e) => ({
-    id: e.dgEntityId,
-    primary: e.displayName || e.dgEntityId,
-    secondary: "id: " + e.dgEntityId
-  }));
-  const passItems = (view?.objectSets?.passed || []).map((e) => ({
-    id: e.dgEntityId,
-    primary: e.displayName || e.dgEntityId,
-    secondary: "id: " + e.dgEntityId
-  }));
+  const { failItems, passItems, unknownItems } = sets;
   const pickedEntity = entities.find((e) => e.dgEntityId === picked);
   const pickedFailing = picked ? failedIds.has(picked) : false;
+  const pickedOpen = picked ? sets.statusOf(picked) === "unknown" : false;
   const zoomPct = worldRef.current.w / viewBox.w;
 
   // The viewer shows only the run's validation model; the base model is never
@@ -1014,6 +1009,7 @@ export default function ModelScreen({ active, onBack, project }) {
               <div style={{ display: "flex", gap: 28, marginTop: 10 }}>
                 <StatBlock label={t("Failing")} value={String(failItems.length)} signal={failItems.length > 0} />
                 <StatBlock label={t("Passing")} value={String(passItems.length)} />
+                {unknownItems.length > 0 && <StatBlock label={t("No verdict")} value={String(unknownItems.length)} />}
               </div>
             </Panel>
             {(() => {
@@ -1125,6 +1121,13 @@ export default function ModelScreen({ active, onBack, project }) {
                 <CollapsibleItem key={it.id} primary={it.primary} secondary={it.secondary} selected={picked === it.id} onClick={() => pick(it.id)} />
               ))}
             </Collapsible>
+            {unknownItems.length > 0 && (
+              <Collapsible label={t("Items without a verdict")} count={unknownItems.length} open={unknownOpen} onToggle={() => setUnknownOpen((v) => !v)}>
+                {unknownItems.map((it) => (
+                  <CollapsibleItem key={it.id} primary={it.primary} secondary={it.secondary} selected={picked === it.id} onClick={() => pick(it.id)} />
+                ))}
+              </Collapsible>
+            )}
             <Panel title={t("Rule")}>
               {(view.rules || []).length > 1 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
@@ -1287,7 +1290,7 @@ export default function ModelScreen({ active, onBack, project }) {
               {t("← Validation run")}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Chip selected>{pickedFailing ? t("Failing") : t("Passing")}</Chip>
+              <Chip selected>{pickedFailing ? t("Failing") : pickedOpen ? t("No verdict") : t("Passing")}</Chip>
               <span style={{ font: "500 13px/1.3 var(--font-mono)", letterSpacing: "-0.2px" }}>{picked}</span>
             </div>
             <Panel title={t("Instance properties")}>
@@ -1302,7 +1305,7 @@ export default function ModelScreen({ active, onBack, project }) {
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, paddingBottom: 8, borderBottom: "1px solid var(--color-hairline)" }}>
                 <span style={{ font: "400 12px/1.3 var(--font-sans)", color: "var(--text-muted)" }}>{t("Status")}</span>
                 <span style={{ font: "600 12px/1.3 var(--font-mono)", color: pickedFailing ? "var(--color-signal)" : "var(--text-secondary)" }}>
-                  {pickedFailing ? t("FAIL") : t("PASS")}
+                  {pickedFailing ? t("FAIL") : pickedOpen ? t("NO VERDICT") : t("PASS")}
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 6 }}>

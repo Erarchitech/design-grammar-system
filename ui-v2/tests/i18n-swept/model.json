@@ -8,6 +8,7 @@
     "src/components/speckle/SpeckleViewport.jsx",
     "src/components/surfaces/RunTile.jsx",
     "src/lib/modelApi.js",
+    "src/lib/objectSets.js",
     "src/lib/speckleProxy.js",
     "src/lib/inputGenApi.js"
   ],
