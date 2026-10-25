@@ -1,0 +1,52 @@
+{
+  "plan": "1303-25",
+  "task": "6 (controller): rollout from the committed sha after the owner's yes (2026-10-25, conditional on a gate with baseline failures only); the DG.gha install is an owner step",
+  "rolledOutAt": "2026-10-25T16:2xZ",
+  "commit7": "9d95481",
+  "releaseFolder": "D:\\dgb\\mapping-release-9d95481",
+  "exportedWith": "git archive 9d95481 data-service ui-v2 DG tools docker-compose.yml cypher_template.txt (committed state only; a parallel session works in the same worktree)",
+  "gate": {
+    "dataServicePytest": "4 failed, 6544 passed, 35 skipped, 8 deselected, 25 errors (468 s, worktree; tested trees had no uncommitted change). Failures: the 4 tests/test_dg_context.py baseline names; errors: DNS for neo4j:7687 (test_cg_structure_checks 20, test_computgraph_consult 5). No new failure name.",
+    "de01Pytest": "1 failed, 173 passed: only the baseline test_de01_runner_against_golden_fixture_has_zero_silent_disagreements",
+    "dgTests": "Release net9.0: 831 passed, 5 failed (the 1303-24 environmental baseline: FrameAblatedCorpusEmitterTests golden files; DesignStateValidationFlowTests x4)",
+    "uiTest": "386/386",
+    "uiBuild": "exit 0",
+    "note": "The full DG.Tests and data-service suites need spec/ and fixtures/, which the archive does not export; they ran in the worktree."
+  },
+  "imageIds": {
+    "dataService": "sha256:b492a73fb54837d3921de54aa99788c90456ea4e5db03af525c57cc01b2ff3cb",
+    "ui": "sha256:91044df0106efe3c10136cc3d604d3987925c43626280a9c3e076161dea18187",
+    "previousDataService": "sha256:6ea5b97a58b69d852cd11373f5c3660392aa561f324027fb364209a8333afe6e (25297dd)",
+    "previousUi": "sha256:8c6226feb679389f8f0b706b91e3dc3fe4146ca95405e315b67d146c414024de (23ed720)"
+  },
+  "buildCommands": [
+    "docker build --no-cache -t dg-mapping-data-service:9d95481 D:\\dgb\\mapping-release-9d95481\\data-service",
+    "docker build --no-cache -t dg-mapping-ui:9d95481 D:\\dgb\\mapping-release-9d95481\\ui-v2"
+  ],
+  "rolloutCommand": "docker compose -p design-grammar-system -f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\docker-compose.yml -f D:\\dgb\\mapping-release-9d95481\\compose.mapping-images.yml up -d --no-build --no-deps data-service design-grammars",
+  "rollback": {
+    "overrideFile": "D:\\dgb\\mapping-release-9d95481\\compose.mapping-rollback.yml",
+    "returnsTo": "data-service 25297dd, ui 23ed720 (images kept)",
+    "configValidated": true
+  },
+  "probes": {
+    "backendRoot": 200,
+    "uiRoot": 200,
+    "anonymousCandidates": 401,
+    "servedCode": "CONTEXT_API names ctx.near and ctx.host_floors; get_validation_entity_sets has the unknown set; _await_check_end reads oneShotPending; UI bundle contains NO VERDICT"
+  },
+  "dgGha": {
+    "builtFrom": "9d95481 via the archive folder, dotnet build DG\\DG.sln -c Release --no-incremental -p:RhinoInstallDir=\"C:\\Program Files\\Rhino 8\" (0 errors, 38 warnings)",
+    "artifactDir": "D:\\dgb\\mapping-release-9d95481\\DG\\src\\DG.Grasshopper\\bin\\Release\\net48",
+    "dgGhaSha256": "0def946488cb4e55770fb13a4625c70fff2c8fb9761c16a745fcff0d2c04a16d",
+    "dgCoreDllSha256": "980225c108dcebe6663b74722ad6730fe719bc50e652e81f478530adbf16cd2f",
+    "installedBefore": "96796214bc5594afb7eb5f41301b4ffe1934267e2aac5ce8d550599947c0bb9a",
+    "backupOfInstalledPlugin": "D:\\dgb\\plugin-backup\\DG-20261025-pre-9d95481 (18 files)",
+    "installScript": "D:\\dgb\\mapping-release-9d95481\\install-dg-gha.ps1 (owner; refuses while Rhino or Revit runs)",
+    "installed": false
+  },
+  "notes": [
+    "No credential, cookie or token is stored here.",
+    "Until DG.gha 9d95481 is installed, the canvas runs the 1303-24 plugin: no VALIDATOR Status (the placement warns that validator.Status is missing and the highlighter keeps ValidStatus) and no verdict-gated one-shot."
+  ]
+}
