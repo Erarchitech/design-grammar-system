@@ -418,6 +418,11 @@ REJECT_ROW_QUERY = (
     "pc.reviewReason = $reason, pc.regenerateRequested = $regenerate, pc.rejectedSha256Json = $rejectedSha256Json "
     "RETURN pc.dataPropertyIri AS dataPropertyIri"
 )
+REGENERATE_ROW_QUERY = (
+    "MATCH (pc:PropertyCalculator {project:$project, dataPropertyIri:$dataPropertyIri}) "
+    "SET pc.regenerateRequested = true, pc.reviewedBy = $by, pc.reviewedAt = $at, pc.reviewReason = $reason "
+    "RETURN pc.dataPropertyIri AS dataPropertyIri"
+)
 # Copies by catalogueId (the id embeds the company hash). SET only, never DELETE.
 RETIRE_COPIES_QUERY = (
     "MATCH (pc:PropertyCalculator {catalogueId:$catalogueId}) WHERE pc.status = 'active' "
@@ -662,6 +667,30 @@ def reject(session: Any, *, project: str, data_property_iri: str, sha256: str, a
     active or retired, is refused (``CALCULATOR_IN_CATALOGUE``). Runs no catalogue statement.
     Returns ``{alreadyRejected, regenerate, rejectedSha256s}``."""
     return session.execute_write(_reject_tx, project, data_property_iri, sha256, actor, reason, regenerate)
+
+
+def _regenerate_tx(tx: Any, project: str, iri: str, sha256: str, actor: str | None, reason: str | None) -> dict:
+    row = _lock_row(tx, project, iri)
+    if not row or row.get("origin") != "generated":
+        raise CalculatorReviewError("CALCULATOR_NOT_FOUND", 404, "no generated calculator for this property")
+    if row.get("sha256") != sha256:
+        raise CalculatorReviewError("CALCULATOR_CHANGED", 409, "the calculator changed since it was shown")
+    if (row.get("status") or STATUS_ACTIVE) != STATUS_RETIRED:
+        raise CalculatorReviewError("CALCULATOR_NOT_RETIRED", 409, "only a retired calculator copy can be regenerated")
+    if row.get("regenerateRequested"):
+        return {"regenerate": True, "alreadyRequested": True}
+    tx.run(REGENERATE_ROW_QUERY, project=project, dataPropertyIri=iri, by=actor, at=utc_now(), reason=reason).consume()
+    return {"regenerate": True, "alreadyRequested": False}
+
+
+def regenerate(session: Any, *, project: str, data_property_iri: str, sha256: str, actor: str | None,
+               reason: str | None) -> dict:
+    """Ask for a new calculator in place of the retired copy shown with ``sha256`` (Phase 1303-24, D-68). Sets
+    ``regenerateRequested`` on the project's retired generated row: status, source, sha256 and catalogueId stay (a
+    retired hash is paused, never rejected), nothing is deleted and the LLM is not called; the next generation asks
+    it once (``is_blocked`` is false while the flag is set). Only a retired row qualifies. Returns
+    ``{regenerate: True, alreadyRequested}``."""
+    return session.execute_write(_regenerate_tx, project, data_property_iri, sha256, actor, reason)
 
 
 def _retire_tx(tx: Any, project: str, company: str, cid: str, actor: str | None, reason: str | None) -> dict:

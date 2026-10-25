@@ -82,6 +82,7 @@ class Env:
         self.confirm_calls = []
         self.reject_calls = []
         self.retire_calls = []
+        self.regenerate_calls = []
         self.error = {}  # store function name -> CalculatorReviewError to raise
 
 
@@ -116,6 +117,11 @@ def env(monkeypatch):
                                               "the calculator belongs to the company catalogue")
         return {"alreadyRejected": False, "regenerate": kw["regenerate"], "rejectedSha256s": [kw["sha256"]]}
 
+    def regenerate(session, **kw):
+        e.regenerate_calls.append(kw)
+        raising("regenerate")
+        return {"regenerate": True, "alreadyRequested": False}
+
     def retire(session, **kw):
         e.retire_calls.append(kw)
         raising("retire")
@@ -145,6 +151,7 @@ def env(monkeypatch):
     monkeypatch.setattr(store, "confirm", confirm)
     monkeypatch.setattr(store, "reject", reject)
     monkeypatch.setattr(store, "retire", retire)
+    monkeypatch.setattr(store, "regenerate", regenerate)
     monkeypatch.setattr(property_scripts, "load_rules", lambda session, project, ids: e.rules)
     monkeypatch.setattr(property_calculator_llm, "generate_calculator",
                         lambda *a, **k: pytest.fail("a calculator route must never call the generator or the LLM"))
@@ -543,7 +550,8 @@ def test_security_boundary_lists_the_four_rows_verbatim():
     for row in ("GET|/scripts/property-calculators/candidates|delegated+member|query|viewer",
                 "POST|/scripts/property-calculators/confirm|member|body|editor",
                 "POST|/scripts/property-calculators/reject|member|body|editor",
-                "POST|/scripts/property-calculators/retire|member|body|owner"):
+                "POST|/scripts/property-calculators/retire|member|body|owner",
+                "POST|/scripts/property-calculators/regenerate|member|body|editor"):
         assert text.count(row + "\n") == 1, row
     assert "### 3.10 Calculator promotion" in text
 
@@ -553,14 +561,14 @@ def test_security_boundary_lists_the_four_rows_verbatim():
 # --------------------------------------------------------------------------------------------------------------
 
 STORE_CODES = {"CALCULATOR_NOT_FOUND", "CALCULATOR_NOT_PENDING", "CALCULATOR_CHANGED", "CALCULATOR_INTEGRITY",
-               "CALCULATOR_RUN_INVALID", "CALCULATOR_IN_CATALOGUE", "CATALOGUE_PROPERTY_TAKEN",
+               "CALCULATOR_RUN_INVALID", "CALCULATOR_IN_CATALOGUE", "CATALOGUE_PROPERTY_TAKEN", "CALCULATOR_NOT_RETIRED",
                "CATALOGUE_ENTRY_NOT_FOUND", "CATALOGUE_RECONFIRM_OWNER_REQUIRED"}
 ROUTE_CODES = {"CALCULATOR_RUN_NOT_FOUND", "CALCULATOR_INPUT_INVALID", "CATALOGUE_COMPANY_REQUIRED"}
 
 
 def test_every_calculator_error_code_has_a_hint():
     assert set(app_module._CALCULATOR_HINTS) == STORE_CODES | ROUTE_CODES
-    assert len(app_module._CALCULATOR_HINTS) == 12 and all(app_module._CALCULATOR_HINTS.values())
+    assert len(app_module._CALCULATOR_HINTS) == 13 and all(app_module._CALCULATOR_HINTS.values())
 
 
 def test_the_store_raises_only_codes_the_routes_have_hints_for():
@@ -570,3 +578,45 @@ def test_the_store_raises_only_codes_the_routes_have_hints_for():
     source = inspect.getsource(store)
     raised = set(re.findall(r'CalculatorReviewError\(\s*"([A-Z_]+)"', source))
     assert raised <= set(app_module._CALCULATOR_HINTS), raised - set(app_module._CALCULATOR_HINTS)
+
+
+# --------------------------------------------------------------------------------------------------------------
+# regenerate a retired copy (Phase 1303-24, D-68)
+# --------------------------------------------------------------------------------------------------------------
+
+def test_regenerate_cleans_the_reason_and_answers_the_request(env):
+    body = {"project": PROJECT, "dataPropertyIri": IRI, "sha256": SHA, "reason": "  reads walls \n only\x00 "}
+    r = client.post(f"{BASE}/regenerate", json=body, headers=CSRF)
+    assert r.status_code == 200, r.text
+    (call,) = env.regenerate_calls
+    assert call["reason"] == "reads walls only" and call["sha256"] == SHA and call["data_property_iri"] == IRI
+    assert r.json() == {"project": PROJECT, "dataPropertyIri": IRI, "regenerate": True, "alreadyRequested": False}
+
+
+def test_regenerate_reason_is_optional_and_a_malformed_sha256_is_422(env):
+    ok = client.post(f"{BASE}/regenerate", json={"project": PROJECT, "dataPropertyIri": IRI, "sha256": SHA},
+                     headers=CSRF)
+    assert ok.status_code == 200 and env.regenerate_calls[-1]["reason"] is None
+    bad = client.post(f"{BASE}/regenerate", json={"project": PROJECT, "dataPropertyIri": IRI, "sha256": "xyz"},
+                      headers=CSRF)
+    assert bad.status_code == 422 and len(env.regenerate_calls) == 1
+
+
+def test_regenerate_of_a_calculator_that_is_not_retired_is_409_with_a_hint(env):
+    env.error["regenerate"] = store.CalculatorReviewError("CALCULATOR_NOT_RETIRED", 409, "not retired")
+    r = client.post(f"{BASE}/regenerate", json={"project": PROJECT, "dataPropertyIri": IRI, "sha256": SHA},
+                    headers=CSRF)
+    assert r.status_code == 409 and _code(r) == "CALCULATOR_NOT_RETIRED"
+    assert set(r.json()["detail"]) == {"error", "hint", "code"} and r.json()["detail"]["hint"]
+
+
+def test_regenerate_never_calls_the_generator_and_a_viewer_cannot_use_it(env):
+    viewer = _user_client(VIEWER, "viewer")
+    body = {"project": PROJECT, "dataPropertyIri": IRI, "sha256": SHA}
+    assert viewer.post(f"{BASE}/regenerate", json=body, headers=CSRF).status_code == 403
+    assert env.regenerate_calls == []
+
+
+def test_regenerate_policy_row_admits_member_editor_only():
+    row = route_policy.ROUTE_POLICIES[("POST", "/scripts/property-calculators/regenerate")]
+    assert row.principals == frozenset({"member"}) and row.project_source == "body" and row.min_role == "editor"

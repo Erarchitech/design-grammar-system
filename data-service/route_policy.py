@@ -246,6 +246,8 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/scripts/property-calculators/confirm"): _p(_MEM, source="body", role="editor"),
     ("POST", "/scripts/property-calculators/reject"): _p(_MEM, source="body", role="editor"),
     ("POST", "/scripts/property-calculators/retire"): _p(_MEM, source="body", role="owner"),
+    # 1303-24 (D-68): ask for a new calculator in place of a retired copy; an editor, like reject (it only sets a flag).
+    ("POST", "/scripts/property-calculators/regenerate"): _p(_MEM, source="body", role="editor"),
     # run re-places the chain when the rules changed and writes Revit colours through the canvas: editor.
     ("POST", "/scripts/property-check/run"): _p(_MEM, _DEL, source="body", role="editor"),
     ("POST", "/scripts/property-check/status"): _p(_MEM, _DEL, source="body", role="viewer"),

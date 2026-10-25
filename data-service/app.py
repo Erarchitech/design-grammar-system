@@ -2522,6 +2522,13 @@ class CalculatorConfirmRequest(BaseModel):
     unit: str | None = Field(default=None, max_length=40)
 
 
+class CalculatorRegenerateRequest(BaseModel):
+    project: str = Field(min_length=1, max_length=200)
+    dataPropertyIri: str = Field(min_length=1, max_length=500)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    reason: str | None = Field(default=None, max_length=600)
+
+
 class CalculatorRejectRequest(BaseModel):
     project: str = Field(min_length=1, max_length=200)
     dataPropertyIri: str = Field(min_length=1, max_length=500)
@@ -2536,7 +2543,7 @@ class CalculatorRetireRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=600)
 
 
-# One hint per code: nine store codes (property_calculator_store.CalculatorReviewError) and three raised here.
+# One hint per code: ten store codes (property_calculator_store.CalculatorReviewError) and three raised here.
 _CALCULATOR_HINTS = {
     "CALCULATOR_NOT_FOUND": "The project has no generated calculator for this property; place the scripts first.",
     "CALCULATOR_NOT_PENDING": "The calculator was already decided; reload the review list.",
@@ -2545,6 +2552,7 @@ _CALCULATOR_HINTS = {
     "CALCULATOR_RUN_INVALID": "Pick a validation run of this project that is newer than the calculator and holds "
                               "values for the property.",
     "CALCULATOR_IN_CATALOGUE": "The calculator belongs to the company catalogue; retire the entry instead.",
+    "CALCULATOR_NOT_RETIRED": "Only a retired calculator can be regenerated here; reject a pending one instead.",
     "CATALOGUE_PROPERTY_TAKEN": "The company already has a calculator for this property; retire it first.",
     "CATALOGUE_ENTRY_NOT_FOUND": "No such catalogue entry in this company; reload the review list.",
     "CATALOGUE_RECONFIRM_OWNER_REQUIRED": "Only an owner of the project confirms a retired calculator again.",
@@ -2705,6 +2713,22 @@ def post_property_calculator_reject(payload: CalculatorRejectRequest, request: R
     return {"project": payload.project, "dataPropertyIri": payload.dataPropertyIri,
             "alreadyRejected": bool(result.get("alreadyRejected")), "regenerate": bool(result.get("regenerate")),
             "rejectedSha256s": list(result.get("rejectedSha256s") or [])}
+
+
+@router.post("/scripts/property-calculators/regenerate")
+def post_property_calculator_regenerate(payload: CalculatorRegenerateRequest, request: Request):
+    """Ask for a new calculator in place of a retired project copy (Phase 1303-24, D-68). Only sets
+    ``regenerateRequested``; the LLM is called by the next generation ("Generate check"), never here."""
+    reason = _calculator_clean(payload.reason, property_calculator_review.REASON_MAX) if payload.reason else None
+    try:
+        with driver.session() as session:
+            result = property_calculator_store.regenerate(
+                session, project=payload.project, data_property_iri=payload.dataPropertyIri, sha256=payload.sha256,
+                actor=_mapping_actor(request), reason=reason or None)
+    except property_calculator_store.CalculatorReviewError as exc:
+        raise _calculator_error(exc) from exc
+    return {"project": payload.project, "dataPropertyIri": payload.dataPropertyIri, "regenerate": True,
+            "alreadyRequested": bool(result.get("alreadyRequested"))}
 
 
 @router.post("/scripts/property-calculators/retire")

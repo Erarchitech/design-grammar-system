@@ -159,6 +159,11 @@ class _RowStore:
             regenerateRequested=regenerate, rejectedSha256Json=rejectedSha256Json)
         return [{"dataPropertyIri": dataPropertyIri}]
 
+    def _do_regenerate_row_query(self, project, dataPropertyIri, by, at, reason):
+        self.rows[(project, dataPropertyIri)].update(
+            regenerateRequested=True, reviewReason=reason, reviewedBy=by, reviewedAt=at)
+        return [{"dataPropertyIri": dataPropertyIri}]
+
     def _do_retire_copies_query(self, catalogueId, reason):
         hit = [r for r in self.rows.values() if r.get("catalogueId") == catalogueId and r.get("status") == "active"]
         for r in hit:
@@ -1150,3 +1155,74 @@ def test_the_project_classes_are_read_with_their_stored_revit_categories():
     assert store.load_class_categories(db, PROJECT) == {"Floor": ["OST_Floors"], "Wall": []}
     query, params = db.calls[0]
     assert params == {"project": PROJECT} and "$project" in query
+
+
+# --- Phase 1303-24 (D-68): regenerate a retired calculator copy ---------------------------------------------------
+
+def _retired_copy(db):
+    cid = _confirmed_in_two_projects(db)
+    store.retire(db, project=PROJECT, company=COMPANY, catalogue_id=cid, actor="owner", reason="wrong")
+    assert db.row()["status"] == "retired"
+    return cid
+
+
+def test_regenerate_marks_a_retired_copy_without_deleting_or_rejecting_it(db):
+    _retired_copy(db)
+    before = {k: v for k, v in db.row().items() if k not in ("regenerateRequested", "reviewReason", "reviewedBy",
+                                                             "reviewedAt", "reviewLock")}
+    seen = list(db.names())
+
+    result = store.regenerate(db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="carol",
+                              reason="reads walls only")
+
+    row = db.row()
+    assert result == {"regenerate": True, "alreadyRequested": False}
+    assert (row["status"], row["regenerateRequested"], row["reviewReason"], row["reviewedBy"]) == (
+        "retired", True, "reads walls only", "carol")
+    assert row["reviewedAt"]
+    assert {k: v for k, v in row.items() if k in before} == before  # sha256, source, catalogueId... untouched
+    assert row.get("rejectedSha256Json") in (None, "[]")  # a retired hash is paused, never rejected
+    assert db.names()[len(seen):] == ["REVIEW_LOCK_QUERY", "REGENERATE_ROW_QUERY"]  # nothing else was run
+
+
+def test_regenerate_twice_reports_the_request_already_made(db):
+    _retired_copy(db)
+    store.regenerate(db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="carol", reason="one")
+    first = dict(db.row())
+
+    again = store.regenerate(db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="dave", reason="two")
+
+    assert again == {"regenerate": True, "alreadyRequested": True}
+    assert db.row()["reviewedBy"] == first["reviewedBy"] and db.row()["reviewedAt"] == first["reviewedAt"]
+
+
+def test_regenerate_makes_load_blocked_report_the_request(db):
+    _retired_copy(db)
+    store.regenerate(db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="carol", reason="r")
+
+    blocked = store.load_blocked(db, PROJECT)
+
+    assert blocked[IRI]["status"] == "retired" and blocked[IRI]["regenerate"] is True
+    assert not store.is_blocked(blocked[IRI])
+
+
+def test_regenerate_not_found_and_changed(db):
+    _refused(db, "CALCULATOR_NOT_FOUND", 404, lambda: store.regenerate(
+        db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="c", reason="r"))
+    _retired_copy(db)
+    _refused(db, "CALCULATOR_CHANGED", 409, lambda: store.regenerate(
+        db, project=PROJECT, data_property_iri=IRI, sha256="f" * 64, actor="c", reason="r"))
+    assert not db.row().get("regenerateRequested")
+
+
+def test_regenerate_refuses_active_pending_and_rejected_rows(db):
+    _generated(db)  # pending, not retired
+    _refused(db, "CALCULATOR_NOT_RETIRED", 409, lambda: store.regenerate(
+        db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="c", reason="r"))
+    _confirm(db)  # active catalogue copy
+    _refused(db, "CALCULATOR_NOT_RETIRED", 409, lambda: store.regenerate(
+        db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="c", reason="r"))
+    db.row().update(status="rejected", reviewStatus="rejected")
+    _refused(db, "CALCULATOR_NOT_RETIRED", 409, lambda: store.regenerate(
+        db, project=PROJECT, data_property_iri=IRI, sha256=GOOD_SHA, actor="c", reason="r"))
+    assert not db.row().get("regenerateRequested")

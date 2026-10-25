@@ -185,6 +185,7 @@ A generated property calculator is Python that runs in other users' Rhino.Inside
 - **At resolve time.** Every shared entry and every stored generated calculator is verified again (sha256, contract) before it binds, a failing one is skipped with a warning and never reaches an assembled script, and a source whose sha256 the project rejected is never bound, through any reject and regenerate order. Only the operator-entered, cleaned meaning and unit enter the ingest vocabulary, never the LLM explanation. The graph routes lock the `CatalogueCalculator` and `PropertyCalculator` labels, protect `source` and `sha256`, and exclude claim-untagged shared nodes (plan 1303-16).
 - **Retire (D-59).** Owner role of the requesting project, member principal only; an owner of any project of the company may retire an entry. It retires the entry and its project copies in the same company, deletes nothing and keeps the history.
 - **Confirming again (D-59, D-60).** A retired calculator may be confirmed again through the confirm gate above, which makes the entry and its retired copies active again; a retired hash is paused, not rejected. Only an owner of the requesting project may do it: the confirm row stays editor-level for a first confirm, the handler passes the owner check to the store, and the store refuses a retired copy otherwise with `CATALOGUE_RECONFIRM_OWNER_REQUIRED` (403) inside its write transaction. A retired copy is never rejected or regenerated per project (`CALCULATOR_IN_CATALOGUE`, 409), so no path turns a paused hash into a rejected one.
+- **Regenerate (1303-24, D-68).** `POST /scripts/property-calculators/regenerate`: an editor, member principal only; only the project copy of a retired calculator, with the exact sha256 that was shown. It sets `regenerateRequested`, calls no LLM and deletes nothing; the next generation asks the provider once.
 - **DeGram (D-57).** The delegated principal may only list candidates; it is absent from the confirm, reject and retire rows, and the generation of calculators never decides a promotion.
 
 ## 4. Machine-Checked Blocks
@@ -327,6 +328,7 @@ GET|/scripts/property-calculators/candidates|delegated+member|query|viewer
 POST|/scripts/property-calculators/confirm|member|body|editor
 POST|/scripts/property-calculators/reject|member|body|editor
 POST|/scripts/property-calculators/retire|member|body|owner
+POST|/scripts/property-calculators/regenerate|member|body|editor
 POST|/scripts/property-check/run|delegated+member|body|editor
 POST|/scripts/property-check/status|delegated+member|body|viewer
 POST|/scripts/rule-classes|delegated+member|body|editor

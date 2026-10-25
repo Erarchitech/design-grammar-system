@@ -1256,3 +1256,28 @@ def test_the_calculator_report_line_counts_boxes_without_a_value():
         encoding="utf-8")
     assert 'n=%d nodata=%d min=%s max=%s' in shell
     assert "len(_values[_k]) - len(_col)" in shell
+
+
+def test_a_retired_copy_with_a_regenerate_request_calls_the_generator_exactly_once(catalogue):
+    """1303-24 (D-68): the Mapping panel's regenerate action sets regenerateRequested on the retired copy; the next
+    generation asks the LLM once and binds the answer (before, the flag was written by hand in Neo4j)."""
+    from property_calculator_llm import finalize
+
+    calls = []
+
+    def generator(dp, rules, box):
+        calls.append(dp["iri"])
+        name, source = finalize(GOOD_FUNCTION)
+        return {"status": "ok", "function": name, "source": source, "provider": "fake", "model": "m"}
+
+    rules = ps.rules_from_rows(_rows({"R_STR_OPENING_HEIGHT_V": "hasOpeningHeightMm"}))
+    iri = rules[0]["dataProperties"][0]["iri"]
+    blocked = {iri: {"status": "retired", "sha256": "e" * 64, "sha256s": [], "reason": "wrong", "by": "owner",
+                     "regenerate": False}}
+    held = ps.resolve(rules, catalogue, generator=generator, blocked=blocked)
+    assert calls == [] and held["resolved"] == [] and "retired" in held["unsupported"][0]["reason"]
+
+    blocked[iri]["regenerate"] = True
+    out = ps.resolve(rules, catalogue, generator=generator, blocked=blocked)
+    assert calls == [iri]
+    assert out["resolved"][0]["origin"] == "generated" and out["resolved"][0]["reviewStatus"] == "pending"
