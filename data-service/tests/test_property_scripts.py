@@ -1374,3 +1374,23 @@ def test_host_floors_finds_the_slab_an_opening_box_sits_in(catalogue):
         ((4, "OST_Floors"), {"lo": (0, 0, 20), "hi": (50, 50, 21)}),
     ])
     assert [e.Id.IntegerValue for e in ctx.host_floors(by_id[1])] == [2]
+
+
+def test_the_highlighter_writes_no_parameter_into_a_grouped_box(catalogue):
+    """Live 2026-10-25 16:58: writing DG_Violation into a box that belongs to a Revit group opened the modal warning
+    'Группа изменена вне режима редактирования групп', which held the solution (and the SendValid one-shot) until it
+    was closed by hand. A grouped box is only coloured in the view (a view setting, not a change of the group)."""
+    import ast
+    import types
+
+    out = ps.assemble(PROJECT, ps.resolve(ps.rules_from_rows(_rows()), catalogue), catalogue)
+    src = out["highlighter"]["source"]
+    tree = ast.parse(src)
+    ns: dict = {}
+    exec(compile(ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "in_group"],
+                            type_ignores=[]), "<highlighter>", "exec"), ns)
+    invalid = types.SimpleNamespace(IntegerValue=-1)
+    grouped = types.SimpleNamespace(GroupId=types.SimpleNamespace(IntegerValue=4711))
+    loose = types.SimpleNamespace(GroupId=types.SimpleNamespace(IntegerValue=-1))
+    assert ns["in_group"](grouped, invalid) is True and ns["in_group"](loose, invalid) is False
+    assert src.count("in_group(e, DB.ElementId.InvalidElementId)") == 2  # paint and clear

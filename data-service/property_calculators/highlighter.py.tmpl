@@ -67,6 +67,14 @@ def verdicts(rule_ids, count, valid_branches, status_branches):
     return out
 
 
+def in_group(element, invalid_id):
+    """True for an element that belongs to a Revit group. Writing a parameter into it opens the modal warning "group
+    changed outside group edit mode", which held the solution until closed by hand (live 2026-10-25); such an element
+    is only coloured in the view."""
+    group_id = getattr(element, "GroupId", None)
+    return group_id is not None and group_id.IntegerValue != invalid_id.IntegerValue
+
+
 def solid_fill_id(doc):
     for fp in DB.FilteredElementCollector(doc).OfClass(DB.FillPatternElement):
         if fp.GetFillPattern().IsSolidFill:
@@ -158,7 +166,7 @@ else:
                     for e in elements:
                         if e is not None:
                             view.SetElementOverrides(e.Id, DB.OverrideGraphicSettings())
-                            p = e.LookupParameter(PARAM_NAME)
+                            p = None if in_group(e, DB.ElementId.InvalidElementId) else e.LookupParameter(PARAM_NAME)
                             if p is not None and not p.IsReadOnly:
                                 p.Set("")
                     Report = ["cleared %d boxes in view %s" % (len(elements), view.Name)]
@@ -170,15 +178,21 @@ else:
                     red = override(RED, fill_id)
                     green = override(GREEN, fill_id)
                     grey = override(GREY, fill_id)
+                    grouped = 0
                     for i, e in enumerate(elements):
                         if e is None:
                             Report.append("missing element %s" % uids[i])
                             continue
                         broken = broken_by[i]
                         view.SetElementOverrides(e.Id, red if broken else (grey if open_by[i] else green))
+                        if in_group(e, DB.ElementId.InvalidElementId):
+                            grouped += 1
+                            continue
                         p = e.LookupParameter(PARAM_NAME)
                         if p is not None and not p.IsReadOnly:
                             p.Set(";".join(broken))
+                    if grouped:
+                        Report.append("%d boxes in Revit groups: coloured only, %s not written" % (grouped, PARAM_NAME))
                     Report.insert(0, "view %s: %d boxes, %d with violations, %d without a verdict, %d pass" % (
                         view.Name, len(elements), failed, no_verdict, len(elements) - failed - no_verdict))
                 t.Commit()
