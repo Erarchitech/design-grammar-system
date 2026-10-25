@@ -96,16 +96,16 @@ def test_passed_only_rolls_up_to_passed(rows_from):
 def test_unrecognized_status_participates_rather_than_vanishing(rows_from, caplog):
     """A status string outside the legacy passed/failed pair (e.g. a newer producer
     emitting `no_population`) must not be silently dropped -- it participates in the
-    rollup and the object is reported (in the `failed` bucket, since only `passed`
-    maps to the legacy-boolean-true bucket)."""
+    rollup and the object is reported. Phase 1303-25 (D-71): a non-verdict is reported in the
+    `unknown` bucket, not as a failure."""
     rows_from([
         _row("OBJ_1", "no_population"),
     ])
 
     result = app.get_validation_entity_sets("P", "RUN_1")
 
-    assert [e["dgEntityId"] for e in result["failed"]] == ["OBJ_1"]
-    assert result["passed"] == []
+    assert [e["dgEntityId"] for e in result["unknown"]] == ["OBJ_1"]
+    assert result["passed"] == [] and result["failed"] == []
 
 
 def test_truly_unrecognized_status_string_maps_to_unknown_and_is_logged(rows_from, caplog):
@@ -122,7 +122,7 @@ def test_truly_unrecognized_status_string_maps_to_unknown_and_is_logged(rows_fro
     with caplog.at_level(logging.WARNING):
         result = app.get_validation_entity_sets("P", "RUN_1")
 
-    assert [e["dgEntityId"] for e in result["failed"]] == ["OBJ_1"]
+    assert [e["dgEntityId"] for e in result["unknown"]] == ["OBJ_1"]
     assert any(
         "unrecognized" in record.message.lower() and "OBJ_1" in record.message
         for record in caplog.records
@@ -178,3 +178,29 @@ def test_rows_missing_dg_entity_id_are_skipped(rows_from):
 
     assert [e["dgEntityId"] for e in result["passed"]] == ["OBJ_1"]
     assert result["failed"] == []
+
+
+def test_an_object_without_data_is_not_reported_as_failed(rows_from):
+    """Phase 1303-25 (D-71), live 2026-10-25: 313 boxes without data were unknown in the evidence and listed as
+    failed in the Model Viewer. Non-verdicts get their own `unknown` set; failed and error stay `failed`."""
+    rows_from([
+        _row("OBJ_U", "unknown"),
+        _row("OBJ_S", "unsupported"),
+        _row("OBJ_F", "failed"),
+        _row("OBJ_E", "error"),
+        _row("OBJ_P", "passed"),
+    ])
+
+    result = app.get_validation_entity_sets("P", "RUN_1")
+
+    assert sorted(e["dgEntityId"] for e in result["failed"]) == ["OBJ_E", "OBJ_F"]
+    assert sorted(e["dgEntityId"] for e in result["unknown"]) == ["OBJ_S", "OBJ_U"]
+    assert [e["dgEntityId"] for e in result["passed"]] == ["OBJ_P"]
+
+
+def test_a_failure_on_one_rule_outranks_no_data_on_another(rows_from):
+    rows_from([_row("OBJ_1", "unknown"), _row("OBJ_1", "failed")])
+
+    result = app.get_validation_entity_sets("P", "RUN_1")
+
+    assert [e["dgEntityId"] for e in result["failed"]] == ["OBJ_1"] and result["unknown"] == []

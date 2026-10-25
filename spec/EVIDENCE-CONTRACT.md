@@ -367,6 +367,20 @@ authoritative verdict once a canonical status is available for the same evaluati
 legacy boolean — a legacy `false` is compatible with seven of the eight canonical statuses, and
 guessing which one collapses exactly the distinction this contract exists to preserve.
 
+### 5.0 Presentation of non-verdicts (Phase 1303-25, D-71)
+
+A display surface never shows a non-verdict as a violation. The legacy boolean `false` of §5 cannot tell
+`failed` from `unknown`, so surfaces that colour or list objects read the canonical status instead:
+
+- VALIDATOR's `Status` output: the canonical status wire name per ObjState (index-matched to `ValidStatus`;
+  empty string for an ObjState outside the rule population). `ValidStatus` itself is unchanged.
+- The Revit highlighter of the property check: red for `failed`/`error`, grey for any other non-`passed`
+  status ("no verdict", e.g. a property calculator found nothing to measure: D-05 row "binding resolution
+  attempted and unresolvable"), green for `passed`. Without `Status` (an older DG.gha) it keeps the
+  `ValidStatus` rule.
+- `/validation/view` `objectSets`: `passed`, `failed` (rolled-up `failed` or `error`) and `unknown` (every
+  other rolled-up status); the Model Viewer draws the `unknown` set in a neutral colour and lists it apart.
+
 ### 5.1 Canonical per-object verdict source (Phase 1202 plan 05, D-10, ALGN12-10)
 
 The envelope's per-`(rule, object)` **`rows`** (§3/§4 above) are the **canonical per-object verdict

@@ -4,10 +4,12 @@
 #   rules:   $rule_ids
 #
 # Inputs:  Run (bool), Clear (bool), UniqueIds (list, from the calculator), RuleIds (list, from the calculator),
-#          ValidStatus (tree, from VALIDATOR: one branch per rule in RuleIds order, one item per box)
+#          ValidStatus (tree, from VALIDATOR: one branch per rule in RuleIds order, one item per box),
+#          Status (tree, from VALIDATOR: the canonical status per box, same shape; optional)
 # Outputs: Report, Violations (one line per violating box)
-# Writes, in one undoable transaction in the active view: red = at least one rule violated, green = all rules pass,
-# and the instance parameter DG_Violation (violated rule ids, ';'-joined; empty when the box passes).
+# Writes, in one undoable transaction in the active view: red = at least one rule violated, grey = no rule violated but
+# at least one without a verdict (no data: unknown), green = all rules pass, and the instance parameter DG_Violation
+# (violated rule ids, ';'-joined; empty when no rule is violated).
 import os
 import tempfile
 
@@ -21,6 +23,7 @@ PARAM_NAME = "DG_Violation"
 PARAM_GUID = "5f0c9b1e-3d2a-4c7e-9a61-1d2b3c4d5e03"
 RED = DB.Color(220, 38, 38)
 GREEN = DB.Color(22, 163, 74)
+GREY = DB.Color(148, 163, 184)
 SHARED_FILE = (
     "# This is a Revit shared parameter file.\n# Do not edit manually.\n"
     "*META\tVERSION\tMINVERSION\nMETA\t2\t1\n*GROUP\tID\tNAME\nGROUP\t1\tDG\n"
@@ -32,6 +35,36 @@ SHARED_FILE = (
 def branches_in_rule_order(tree):
     paths = sorted(list(tree.Paths), key=lambda p: tuple(p.Indices))
     return [list(tree.Branch(p)) for p in paths]
+
+
+def verdicts(rule_ids, count, valid_branches, status_branches):
+    """[(violated rule ids, rule ids without a verdict)] per box.
+
+    Phase 1303-25 (D-71), live 2026-10-25: a box without data is unknown in the evidence but false in ValidStatus, so
+    the legacy list painted 313 such boxes as violations. With VALIDATOR's Status (one branch per rule) a box violates a
+    rule only for failed or error; any other status but passed is "no verdict". Without Status (an older DG.gha) the
+    ValidStatus rule applies: false = violated."""
+    use_status = len(status_branches) == len(rule_ids) and any(len(b) for b in status_branches)
+    if not use_status and len(valid_branches) != len(rule_ids):
+        raise ValueError("ValidStatus has %d branches but %d rules" % (len(valid_branches), len(rule_ids)))
+    out = []
+    for i in range(count):
+        broken = []
+        open_ = []
+        for k, rule in enumerate(rule_ids):
+            if use_status:
+                branch = status_branches[k]
+                status = str(branch[i]) if i < len(branch) and branch[i] is not None else ""
+                if status in ("failed", "error"):
+                    broken.append(rule)
+                elif status and status != "passed":
+                    open_.append(rule)
+            else:
+                branch = valid_branches[k]
+                if i < len(branch) and not branch[i]:
+                    broken.append(rule)
+        out.append((broken, open_))
+    return out
 
 
 def solid_fill_id(doc):
@@ -93,24 +126,28 @@ else:
 
         digest_key = "DG.Highlighter.LastDigest"
         broken_by = []
+        open_by = []
         if not Clear:
-            branches = branches_in_rule_order(ValidStatus)
-            if len(branches) != len(rule_ids):
-                raise ValueError("ValidStatus has %d branches but %d rules" % (len(branches), len(rule_ids)))
-            for i, e in enumerate(elements):
-                broken_by.append([rule_ids[k] for k, branch in enumerate(branches) if i < len(branch) and not branch[i]])
+            status_branches = branches_in_rule_order(Status) if Status is not None else []
+            for broken, open_ in verdicts(rule_ids, len(elements), branches_in_rule_order(ValidStatus), status_branches):
+                broken_by.append(broken)
+                open_by.append(open_)
         digest = "%s|%s|%s" % (doc.Title, view.Id.IntegerValue, "clear" if Clear else ";".join(
-            "%s=%s" % (uids[i], ",".join(broken_by[i])) for i in range(len(uids))))
+            "%s=%s/%s" % (uids[i], ",".join(broken_by[i]), ",".join(open_by[i])) for i in range(len(uids))))
         unchanged = System.AppDomain.CurrentDomain.GetData(digest_key) == digest
         failed = 0
+        no_verdict = 0
         for i, e in enumerate(elements):
             if Clear or e is None:
                 continue
             if broken_by[i]:
                 failed += 1
                 Violations.append("%s [%d]: %s" % (e.Name, e.Id.IntegerValue, ", ".join(broken_by[i])))
+            elif open_by[i]:
+                no_verdict += 1
         if unchanged:
-            Report = ["unchanged since the last paint of view %s: nothing written (%d with violations)" % (view.Name, failed)]
+            Report = ["unchanged since the last paint of view %s: nothing written (%d with violations, %d without a verdict)"
+                      % (view.Name, failed, no_verdict)]
         else:
             # No "with": inside Rhino.Inside.Revit pythonnet does not expose Transaction as a context manager
             # ("__enter__", live 2026-10-20). Explicit Start/Commit, RollBack on any error.
@@ -132,17 +169,18 @@ else:
                     fill_id = solid_fill_id(doc)
                     red = override(RED, fill_id)
                     green = override(GREEN, fill_id)
+                    grey = override(GREY, fill_id)
                     for i, e in enumerate(elements):
                         if e is None:
                             Report.append("missing element %s" % uids[i])
                             continue
                         broken = broken_by[i]
-                        view.SetElementOverrides(e.Id, red if broken else green)
+                        view.SetElementOverrides(e.Id, red if broken else (grey if open_by[i] else green))
                         p = e.LookupParameter(PARAM_NAME)
                         if p is not None and not p.IsReadOnly:
                             p.Set(";".join(broken))
-                    Report.insert(0, "view %s: %d boxes, %d with violations, %d pass" % (
-                        view.Name, len(elements), failed, len(elements) - failed))
+                    Report.insert(0, "view %s: %d boxes, %d with violations, %d without a verdict, %d pass" % (
+                        view.Name, len(elements), failed, no_verdict, len(elements) - failed - no_verdict))
                 t.Commit()
                 System.AppDomain.CurrentDomain.SetData(digest_key, digest)
             except Exception:

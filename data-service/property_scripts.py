@@ -685,7 +685,9 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
                    {"name": "Clear", "access": "item", "hint": "bool"},
                    {"name": "UniqueIds", "access": "list", "hint": "str"},
                    {"name": "RuleIds", "access": "list", "hint": "str"},
-                   {"name": "ValidStatus", "access": "tree", "hint": "bool"}],
+                   {"name": "ValidStatus", "access": "tree", "hint": "bool"},
+                   # Phase 1303-25 (D-71): the canonical status, so a box without data is not painted as violating
+                   {"name": "Status", "access": "tree", "hint": "str"}],
         "outputs": ["Report", "Violations"],
     }
     for script in (calculator, highlighter):
@@ -742,6 +744,9 @@ def placement_plan(project: str, property_count: int) -> dict:
         ["calculator.UniqueIds", "highlighter.UniqueIds"],
         ["calculator.RuleIds", "highlighter.RuleIds"],
         ["validator.ValidStatus", "highlighter.ValidStatus"],
+        # an older DG.gha has no VALIDATOR Status: the listener warns "port not found" and the highlighter keeps the
+        # ValidStatus rule
+        ["validator.Status", "highlighter.Status"],
     ]
     for k in range(1, property_count + 1):
         key = f"prop{k}"

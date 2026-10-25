@@ -1118,10 +1118,10 @@ def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = 
     This reconciles the legacy failed-wins dedup this function used to run, which put
     `failed` ahead of `error`, the opposite of the shipped precedence.
 
-    Legacy presentation bucketing: the rolled-up canonical status is mapped onto this
-    function's existing {"failed": [...], "passed": [...]} return shape using
-    evidence_contract.to_legacy_boolean, the sole sanctioned canonical->boolean
-    direction -- `passed` buckets to "passed", every other status buckets to "failed".
+    Presentation bucketing: `passed` (evidence_contract.to_legacy_boolean, the sole
+    sanctioned canonical->boolean direction) buckets to "passed", `failed` and `error` to
+    "failed", every other status (a non-verdict such as `unknown`: no data) to "unknown"
+    (Phase 1303-25, D-71; before it, non-verdicts were listed as failed).
     Per D-10 this whole function is legacy/non-authoritative: the canonical per-object
     verdict source is the evidence envelope, read in C# via
     IValidGraphRepository.GetPerObjectVerdictsAsync. This function's only remaining job
@@ -1162,8 +1162,12 @@ def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = 
             status = evidence_contract.CanonicalStatus.UNKNOWN
         group["statuses"].add(status)
 
+    # Phase 1303-25 (D-71), live 2026-10-25: 313 boxes without data (unknown) were listed as failed in the Model
+    # Viewer. A failure is failed or error; every other status but passed is a non-verdict and gets its own set.
+    failure = {evidence_contract.CanonicalStatus.FAILED, evidence_contract.CanonicalStatus.ERROR}
     failed: list[dict[str, str]] = []
     passed: list[dict[str, str]] = []
+    unknown: list[dict[str, str]] = []
     for dg_entity_id, group in groups.items():
         entry = {"dgEntityId": dg_entity_id, "displayName": group["displayName"]}
         rolled_up = next(
@@ -1172,10 +1176,12 @@ def get_validation_entity_sets(project: str, run_id: str, rule_id: str | None = 
         )
         if evidence_contract.to_legacy_boolean(rolled_up):
             passed.append(entry)
-        else:
+        elif rolled_up in failure:
             failed.append(entry)
+        else:
+            unknown.append(entry)
 
-    return {"failed": failed, "passed": passed}
+    return {"failed": failed, "passed": passed, "unknown": unknown}
 
 
 def build_rules_summary(request: ValidationPublishRequest) -> list[dict[str, Any]]:

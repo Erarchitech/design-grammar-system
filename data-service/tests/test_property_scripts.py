@@ -1281,3 +1281,39 @@ def test_a_retired_copy_with_a_regenerate_request_calls_the_generator_exactly_on
     out = ps.resolve(rules, catalogue, generator=generator, blocked=blocked)
     assert calls == [iri]
     assert out["resolved"][0]["origin"] == "generated" and out["resolved"][0]["reviewStatus"] == "pending"
+
+
+def _highlighter_verdicts(catalogue):
+    """The pure verdict function of an assembled highlighter, without Revit."""
+    import ast
+
+    out = ps.assemble(PROJECT, ps.resolve(ps.rules_from_rows(_rows()), catalogue), catalogue)
+    tree = ast.parse(out["highlighter"]["source"])
+    keep = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in ("verdicts", "_text")]
+    ns: dict = {}
+    exec(compile(ast.Module(body=keep, type_ignores=[]), "<highlighter>", "exec"), ns)
+    return out, ns["verdicts"]
+
+
+def test_the_highlighter_does_not_paint_a_box_without_a_verdict_as_violating(catalogue):
+    """Phase 1303-25 (D-71), live 2026-10-25: 313 boxes without data were unknown in the evidence but false in
+    ValidStatus; with Paint on all of them would have been painted red."""
+    _, verdicts = _highlighter_verdicts(catalogue)
+    rules = ["R1", "R2"]
+    valid = [[True, False, False], [False, False, True]]
+    status = [["passed", "failed", "unknown"], ["unknown", "error", "passed"]]
+    assert verdicts(rules, 3, valid, status) == [([], ["R2"]), (["R1", "R2"], []), ([], ["R1"])]
+
+
+def test_the_highlighter_keeps_the_validstatus_rule_without_a_status_input(catalogue):
+    """An older DG.gha has no VALIDATOR Status output: the highlighter behaves as before."""
+    _, verdicts = _highlighter_verdicts(catalogue)
+    assert verdicts(["R1"], 2, [[True, False]], []) == [([], []), (["R1"], [])]
+    with pytest.raises(ValueError):
+        verdicts(["R1", "R2"], 2, [[True, False]], [])
+
+
+def test_the_placement_wires_validator_status_into_the_highlighter(catalogue):
+    out, _ = _highlighter_verdicts(catalogue)
+    assert ["validator.Status", "highlighter.Status"] in out["placement"]["wires"]
+    assert {"name": "Status", "access": "tree", "hint": "str"} in out["highlighter"]["inputs"]
