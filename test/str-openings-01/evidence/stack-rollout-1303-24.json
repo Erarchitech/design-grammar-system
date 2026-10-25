@@ -1,0 +1,67 @@
+{
+  "plan": "1303-24",
+  "task": "6 (controller): rollout from the committed sha, DG.gha build and install script; the DG.gha install is an owner step, not performed",
+  "rolledOutAt": "2026-10-25",
+  "commit": "23ed7209edc8b8dcf5377d5b91aba0a8a6ca21aa",
+  "commit7": "23ed720",
+  "releaseFolder": "D:\\dgb\\mapping-release-23ed720",
+  "exportedWith": "git archive 23ed720 data-service ui-v2 DG docker-compose.yml cypher_template.txt (committed state only; a parallel session works in the same worktree and its uncommitted files are not in the images)",
+  "gate": {
+    "dataServicePytest": "4 failed, 6533 passed, 35 skipped, 8 deselected, 25 errors (415 s). The 4 failures are the 1303-18/23 baseline (tests/test_dg_context.py: test_post_assemble_returns_200_for_valid_type, test_get_debug_matches_post_assemble_body, test_repeated_assemble_calls_are_byte_identical, test_get_debug_and_post_assemble_are_equal_for_graph_query); the 25 errors are failed DNS resolution of neo4j:7687 (test_cg_structure_checks 20, test_computgraph_consult 5). No new failure name.",
+    "de01Pytest": "1 failed, 173 passed: only test_de01_runner_against_golden_fixture_has_zero_silent_disagreements (baseline).",
+    "dgTests": "Release net9.0: 5 failed, 822 passed (827). The same 5 environmental failures as the baseline (FrameAblatedCorpusEmitterTests golden files: worktree .git is a file; DesignStateValidationFlowTests x4: live Neo4j refuses the hard-coded test password).",
+    "uiTest": "381 tests, 381 pass (370 baseline + 11 new)",
+    "uiBuild": "exit 0"
+  },
+  "imageIds": {
+    "dataService": "sha256:7a96989532aa5349ade1c8a51a85f04872c04f1340a2338728f52586402b68ca",
+    "ui": "sha256:8c6226feb679389f8f0b706b91e3dc3fe4146ca95405e315b67d146c414024de",
+    "previousDataService": "sha256:af1b1deb422eccdc51473ba28264bc2d6f0b9b562428f0c4517e82f0bd056f75",
+    "previousUi": "sha256:6861c7c00dbc19e92d7c6873d9ea921f4ea86308c7aef3be87a8419c5d3577be"
+  },
+  "buildCommands": [
+    "docker build --no-cache -t dg-mapping-data-service:23ed720 D:\\dgb\\mapping-release-23ed720\\data-service",
+    "docker build --no-cache -t dg-mapping-ui:23ed720 D:\\dgb\\mapping-release-23ed720\\ui-v2"
+  ],
+  "runningImages": {
+    "dataService": "dg-mapping-data-service:23ed720",
+    "ui": "dg-mapping-ui:23ed720",
+    "dgReasoner": "dg-mapping-dg-reasoner:e600716 (unchanged, not recreated)"
+  },
+  "composeOverride": "D:\\dgb\\mapping-release-23ed720\\compose.mapping-images.yml",
+  "rolloutCommand": "docker compose -p design-grammar-system -f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\docker-compose.yml -f D:\\dgb\\mapping-release-23ed720\\compose.mapping-images.yml up -d --no-build --no-deps data-service design-grammars",
+  "rollback": {
+    "overrideFile": "D:\\dgb\\mapping-release-23ed720\\compose.mapping-rollback.yml",
+    "command": "docker compose -p design-grammar-system -f C:\\Users\\Admin\\source\\repos\\design-grammar-system\\docker-compose.yml -f D:\\dgb\\mapping-release-23ed720\\compose.mapping-rollback.yml up -d --no-build --no-deps data-service design-grammars",
+    "returnsTo": "f0e27a1 (images dg-mapping-data-service:f0e27a1 and dg-mapping-ui:f0e27a1 are kept)",
+    "furtherBack": "D:\\dgb\\mapping-release-f0e27a1\\compose.mapping-rollback.yml (2a61d07)",
+    "configValidated": true
+  },
+  "probes": {
+    "backendRoot": 200,
+    "uiRoot": 200,
+    "anonymousCandidates": 401,
+    "anonymousRegenerate": 401,
+    "servedCodeMatchesArchive": "app.py, property_calculator_llm.py, property_calculator_store.py, route_policy.py, property_scripts.py equal after line-ending normalization",
+    "regenerateRouteLoaded": "route_policy POST /scripts/property-calculators/regenerate min_role editor; app._start_check present, _run_check_retrying_busy absent",
+    "uiBundleHasRegenerateString": true
+  },
+  "dgGha": {
+    "builtFrom": "23ed720 via the git archive folder, dotnet build DG\\DG.sln -c Release --no-incremental -p:RhinoInstallDir=\"C:\\Program Files\\Rhino 8\" (0 errors, 38 warnings)",
+    "artifactDir": "D:\\dgb\\mapping-release-23ed720\\DG\\src\\DG.Grasshopper\\bin\\Release\\net48",
+    "dgGhaSha256": "96796214bc5594afb7eb5f41301b4ffe1934267e2aac5ce8d550599947c0bb9a",
+    "dgCoreDllSha256": "20c29297b26a2a55a808dc14aa38804e4e54e92551b38abcd431b55b9aa357fd",
+    "installedBefore": {
+      "dgGhaSha256": "02788a2218c4e5772d3aa620611033a2e6bb14b075e84049e5f24a1922b5123b",
+      "dgCoreDllSha256": "09af8d0d9c05d92deedf2eb33662a17389fe4676aecfcf2bc66829d1e9df7057"
+    },
+    "installed": false,
+    "backupOfInstalledPlugin": "D:\\dgb\\plugin-backup\\DG-20261025-pre-23ed720 (copy of %APPDATA%\\Grasshopper\\Libraries\\DG, 18 files)",
+    "installScript": "D:\\dgb\\mapping-release-23ed720\\install-dg-gha.ps1 (not executed; refuses to run while Rhino or Revit is running, checks the backup, copies, verifies the hash of DG.gha and DG.Core.dll)"
+  },
+  "notes": [
+    "No credential, cookie or token is stored here.",
+    "ValidationRun nodes and Speckle versions of 2026-10-25 (50 each) were counted, not deleted: the owner chose to keep them for now.",
+    "Behaviour change for the hand workflow: SendValid switches itself off at the end of the solution that finds it on (SendValidGuard)."
+  ]
+}
