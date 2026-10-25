@@ -77,6 +77,7 @@ CONTEXT_API = """Available inside calc_gen (nothing else exists):
 - math, TOL_FT (1 mm in feet), FEET_TO_MM (304.8).
 - params: dict, empty unless you need none.
 Return lengths in the unit the property name states (Mm = millimetres, M = metres); counts as int.
+Write no import statements: math, DB, List, TOL_FT, FEET_TO_MM, element_solids and bbox_corners are already available.
 When the elements a distance, clearance or size is measured against do not exist, return None (no data), never 0:
 0 would read as a measured value and violate the rule. Counts return 0 when nothing is found."""
 

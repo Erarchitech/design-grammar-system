@@ -74,8 +74,10 @@ import logging  # noqa: E402
 # [{'ruleId': 'R1', 'text': 't', 'swrl': 's'}], 'Beam') taken BEFORE 1303-16 changed build_prompt; re-pinned by
 # 1303-24 (D-66), which added two sentences to CONTEXT_API (return None for "nothing found", counts return 0) and
 # changed nothing else (was length 1419, sha256 0c22e77a...).
-PROMPT_BEFORE_SHA256 = "6dad6ef0d7753d38ed8c22e33745ccab14d627c568ec9eb47a32d594bbc86f5d"
-PROMPT_BEFORE_LENGTH = 1627
+PROMPT_BEFORE_SHA256 = "61afb4e26eefbc91e6d0feec5ccf563088bd19ae8c09f06e88cc6b51cf72762e"
+PROMPT_BEFORE_LENGTH = 1746
+# (1303-24, second re-pin after two live generations answered with `from ... import`: one more CONTEXT_API line;
+# the first 1303-24 pin was length 1627, sha256 6dad6ef0...)
 
 GEN_LOGGER = "dg.property_calculator_generation"
 
@@ -302,3 +304,10 @@ def test_the_contract_text_tells_the_model_to_return_none_for_nothing_found():
     assert "return None" in pcl.SYSTEM + pcl.CONTEXT_API
     assert "never return 0" in pcl.CONTEXT_API.lower() or "never 0" in pcl.CONTEXT_API.lower()
     assert "count" in pcl.CONTEXT_API.lower()
+
+
+def test_the_contract_text_forbids_imports_and_names_what_is_already_available():
+    # live 2026-10-25: two generations in a row answered with `from ... import`, which validate_function refuses
+    text = pcl.CONTEXT_API.lower()
+    assert "no import" in text and "already available" in text
+    assert "math" in pcl.CONTEXT_API and "DB" in pcl.CONTEXT_API
