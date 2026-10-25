@@ -463,8 +463,8 @@ $output_assignments
         Report = ["document: %s" % _doc.Title, "boxes: %d" % len(_boxes)]
         for _k, _prop in enumerate(PROPERTIES):
             _col = [v for v in _values[_k] if v is not None]
-            Report.append("%s (%s): n=%d min=%s max=%s" % (
-                _prop["dataPropertyLabel"], _prop["ruleId"], len(_col),
+            Report.append("%s (%s): n=%d nodata=%d min=%s max=%s" % (
+                _prop["dataPropertyLabel"], _prop["ruleId"], len(_col), len(_values[_k]) - len(_col),
                 min(_col) if _col else "-", max(_col) if _col else "-"))
         Report.extend(_errors)
         Report.extend(inventory(_doc, _ctx))

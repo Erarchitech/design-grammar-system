@@ -71,9 +71,11 @@ import importlib  # noqa: E402
 import logging  # noqa: E402
 
 # sha256 and length of build_prompt({'label': 'hasHeightMm', 'iri': 'dg:hasHeightMm'},
-# [{'ruleId': 'R1', 'text': 't', 'swrl': 's'}], 'Beam') taken BEFORE 1303-16 changed build_prompt.
-PROMPT_BEFORE_SHA256 = "0c22e77a4b18b6ea043cba85974a3354456b8fd00645b82775c494b8e7d0180e"
-PROMPT_BEFORE_LENGTH = 1419
+# [{'ruleId': 'R1', 'text': 't', 'swrl': 's'}], 'Beam') taken BEFORE 1303-16 changed build_prompt; re-pinned by
+# 1303-24 (D-66), which added two sentences to CONTEXT_API (return None for "nothing found", counts return 0) and
+# changed nothing else (was length 1419, sha256 0c22e77a...).
+PROMPT_BEFORE_SHA256 = "6dad6ef0d7753d38ed8c22e33745ccab14d627c568ec9eb47a32d594bbc86f5d"
+PROMPT_BEFORE_LENGTH = 1627
 
 GEN_LOGGER = "dg.property_calculator_generation"
 
@@ -223,3 +225,80 @@ def test_participants_come_from_the_request_and_the_rejection_reason_still_follo
     assert "Participants:\n- Slab: hostedBy Opening" in seen[0]
     assert seen[0].index("Participants:") < seen[0].index("wrong slab")
     assert "Participants" not in seen[1]
+
+
+# --- Phase 1303-24 (D-66): "nothing found" is no data, never 0 --------------------------------------------------
+
+NOT_FOUND_ZERO = (
+    "def calc_gen(ctx, box, params):\n"
+    "    min_clear = None\n"
+    "    for e in ctx.intersecting(box, ['OST_Walls']):\n"
+    "        min_clear = 1.0\n"
+    "    if min_clear is None:\n"
+    "        return {zero}\n"
+    "    return min_clear\n"
+)
+
+
+@pytest.mark.parametrize("zero", ["0.0", "0", "-0.0"])
+def test_a_zero_returned_from_the_nothing_found_branch_is_refused(zero):
+    with pytest.raises(pcl.GeneratedCalculatorError) as err:
+        pcl.validate_function(NOT_FOUND_ZERO.format(zero=zero))
+    assert "return None" in str(err.value)
+
+
+def test_a_zero_in_a_nested_statement_of_the_nothing_found_branch_is_refused():
+    source = (
+        "def calc_gen(ctx, box, params):\n"
+        "    best = None\n"
+        "    if best is None:\n"
+        "        if params:\n"
+        "            return 1.0\n"
+        "        for e in ctx.intersecting(box, ['OST_Walls']):\n"
+        "            return 0.0\n"
+        "    return best\n"
+    )
+    with pytest.raises(pcl.GeneratedCalculatorError):
+        pcl.validate_function(source)
+
+
+def test_none_for_nothing_found_is_accepted():
+    name, source = pcl.finalize(NOT_FOUND_ZERO.format(zero="None"))
+    assert "return None" in source and pcl.verify_stored_source(source, name, hashlib.sha256(source.encode()).hexdigest()) is None
+
+
+def test_counts_may_return_zero_when_nothing_is_found():
+    count = (
+        "def calc_gen(ctx, box, params):\n"
+        "    hits = ctx.intersecting(box, ['OST_StructuralFraming'])\n"
+        "    if not hits:\n"
+        "        return 0\n"
+        "    if len(hits) == 0:\n"
+        "        return 0\n"
+        "    return len(hits)\n"
+    )
+    other = (
+        "def calc_gen(ctx, box, params):\n"
+        "    x = ctx.wall_frame(box)\n"
+        "    if x is not None:\n"
+        "        return 0.0\n"
+        "    return None\n"
+    )
+    assert pcl.validate_function(count) and pcl.validate_function(other)
+
+
+def test_a_stored_source_with_the_zero_fallback_fails_verification_with_a_reason():
+    # the source the 2026-10-25 live run stored: valid before D-66, so it is rebuilt the way finalize used to
+    old = NOT_FOUND_ZERO.format(zero="0.0")
+    import ast
+    function = "calc_gen_" + hashlib.sha256(ast.unparse(ast.parse(old).body[0]).strip().replace(
+        "def calc_gen(", "def calc_gen(").encode()).hexdigest()[:10]
+    stored = ast.unparse(ast.parse(old).body[0]).replace("def calc_gen(", f"def {function}(", 1) + "\n"
+    problem = pcl.verify_stored_source(stored, function, hashlib.sha256(stored.encode()).hexdigest())
+    assert problem and "source fails the contract" in problem and "return None" in problem
+
+
+def test_the_contract_text_tells_the_model_to_return_none_for_nothing_found():
+    assert "return None" in pcl.SYSTEM + pcl.CONTEXT_API
+    assert "never return 0" in pcl.CONTEXT_API.lower() or "never 0" in pcl.CONTEXT_API.lower()
+    assert "count" in pcl.CONTEXT_API.lower()

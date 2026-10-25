@@ -71,7 +71,7 @@ distinct situations and must never be reported as `failed`.
 | Rule evaluated, population non-empty, constraint violated | `failed` |
 | Rule evaluated, **population empty** (zero bindings) | `no_population` |
 | Rule in scope but **never evaluated** (no result produced) | `not_evaluated` |
-| Binding resolution **attempted and unresolvable** | `unknown` |
+| Binding resolution **attempted and unresolvable** (for example a property calculator found no element to measure against and returned no value) | `unknown` |
 | Construct outside the implemented evaluator subset | `unsupported` |
 | Evaluation attempted, result not determinable | `indeterminate` |
 | Evaluation raised / infrastructure fault | `error` |

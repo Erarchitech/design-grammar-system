@@ -76,7 +76,9 @@ CONTEXT_API = """Available inside calc_gen (nothing else exists):
 - DB: Autodesk.Revit.DB (read-only use: FilteredElementCollector, BuiltInCategory, XYZ, Outline, filters).
 - math, TOL_FT (1 mm in feet), FEET_TO_MM (304.8).
 - params: dict, empty unless you need none.
-Return lengths in the unit the property name states (Mm = millimetres, M = metres); counts as int."""
+Return lengths in the unit the property name states (Mm = millimetres, M = metres); counts as int.
+When the elements a distance, clearance or size is measured against do not exist, return None (no data), never 0:
+0 would read as a measured value and violate the rule. Counts return 0 when nothing is found."""
 
 
 class GeneratedCalculatorError(ValueError):
@@ -126,7 +128,37 @@ def validate_function(source: str, name: str = FUNCTION_NAME) -> str:
                 raise GeneratedCalculatorError(f"name not available to calculators: {node.id}")
         if isinstance(node, ast.Constant) and isinstance(node.value, str) and "__" in node.value:
             raise GeneratedCalculatorError("dunder strings are not allowed")
+    if _returns_zero_when_not_found(fn):
+        raise GeneratedCalculatorError(
+            "a branch that tests `is None` must return None, not 0: return None when nothing is found "
+            "(no data is not a measured value)")
     return ast.unparse(fn).strip() + "\n"
+
+
+def _is_zero(node: ast.AST) -> bool:
+    """The constant 0, 0.0 or -0.0 (not False)."""
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)):
+        node = node.operand
+    return (isinstance(node, ast.Constant) and not isinstance(node.value, bool)
+            and isinstance(node.value, (int, float)) and node.value == 0)
+
+
+def _returns_zero_when_not_found(fn: ast.FunctionDef) -> bool:
+    """True when ``fn`` returns the constant zero from inside an ``if <name> is None`` branch: the explicit
+    "nothing found" sentinel. Phase 1303-24 (D-66): for a measured distance, clearance or size that 0 reads as the
+    worst possible value; the calculator must return None so VALIDATOR reports ``unknown`` (EVIDENCE-CONTRACT D-05)."""
+    for node in ast.walk(fn):
+        if not (isinstance(node, ast.If) and isinstance(node.test, ast.Compare)):
+            continue
+        test = node.test
+        if not (isinstance(test.left, ast.Name) and len(test.ops) == 1 and isinstance(test.ops[0], ast.Is)
+                and isinstance(test.comparators[0], ast.Constant) and test.comparators[0].value is None):
+            continue
+        for stmt in node.body:
+            for inner in ast.walk(stmt):
+                if isinstance(inner, ast.Return) and inner.value is not None and _is_zero(inner.value):
+                    return True
+    return False
 
 
 def categories_in(source: str) -> list[str]:

@@ -1236,3 +1236,14 @@ def test_a_one_class_rule_sends_the_generator_the_request_it_always_did(catalogu
 
     ps.resolve(ps.rules_from_rows(_rows({"R_X_V": "hasFireRatingMinutes"})), catalogue, generator=generator)
     assert seen == [{"iri": DG + "hasFireRatingMinutes", "label": "hasFireRatingMinutes"}]
+
+
+# --- Phase 1303-24 (D-66): the report shows how many boxes have no value -------------------------------------------
+
+def test_the_calculator_report_line_counts_boxes_without_a_value():
+    from pathlib import Path
+
+    shell = (Path(__file__).resolve().parents[1] / "property_calculators" / "calculator_shell.py.tmpl").read_text(
+        encoding="utf-8")
+    assert 'n=%d nodata=%d min=%s max=%s' in shell
+    assert "len(_values[_k]) - len(_col)" in shell
