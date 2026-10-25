@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-25 Phase 1303 plan 24 executed — no-data calculators, run check, regenerate retired, derived edges, rollout 23ed720|Session — Phase 1303 plan 24 executed and rolled out (23ed720/25297dd); calculator for hasMinProjectionClearanceMm still missing, act 5 open]] (2026-10-25)
+- [[knowledge/decisions/Calculators return None for nothing found, SendValid is one-shot and a retired calculator can be regenerated (Phase 1303-24, D-66 to D-68)|Decision — D-66 None for nothing found, D-67 one run and one-shot SendValid, D-68 regenerate a retired calculator]] (2026-10-25)
+- [[knowledge/debugging/Generated calculators answered with from-import and were refused by the contract (Phase 1303-24)|Debugging — generated calculators answered with from-import (2 paid calls refused)]] (2026-10-25)
 - [[sessions/2026-10-25 Phase 1303 live acceptance of 18 and 23 — stack rolled to f0e27a1, acts 1-4, findings|Session — Phase 1303 live acceptance: stack at f0e27a1, acts 1–4 of 1303-23, calculator regeneration, publish-loop incident]] (2026-10-25)
 - [[Run check answers BUSY because the solution blocks the Rhino UI thread longer than 10 s, and SendValid left True loops publishing (Phase 1303)|Debugging — Run check BUSY and SendValid publish loop]] (2026-10-25)
 - [[Generated property calculators return 0.0 when no related element is found (Phase 1303)|Debugging — calculators return 0.0 for not found]] (2026-10-25)
