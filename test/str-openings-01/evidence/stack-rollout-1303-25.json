@@ -43,10 +43,32 @@
     "installedBefore": "96796214bc5594afb7eb5f41301b4ffe1934267e2aac5ce8d550599947c0bb9a",
     "backupOfInstalledPlugin": "D:\\dgb\\plugin-backup\\DG-20261025-pre-9d95481 (18 files)",
     "installScript": "D:\\dgb\\mapping-release-9d95481\\install-dg-gha.ps1 (owner; refuses while Rhino or Revit runs)",
-    "installed": false
+    "installed": true
   },
+  "followUpRollouts": [
+    {
+      "commit7": "12b5d76",
+      "change": "after a fresh placement the check waits for the placement's solution before it starts (live 503 at 16:46)",
+      "dataServiceImageId": "sha256:5897bfff81ed1e1bdf89f2767d6bbd7bc091083cfb7d28ffa470aac2015b5af4",
+      "releaseFolder": "D:\\dgb\\mapping-release-12b5d76",
+      "rollback": "compose.mapping-rollback.yml -> dg-mapping-data-service:9d95481",
+      "gate": "focused property/run/rollup set 266 passed",
+      "approvedBy": "owner (option 'small fix first', including a data-service-only rollout)"
+    },
+    {
+      "commit7": "c0b81f6",
+      "change": "72846b4 view and picked-object statuses read the evidence envelope; c0b81f6 highlighter writes no parameter into a grouped box",
+      "dataServiceImageId": "sha256:a06102a10d387128644055b8b1eb299f08b0a0bda4b7e264df6f86a8c7862477",
+      "releaseFolder": "D:\\dgb\\mapping-release-c0b81f6",
+      "rollback": "compose.mapping-rollback.yml -> dg-mapping-data-service:12b5d76",
+      "gate": "focused property/run/rollup/publish-wire/graph-routes set 425 passed",
+      "approvedBy": "owner yes (2026-10-25)",
+      "probe": "backend 200; /validation/view sets for run c40c4a59... equal the envelope (unknown 4)"
+    }
+  ],
   "notes": [
     "No credential, cookie or token is stored here.",
+    "DG.gha 9d95481 was installed by the owner by copying DG.gha, DG.Grasshopper.dll, DG.Core.dll (+pdb); hash checked 0DEF9464...",
     "Until DG.gha 9d95481 is installed, the canvas runs the 1303-24 plugin: no VALIDATOR Status (the placement warns that validator.Status is missing and the highlighter keeps ValidStatus) and no verdict-gated one-shot."
   ]
 }

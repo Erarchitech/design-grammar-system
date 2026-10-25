@@ -1,0 +1,64 @@
+{
+  "plan": "1303-25 (live acceptance of D-70, D-71, D-72) and the open proofs of 1303-24",
+  "date": "2026-10-25",
+  "stack": {
+    "dataService": "dg-mapping-data-service:12b5d76 during the run, c0b81f6 for the view check",
+    "ui": "dg-mapping-ui:9d95481",
+    "dgGhaSha256": "0def946488cb4e55770fb13a4625c70fff2c8fb9761c16a745fcff0d2c04a16d (installed by the owner, hash checked)",
+    "canvas": "C:\\Users\\Admin\\Downloads\\phase1303-test-revit.gh opened from disk (no property-check group: fresh placement)"
+  },
+  "regeneration": {
+    "authorizedBy": "owner, one paid call",
+    "rejected": "d9d205dcbd22e363ccb4c5a7c8e014bca66ccf845b008e4cdb4a28208623a02e (owner reason: 'Семейства отверстий Box не читаются')",
+    "generatedAt": "2026-10-25T16:45:28Z",
+    "function": "calc_gen_e5c9bd4c09",
+    "sha256": "bce2dcf4bc8c6b6ac8f746f7ab0d56b2d21dda7b23b6abc3f2363c29fc292a75",
+    "reviewStatus": "pending",
+    "usesHelpers": ["ctx.host_floors", "ctx.near (columns, walls, 5000 mm)", "ctx.plan_gap_mm"],
+    "measures": "the smallest plan gap in mm between the opening box and a column or wall within 5 m of it, on a slab the box sits in; None when there is no slab or no such element",
+    "note": "contains a dead `IntersectWith` call that always raises and is caught; no effect on the value"
+  },
+  "firstRunAfterRegeneration": {
+    "at": "about 16:46Z",
+    "http": 503,
+    "cause": "the placement's own solution was running; the pre-run status read answered BUSY and the check started nothing (D-67 guard). Fixed by 12b5d76: after a placement only the read is repeated until the canvas is free."
+  },
+  "run": {
+    "startedFrom": "Run check, one request, right after a fresh placement (data-service restarted, so the chain was re-placed)",
+    "answeredHttp": 200,
+    "publishRequests": 5,
+    "runs": ["71e71c23347e44e38d43260016261d23", "ad8c4ce6917944d7b64491dd136cf8a4", "1864283a1e534a96bee1f8ace83de16b", "1e8812ed5a5049f0b37b52091f20e663", "c40c4a59549949aea855ab50c8714ca7"],
+    "publishedBetween": "16:55:38Z-16:57:54Z",
+    "calculatorReport": {
+      "R_OpeningAboveDoorWindow": "n=313 nodata=0 min=0 max=1",
+      "R_OpeningMinClearanceToHostOpening": "n=313 nodata=0 min=730.0 max=100000.0",
+      "R_OpeningNotInBeam": "n=313 nodata=0 min=0 max=1",
+      "R_OpeningNotInColumns": "n=313 nodata=0 min=0 max=1",
+      "R_STR_OPENING_CLEARANCE_MIN_500_V": "n=309 nodata=4 min=0.0 max=2830.0"
+    },
+    "verdicts": {
+      "R_OpeningAboveDoorWindow": "1 failed (box 214)",
+      "R_OpeningMinClearanceToHostOpening": "0 failed",
+      "R_OpeningNotInBeam": "1 failed (box 217)",
+      "R_OpeningNotInColumns": "4 failed (boxes 0, 1, 2, 157)",
+      "R_STR_OPENING_CLEARANCE_MIN_500_V": "envelope: 188 failed, 121 passed, 4 unknown"
+    },
+    "revitDialog": "during painting Revit showed 'Группа изменена вне режима редактирования групп. Изменение допускается, поскольку имеется только один экземпляр типа.' (DG_Violation written into a grouped box); the solution, and with it the one-shot, waited until the owner pressed OK. Fixed by c0b81f6: grouped boxes are only coloured.",
+    "afterDialogClosed": "SendValid false, Paint false, oneShotPending false, sendValidGuard disarmed 1; 10 further solutions, no further publish (5 runs in total)"
+  },
+  "modelViewerCheck": {
+    "before": "with 12b5d76 the view listed the 4 unknown boxes as passed: the legacy ValidationEntity rows come from passedRuleIds, which hold every non-failing object",
+    "after": "with c0b81f6 the view reads the envelope rows: R_STR failed 188, passed 121, unknown 4; the other four rules equal their envelopes; a picked unknown box reports status unknown"
+  },
+  "proofs": {
+    "D-70 publish after a fresh placement": "closed (5 of 5 runs, one-shot released by the verdict solution, no loop)",
+    "1303-24 None keeps the ObjState pairing": "closed (mix of 309 values and 4 None: exactly 4 unknown rows in the envelope; R1-R4 verdicts and box indices unchanged)",
+    "1303-24 SendValid auto-off does not cut the upload": "closed earlier the same day (manual publish 15:50)",
+    "D-71 display": "closed for the Model Viewer (c0b81f6); the grey Revit colour was not inspected visually",
+    "D-72": "closed: the regenerated calculator uses the bounding-box helpers and returns values on 309 of 313 boxes"
+  },
+  "notes": [
+    "No credential, cookie or token is stored here.",
+    "The calculator is still pending (not confirmed into the company catalogue); act 5 of plan 1303-18 is not done."
+  ]
+}

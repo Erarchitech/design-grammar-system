@@ -38,7 +38,7 @@ key-files:
 requirements-completed: []
 requirements_partial: [DGOPN-05, DGOPN-06]
 completed: 2026-10-25
-status: complete-offline-live-acceptance-open
+status: complete-live-accepted
 ---
 
 # Plan 1303-25 summary
@@ -66,11 +66,22 @@ status: complete-offline-live-acceptance-open
 
 data-service full (worktree, 468 s): 4 failed, 6544 passed, 35 skipped, 8 deselected, 25 errors. The 4 failures are the 1303-18/23/24 baseline names (tests/test_dg_context.py: test_post_assemble_returns_200_for_valid_type, test_get_debug_matches_post_assemble_body, test_repeated_assemble_calls_are_byte_identical, test_get_debug_and_post_assemble_are_equal_for_graph_query); the 25 errors are the DNS failures for neo4j:7687 (test_cg_structure_checks 20, test_computgraph_consult 5). No new failure name; 11 more tests pass than in the 1303-24 gate (6533).
 
-## Not proven offline (owner acts)
+## Live acceptance (2026-10-25 evening, evidence `test/str-openings-01/evidence/live-check-1303-25.json`)
 
-1. A Run check right after a fresh placement publishes one run per rule (needs DG.gha 9d95481 installed and the images rolled out).
-2. Boxes without data are grey in Revit and listed under "Items without a verdict" in the Model Viewer.
-3. A regenerated hasMinProjectionClearanceMm calculator (one paid call) uses the bbox helpers and returns values where participants exist; a mix of None and values then also proves the ObjState pairing (open proof of 1303-24).
+Rollout 9d95481 (data-service, UI), DG.gha installed by the owner (hash checked). Three follow-up fixes found live, each red-then-green and rolled out with the owner's yes:
+
+| Commit | Finding | Fix |
+|---|---|---|
+| 12b5d76 | Run check right after placing a newly generated calculator answered 503: the pre-run read met the placement's own solution | after a placement only the status read is repeated (up to 90 s); the run is still sent once |
+| 72846b4 | the Model Viewer listed 4 boxes without data as passed: legacy ValidationEntity rows come from passedRuleIds | objectSets and picked-object statuses read the run's evidence envelope; ValidationEntity rows unchanged (pinned contract) |
+| c0b81f6 | painting opened Revit's modal "group changed outside group edit mode" warning, which held the solution and the one-shot | a grouped box is only coloured; DG_Violation is not written into it |
+
+Results: one paid regeneration gave `calc_gen_e5c9bd4c09` (bce2dcf4..., pending) using host_floors/near/plan_gap_mm: n=309, nodata=4. One Run check after a fresh placement published 5 of 5 runs (200); after the dialog was closed the one-shot released itself, no further publish. Envelope R_STR: 188 failed, 121 passed, 4 unknown; R1-R4 unchanged (boxes 214, 217, 0/1/2/157) — this closes the 1303-24 ObjState-pairing proof. With c0b81f6 the view equals the envelope for all 5 rules.
+
+## Still open
+
+1. Grey colouring in Revit was not inspected visually; c0b81f6 (no parameter in grouped boxes) not yet exercised live.
+2. The calculator is pending: confirming it into the UAT-A catalogue is act 5 of plan 1303-18.
 
 ## Deviations
 
