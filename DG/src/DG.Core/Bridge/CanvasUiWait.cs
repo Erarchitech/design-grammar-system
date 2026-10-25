@@ -25,15 +25,18 @@ public static class CanvasUiWait
     /// Waits for <paramref name="task"/> up to <paramref name="timeoutMs"/>.
     /// Returns its result; rethrows its original exception when it faults;
     /// throws <see cref="CanvasBusyException"/> on expiry. A timed-out task is
-    /// not cancelled (the UI delegate may still run later) and is never retried.
+    /// not cancelled by this wait (the UI delegate may still run later) and is never retried.
+    /// <paramref name="onTimeout"/> runs once on expiry, before the exception, so a caller can mark
+    /// the hand-off abandoned and keep the delegate from running late (Phase 1303-24, D-67).
     /// </summary>
-    public static T Await<T>(Task<T> task, int timeoutMs = CanvasBridgeProtocol.CanvasUiTimeoutMs)
+    public static T Await<T>(Task<T> task, int timeoutMs = CanvasBridgeProtocol.CanvasUiTimeoutMs, Action? onTimeout = null)
     {
         DG.Core.Compat.DgCompat.ThrowIfNull(task);
 
         // WaitHandle wait never throws for a faulted task (Task.Wait would wrap in AggregateException).
         if (!((IAsyncResult)task).AsyncWaitHandle.WaitOne(timeoutMs) && !task.IsCompleted)
         {
+            onTimeout?.Invoke();
             throw new CanvasBusyException(
                 $"Canvas UI thread did not respond within {timeoutMs} ms (busy). Retry later.");
         }

@@ -336,7 +336,7 @@ public sealed class CanvasListenerComponent : GH_Component
     /// <see cref="CanvasUiWait.Await{T}"/> throws <see cref="CanvasBusyException"/>, which the
     /// dispatcher reports as a BUSY error envelope instead of hanging the accept loop (D-18).
     /// </summary>
-    private static object? InvokeOnCanvas(Func<object?> work)
+    private static object? InvokeOnCanvas(Func<object?> work, int timeoutMs = CanvasBridgeProtocol.CanvasUiTimeoutMs)
     {
         var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -352,7 +352,7 @@ public sealed class CanvasListenerComponent : GH_Component
             }
         }));
 
-        return CanvasUiWait.Await(tcs.Task);
+        return CanvasUiWait.Await(tcs.Task, timeoutMs);
     }
 
     /// <summary>
@@ -372,12 +372,26 @@ public sealed class CanvasListenerComponent : GH_Component
     /// A timeout reports BUSY without retry; the UI delegate is not cancelled and may still
     /// run later, so a client must re-read state before assuming the write did not happen.
     /// </summary>
-    private object? InvokeOnCanvasWrite(Func<GH_Document, object?> work)
+    /// <remarks>
+    /// With <paramref name="cancelOnTimeout"/> (Phase 1303-24, D-67) a hand-off whose wait expired is marked
+    /// abandoned before BUSY is reported, so the UI delegate does nothing if it gets its turn later: a caller that
+    /// was told BUSY never finds the write applied behind its back. A delegate that had already started when the
+    /// wait expired still completes.
+    /// </remarks>
+    private object? InvokeOnCanvasWrite(Func<GH_Document, object?> work,
+        int timeoutMs = CanvasBridgeProtocol.CanvasUiTimeoutMs, bool cancelOnTimeout = false)
     {
         var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handOff = 0; // 0 = queued, 1 = running, 2 = abandoned
 
         RhinoApp.InvokeOnUiThread(new Action(() =>
         {
+            if (cancelOnTimeout && Interlocked.CompareExchange(ref handOff, 1, 0) != 0)
+            {
+                tcs.TrySetCanceled();
+                return;
+            }
+
             try
             {
                 var doc = OnPingDocument();
@@ -397,7 +411,10 @@ public sealed class CanvasListenerComponent : GH_Component
             }
         }));
 
-        return CanvasUiWait.Await(tcs.Task);
+        return CanvasUiWait.Await(
+            tcs.Task,
+            timeoutMs,
+            cancelOnTimeout ? () => Interlocked.CompareExchange(ref handOff, 2, 0) : null);
     }
 
     private object? HandleGetPreviewStatus(CanvasCommandRequest request)
@@ -668,6 +685,28 @@ public sealed class CanvasListenerComponent : GH_Component
     private const string HighlighterNickName = "DG VALIDATION HIGHLIGHTER";
     private GH_Document? _solutionCounterDoc;
     private long _solutionsEnded;
+    private readonly SendValidGuard _sendValidGuard = new();
+
+    /// <summary>
+    /// Subscribes the solution counter and the SendValid one-shot to <paramref name="doc"/> (once per document).
+    /// Called by every property-check command, so a SendValid the operator sets by hand is guarded even when the
+    /// listener never ran a check on this document.
+    /// </summary>
+    private void EnsureSolutionCounter(GH_Document doc)
+    {
+        if (ReferenceEquals(_solutionCounterDoc, doc))
+        {
+            return;
+        }
+
+        if (_solutionCounterDoc is not null)
+        {
+            _solutionCounterDoc.SolutionEnd -= OnPropertyCheckSolutionEnd;
+        }
+
+        doc.SolutionEnd += OnPropertyCheckSolutionEnd;
+        _solutionCounterDoc = doc;
+    }
 
     private static IEnumerable<GH_Group> PropertyCheckGroups(GH_Document doc, string groupName) =>
         doc.Objects.OfType<GH_Group>().Where(g => string.IsNullOrEmpty(groupName)
@@ -707,16 +746,7 @@ public sealed class CanvasListenerComponent : GH_Component
         {
             var members = PropertyCheckMembers(doc, project)
                 ?? throw new InvalidOperationException("No DG property check on this canvas: generate it first.");
-            if (!ReferenceEquals(_solutionCounterDoc, doc))
-            {
-                if (_solutionCounterDoc is not null)
-                {
-                    _solutionCounterDoc.SolutionEnd -= OnPropertyCheckSolutionEnd;
-                }
-
-                doc.SolutionEnd += OnPropertyCheckSolutionEnd;
-                _solutionCounterDoc = doc;
-            }
+            EnsureSolutionCounter(doc);
 
             // Expiring while Rhino.Inside is solving stops Grasshopper ("object expired during a solution", live
             // 2026-10-21); doing it inside a ScheduleSolution callback instead left the toggles out of the solution (no
@@ -760,7 +790,7 @@ public sealed class CanvasListenerComponent : GH_Component
 
             doc.ScheduleSolution(5);
             return null;
-        });
+        }, CanvasBridgeProtocol.CanvasRunUiTimeoutMs, cancelOnTimeout: true);
 
         var deadline = DateTime.UtcNow.AddSeconds(25);
         var finished = false;
@@ -774,8 +804,17 @@ public sealed class CanvasListenerComponent : GH_Component
             }
         }
 
-        var status = HandleGetPropertyCheckStatus(request);
-        return new { finished, paint, clear, send, status };
+        // A solution that outlives the wait blocks the UI thread: reading the canvas now would only queue behind it
+        // and answer BUSY. The caller polls get_property_check_status and compares solutionsEnded with
+        // solutionsEndedBefore (Phase 1303-24, D-67).
+        var solutionsEnded = Interlocked.Read(ref _solutionsEnded);
+        if (!finished)
+        {
+            return new { finished, paint, clear, send, status = (object?)null, solutionsEndedBefore = before, solutionsEnded };
+        }
+
+        var status = ReadPropertyCheckStatus(request, CanvasBridgeProtocol.CanvasRunUiTimeoutMs);
+        return new { finished, paint, clear, send, status, solutionsEndedBefore = before, solutionsEnded };
     }
 
     private GH_Document? _oneShotDoc;
@@ -785,18 +824,36 @@ public sealed class CanvasListenerComponent : GH_Component
     {
         var ended = Interlocked.Increment(ref _solutionsEnded);
         var doc = _oneShotDoc;
-        if (doc is null || ended <= _oneShotAfter)
+        if (doc is not null && ended > _oneShotAfter)
         {
+            // This run's own solution ended: SendValid and Paint go off (the listener-armed one-shot).
+            _oneShotDoc = null;
+            _sendValidGuard.Observe(IsSendValidOn(doc), DateTime.UtcNow);
+            ScheduleToggleOff(doc, includePaint: true);
             return;
         }
 
-        _oneShotDoc = null;
+        // SendValid is one-shot also when the operator set it by hand: a value left True made every Rhino.Inside
+        // re-solve publish again (live 2026-10-25: 50 runs in 54 minutes, canvas frozen). Phase 1303-24, D-67.
+        var guarded = _solutionCounterDoc;
+        if (guarded is not null && _sendValidGuard.Observe(IsSendValidOn(guarded), DateTime.UtcNow))
+        {
+            ScheduleToggleOff(guarded, includePaint: false);
+        }
+    }
+
+    private static bool IsSendValidOn(GH_Document doc) =>
+        PropertyCheckGroups(doc, string.Empty).SelectMany(g => GroupMembers(doc, g)).OfType<GH_BooleanToggle>()
+            .Any(t => t.NickName == "SendValid" && t.Value);
+
+    private static void ScheduleToggleOff(GH_Document doc, bool includePaint)
+    {
         doc.ScheduleSolution(1, d =>
         {
             foreach (var group in PropertyCheckGroups(d, string.Empty))
             {
                 foreach (var toggle in GroupMembers(d, group).OfType<GH_BooleanToggle>()
-                             .Where(t => (t.NickName == "SendValid" || t.NickName == "Paint") && t.Value))
+                             .Where(t => (t.NickName == "SendValid" || (includePaint && t.NickName == "Paint")) && t.Value))
                 {
                     toggle.Value = false;
                     toggle.ExpireSolution(false);
@@ -847,12 +904,16 @@ public sealed class CanvasListenerComponent : GH_Component
         });
     }
 
-    private object? HandleGetPropertyCheckStatus(CanvasCommandRequest request)
+    private object? HandleGetPropertyCheckStatus(CanvasCommandRequest request) =>
+        ReadPropertyCheckStatus(request, CanvasBridgeProtocol.CanvasUiTimeoutMs);
+
+    private object? ReadPropertyCheckStatus(CanvasCommandRequest request, int timeoutMs)
     {
         var project = request.TryGetString("project");
         return InvokeOnCanvas(() =>
         {
             var doc = OnPingDocument() ?? throw new InvalidOperationException("No active document.");
+            EnsureSolutionCounter(doc);
             var members = PropertyCheckMembers(doc, project)
                 ?? throw new InvalidOperationException("No DG property check on this canvas: generate it first.");
             var components = members.OfType<IGH_Component>().ToList();
@@ -919,8 +980,10 @@ public sealed class CanvasListenerComponent : GH_Component
 #endif
                 upstream = upstreamState,
                 messages,
+                solutionsEnded = Interlocked.Read(ref _solutionsEnded),
+                sendValidGuard = new { disarmed = _sendValidGuard.Disarmed, loopSuspected = _sendValidGuard.LoopSuspected },
             };
-        });
+        }, timeoutMs);
     }
 
     /// <summary>
