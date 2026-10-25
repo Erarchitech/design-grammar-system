@@ -1,7 +1,7 @@
 # DeGram Developer Mode / Demo Mode — priority planning brief
 
 **Captured:** 2026-10-25
-**Status:** owner requirement captured; executable PLANs and implementation pending
+**Status:** scoped executable plans 1301-42..47 prepared; structural self-check only, no independent checker; implementation and acceptance pending
 **Delivery owner:** Phase 1301; hosted integration counterpart: Phase 1309 / HOST-05
 **Requirements:** DGMODE-01..04 (additive, outside the original 51 MVP IDs)
 **Todo:** `.planning/todos/pending/2026-10-25-add-degram-developer-mode-and-demo-mode.md`
@@ -35,7 +35,22 @@ This is not a request to replace localhost with Contabo, create another product/
 7. Target failure, missing login/grant and cancelled/failed switching must be explicit and recoverable. Mode selection does not grant demo users admin access or relax project/connector grants.
 8. No automatic sync/migration of local project data, secrets, chat history or model contents to the stand. Credentials stay out of code, bundles, logs and planning artifacts.
 
-## Proposed executable-plan split
+## Scoped executable plans (prepared)
+
+Additive slice only; existing plans 01–41 are not replanned. See `1301-DGMODE-RESEARCH.md`, `1301-DGMODE-VALIDATION.md` and `1301-DGMODE-PLAN-CHECK.md` for rationale, test strategy and actual planning-check status.
+
+| Plan | Wave | Scope |
+|---|---|---|
+| 1301-42 | 29 | Target config, explicit override policy, compatible settings/partition ownership |
+| 1301-43 | 30 | Environment profiles, migration and origin-scoped purge/cleanup |
+| 1301-44 | 31 | Main/backend switch barrier, target-bound runtime and typed IPC |
+| 1301-45 | 32 | UI amendment, selector and fenced renderer consumers |
+| 1301-46 | 33 | Same-home real-path A→B→A, collision/race/negative tests and offline evidence |
+| 1301-47 | 34 | Framework guide/integration and separately authorized publication/live acceptance |
+
+Dependencies are 42 → 43 → 44 → 45 → 46 → 47. Plan 42 has no old-release dependency; wave numbering continues the existing phase without requiring old plan 41. Execute only this explicit plan set, not a blanket phase rerun. Implementation decisions are identified as such in supplemental research, not represented as new owner decisions. All requirement and independent phase/hosted gates remain pending.
+
+## Original proposed work packages
 
 These are planning work packages, **not executable PLAN files**. Run scoped planning before execution; inspect the named component areas through the local index and read the Desktop AGENTS/DESIGN rules first. Allocate the next available plan numbers (currently after 1301-41) only after checking existing plans.
 

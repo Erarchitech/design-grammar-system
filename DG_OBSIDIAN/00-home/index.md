@@ -9,6 +9,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-25 DeGram dual mode plans 42-47 prepared|Session — DGMODE plans 42–47, structural self-check, execute only waves 29–34]] (2026-10-25)
+- [[knowledge/decisions/DeGram dual mode is an additive plan slice with explicit runtime gates|Decision — additive slice, origin isolation and separate runtime/publication gates]] (2026-10-25)
+
+
 - [[sessions/2026-10-25 DeGram Developer and Demo modes captured in GSD|Session — Developer/Demo modes captured, DGMODE-01..04, Phase1301 priority; executable planning next]] (2026-10-25)
 - [[knowledge/decisions/DeGram Developer Mode uses localhost and Demo Mode uses Contabo|Decision — Developer = localhost, Demo = Contabo; isolated state and safe switching, delivery1301 / hosted1309]] (2026-10-25)
 
