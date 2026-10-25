@@ -2202,10 +2202,12 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
         if (canvas_sha != generated["calculator"]["sha256"]
                 or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
+    _guard_canvas_ready(payload.project)
     started_at = datetime.now(timezone.utc).isoformat()
-    result = _run_check_retrying_busy(payload.model_dump(exclude={"refresh"}))
+    result = _start_check(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
         result["refreshed"] = refreshed
+        _await_check_end(payload.project, result)
         if payload.send and not payload.clear:
             # Live 2026-10-21: publishing 4 rules takes ~70 s, the listener waits 25 s, and VALIDATOR's run-id outputs
             # are blank again after the listener switches SendValid off. The published runs are therefore read from
@@ -2337,27 +2339,77 @@ def _publish_check_context(project: str, run_ids: list[str]) -> dict:
         return {"published": False, "reason": str(exc)[:300]}
 
 
-BUSY_ATTEMPTS = 8
-BUSY_PAUSE_S = 4.0
+CHECK_POLL_S = 5.0
+CHECK_POLL_ATTEMPTS = 18  # 90 s
 
 
-def _run_check_retrying_busy(params: dict) -> dict:
-    """The listener refuses a run while a Grasshopper solution is running (BUSY) instead of expiring components in
-    the middle of it; retry for up to ~30 s."""
-    for attempt in range(BUSY_ATTEMPTS):
+def _bridge_code(exc: HTTPException) -> str:
+    detail = exc.detail if isinstance(exc.detail, dict) else {}
+    return str(detail.get("code") or "")
+
+
+def _canvas_busy() -> HTTPException:
+    return _structured_error_response(
+        "The Grasshopper canvas is solving; no check was started.",
+        "Wait until the solution has finished and run the check once; do not repeat it while the canvas is busy.",
+        "CANVAS_BUSY", 503)
+
+
+def _guard_canvas_ready(project: str) -> None:
+    """Phase 1303-24 (D-67): never start a check on a canvas that is solving (a second run queues another solution)
+    or whose SendValid is already on (every re-solve then publishes; live 2026-10-25: 50 runs in 54 minutes). A
+    listener that cannot be read is left to the run itself, which reports it."""
+    try:
+        status = gh_bridge.get_property_check_status(project)
+    except HTTPException as exc:
+        if _bridge_code(exc) == "BUSY":
+            raise _canvas_busy() from exc
+        return
+    toggles = status.get("toggles") if isinstance(status, dict) else None
+    if isinstance(toggles, dict) and toggles.get("SendValid") is True:
+        raise _structured_error_response(
+            "SendValid is already on in the property check, so every solution would publish a run; no check was started.",
+            "Switch SendValid off on the canvas (it is a one-shot) and run the check again.",
+            "SEND_VALID_ARMED", 409)
+
+
+def _start_check(params: dict) -> dict:
+    """Send run_property_check once. A BUSY answer is never answered with a second run: the first request may
+    still run later, and a repeat queues a further solution (live 2026-10-25)."""
+    try:
+        return gh_bridge.run_property_check(params)
+    except HTTPException as exc:
+        code = _bridge_code(exc)
+        if code == "GH_BRIDGE_UNREACHABLE" and params.get("send"):
+            # The listener accepted the run and is still solving (it published at 12:18 while data-service had
+            # timed out): treat as started and let the caller wait for the published runs in the graph.
+            return {"finished": False, "send": True, "clear": params.get("clear", False),
+                    "paint": params.get("paint", True), "status": {}, "bridgeTimedOut": True}
+        if code == "BUSY":
+            raise _canvas_busy() from exc
+        raise
+
+
+def _await_check_end(project: str, result: dict) -> None:
+    """When the listener stopped waiting before the solution ended (finished=false) it answers the counter of
+    ended solutions it saw before the run; poll the status (a BUSY read means the UI thread is still solving) until
+    the counter moves, then adopt that status. A listener without the counter is left as it answered."""
+    before = result.get("solutionsEndedBefore")
+    if result.get("finished") is not False or before is None:
+        return
+    for attempt in range(CHECK_POLL_ATTEMPTS):
         try:
-            return gh_bridge.run_property_check(params)
+            status = gh_bridge.get_property_check_status(project)
         except HTTPException as exc:
-            detail = exc.detail if isinstance(exc.detail, dict) else {}
-            if detail.get("code") == "GH_BRIDGE_UNREACHABLE" and params.get("send"):
-                # The listener accepted the run and is still solving (it published at 12:18 while data-service had
-                # timed out): treat as started and let the caller wait for the published runs in the graph.
-                return {"finished": False, "send": True, "clear": params.get("clear", False),
-                        "paint": params.get("paint", True), "status": {}, "bridgeTimedOut": True}
-            if detail.get("code") != "BUSY" or attempt == BUSY_ATTEMPTS - 1:
-                raise
-        time.sleep(BUSY_PAUSE_S)
-    raise RuntimeError("unreachable")
+            if _bridge_code(exc) != "BUSY":
+                return
+            status = None
+        if isinstance(status, dict) and int(status.get("solutionsEnded") or 0) > int(before):
+            result["status"] = status
+            result["finished"] = True
+            return
+        if attempt < CHECK_POLL_ATTEMPTS - 1:
+            time.sleep(CHECK_POLL_S)
 
 
 def source_model_of(calculator_report: list[str] | None) -> str | None:

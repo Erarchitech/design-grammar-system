@@ -473,6 +473,15 @@ def test_generated_calculator_output_names_do_not_shadow_its_helpers(catalogue):
     assert not (defined & outputs), defined & outputs
 
 
+@pytest.fixture(autouse=True)
+def _canvas_idle(monkeypatch):
+    """1303-24: a check run reads the canvas status before it starts; no test here may reach a live listener."""
+    import gh_bridge
+
+    monkeypatch.setattr(gh_bridge, "get_property_check_status",
+                        lambda project: {"toggles": {"SendValid": False}, "solutionsEnded": 0})
+
+
 def test_a_published_check_answers_at_once_and_publishes_context_in_the_background(monkeypatch):
     """Live 2026-10-21: DeGram got 504 (60 s proxy limit), and the toggle reset expired the chain mid-solution."""
     import app as app_module
