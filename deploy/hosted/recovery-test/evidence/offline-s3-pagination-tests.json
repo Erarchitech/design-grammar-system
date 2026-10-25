@@ -1,0 +1,100 @@
+{
+  "kind": "offline-synthetic-s3-pagination-not-native-qualification",
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "suites": [
+    {
+      "module": "test_recovery_sequence.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_n8n.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_objects.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_queues.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_pg_init.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_transport.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 5,
+        "ran": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "incrementTestsRun": 34,
+  "objectsTestsRun": 10,
+  "normalIndexEntriesPreserved": true,
+  "unrelatedStagedPaths": 19,
+  "review": {
+    "id": "deleg_8e3dfebf",
+    "pending": false,
+    "passed": false,
+    "findings": ["Nonempty StartAfter explicitly filtered response accepted"],
+    "parentRedGreenFixed": true,
+    "fixReview": "deleg_f244d80f",
+    "fixReviewPending": false,
+    "fixReviewPassed": true,
+    "fixReviewStrictTests": 10,
+    "additionalFixReviewerCases": 16
+  },
+  "reviewPatchSha256": "c38a86012d32bbc02fa76ca061cc3ecfe72ee72df9aacbac3f26b6f572acde21",
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false,
+  "dockerInvoked": false,
+  "networkInvoked": false,
+  "limitations": [
+    "Only synthetic SDK-shaped client, not full native MinIO provider",
+    "Client must enforce endpoint/bucket binding and SDK parsing/retry/socket bounds",
+    "Unversioned feature checks and native server listing completeness unqualified",
+    "Encoded response rejected; native SDK auto-encoding configuration needs qualification",
+    "Original nine recovery suites90/90 last repeated in preceding transport slice"
+  ]
+}

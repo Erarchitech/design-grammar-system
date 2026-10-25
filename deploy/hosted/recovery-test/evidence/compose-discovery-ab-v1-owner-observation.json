@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "kind": "owner-chat-supplied-compose-ab-summary-not-independent-attestation",
+  "source": "Selected fields transcribed from the complete user-supplied JSON and outer exit line; not an original report file",
+  "reportedExitCode": 0,
+  "observedAtUtc": "2026-10-18T07:28:03.8078134Z",
+  "target": "DESKTOP-OS4Q8CP",
+  "reportedStatus": "COMPARISON_COMPLETE",
+  "dockerOffPrerequisite": "owner-stated-not-probed",
+  "dockerInvoked": true,
+  "dockerClientLaunches": 2,
+  "dockerExecutableSha256": "70c9fbdfb6318c2aa910581cdbe1cf4237a600177cabedcd83e95f1dac7f5db5",
+  "pluginSha256": "93be120f45f1ef7a5a7c176636933a5ed0fa2e26fd4cb5907303cd395c9149dc",
+  "pluginSlot": "resources/cli-plugins/docker-compose.exe",
+  "observations": [
+    {"mode": "EMPTY_CONFIG", "composeVersion": null, "read": {"phase": "EXIT", "started": true, "timedOut": false, "exitCode": 125, "category": "CLI_ARGUMENT_REJECTED", "stdoutChars": 0, "stderrChars": 107, "elapsedMs": 90}},
+    {"mode": "EXPLICIT_PLUGIN_DIR", "composeVersion": "5.0.1", "read": {"phase": "SCHEMA", "started": true, "timedOut": false, "exitCode": 0, "category": "VERSION_OBSERVED", "stdoutChars": 6, "stderrChars": 0, "elapsedMs": 153}}
+  ],
+  "reportedFailureStage": null,
+  "interpretation": "For the observed CLI/plugin hashes and isolated environment, changing private config to include the fixed plugin directory enabled Compose discovery and version --short. Empty config reproduced exit125. Exact internal fallback/error text was not collected. The report does not establish the Docker CLI client/server version or native recovery compatibility.",
+  "oneRunPermissionConsumed": true,
+  "imageIdentitiesObserved": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

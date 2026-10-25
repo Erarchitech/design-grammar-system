@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "offline-inventory-source-review-not-native-acceptance",
+  "collectorSchemaVersion": 3,
+  "collectorSha256": "5463737019ff85d10769ba046b0be23543d87186dbb203a83fcaa70d93742e35",
+  "testSourceSha256": "3e2568eafa9e09f3f8ae82379b24d85ecab2071288d85d5d645548223af2f9e4",
+  "completeReviewPatchSha256": "8d69efdf7265557ef53001d66a61c285e11ec43c7297d0178569bd21bd71467a",
+  "independentReview": {
+    "id": "deleg_15d8a26d",
+    "passed": true,
+    "securityConcerns": [],
+    "logicErrors": [],
+    "strictTests": {"discovered": 9, "ran": 9, "failures": 0, "errors": 0, "skipped": 0},
+    "nonblockingSuggestion": "Assert child environment and working directory explicitly in the synthetic executable, with seeded owner-like environment variables.",
+    "suggestionDisposition": "Deferred test hardening; source environment clearing and working-directory selection reviewed, not claimed as explicit full-collector runtime assertions."
+  },
+  "parentStrictInventoryTests": {"discovered": 9, "ran": 9, "failures": 0, "errors": 0, "skipped": 0},
+  "separateRecoveryBaseline": {"suiteCount": 17, "totalTestsRun": 133, "passed": true, "exitCode": 0},
+  "reviewedSourceHashesRechecked": true,
+  "headAndExactIndexPreserved": true,
+  "redGreenRegressions": [
+    "Full compiled synthetic collector failed with empty config before per-kind private plugin config implementation, then passed.",
+    "Preexisting empty config collision was deleted before cleanup ownership fix, then preserved."
+  ],
+  "issuedArchivesModified": false,
+  "newPackageBuilt": false,
+  "newTargetExecutionAuthorized": false,
+  "dockerStarted": false,
+  "imageIdentitiesObserved": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

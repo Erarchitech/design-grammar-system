@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "reviewed-inventory-v4-owner-result-received-permission-consumed",
+  "target": "DESKTOP-OS4Q8CP",
+  "filename": "DG-multistore-inventory-535eb30-v4.zip",
+  "zipSha256": "6b96d215107bd4fb581858265d2e27e8e78866ded95e091d8d2eff04066b3591",
+  "zipBytes": 7967,
+  "files": {
+    "Collect-MultiStoreInventory.ps1": "af5785894475846f437cc545321365a9eb2466b5bc21c2b71050b4bb4ebc4c18",
+    "README.md": "a260b64f3ff62e9e767a1cc06540bcbff621e383466948228e1040fa1623d878",
+    "manifest.json": "6f90f6e9c0c394929c6e1467384ed739aa06109f59c07a5cc9be2314a21b13a5"
+  },
+  "completeReviewPatchSha256": "2ae31c2c988951b0dac9bf99abc11c76a67350b5468250970235dd1e33d2335d",
+  "testSourceSha256": "5ad348b4d9a80527374a111ac027a83d40f79bba211582fd18c01548b8035378",
+  "candidateIdentities": {
+    "dockerSha256": "6c699720bb9523dedb9eb5d22a49951ea9210dbdb1314a3554029eee9be76896",
+    "composePluginSha256": "e6176502e836a7fee8d71cab5fcda736c8dacc79ccefdf9659af977f7eae2375",
+    "source": "docker-file-identity-v1-owner-observation.json",
+    "identityBindingAcceptedForRuntime": true
+  },
+  "productionDelta": "Exactly two SHA256 literals from v3; report schema remains3. No fallback, old/mixed-pair acceptance or weaker guard.",
+  "strictTests": {"discovered": 10, "ran": 10, "failures": 0, "errors": 0, "skipped": 0},
+  "bindingMatrixRedGreen": "Old source accepted only old/old; after candidate pins, only new/new accepted. Mixed or old pairs rejected at the expected first differing check. Fixed hash declaration seam is not native verification.",
+  "parentExtractedPreflight": {"exitCode": 0, "schemaVersion": 3, "dockerInvoked": false, "images": [], "tools": {}},
+  "independentReview": {"id": "deleg_ab790ce4", "status": "PASS", "passed": true, "securityConcerns": [], "logicErrors": [], "suggestions": [], "strictTests": {"discovered": 10, "ran": 10, "failures": 0, "errors": 0, "skipped": 0}, "extractedPreflight": {"exitCode": 0, "schemaVersion": 3, "status": "PREFLIGHT_ONLY", "dockerInvoked": false, "images": [], "tools": {}, "diagnostics": []}, "scratchEvidence": "C:/Users/Admin/AppData/Local/hermes/cache/scratch/dg-1309-v4-independent-review-3fa77202a2094620a6b9323f80531cff/review-evidence.json"},
+  "parentPostReviewChecks": {"zipHashSizeCrcManifestSourceTestsPatchVerified": true, "reviewEvidenceReadAndAllChecksVerified": true, "headAndExactIndex19Preserved": true, "dockerInvoked": false},
+  "headAndExactIndex19Preserved": true,
+  "olderIssuedArchivesUnchanged": true,
+  "maximumTopLevelDockerClientLaunches": 14,
+  "targetExecutionAuthorized": false,
+  "daemonStateChangeAuthorized": false,
+  "requiresSeparateOwnerApproval": true,
+  "ownerAuthorization": {"source": "User selected option1 with message: 1 вариант", "scope": "Accept exact new CLI/plugin pair and one owner-manual inventory using exact reviewed v4 ZIP on DESKTOP-OS4Q8CP; at most14 top-level CLI launches, no retries", "daemonAlreadyRunning": "owner-stated-not-independently-probed", "daemonStartupAuthorized": false, "daemonShutdownAuthorized": false, "developmentHostDockerAuthorized": false, "targetResultReceived": true, "permissionConsumed": true, "reportedStatus": "OBSERVED_NOW", "reportedExitCode": 0, "ownerObservationSummary": "multistore-inventory-v4-owner-observation.json", "reportedObservedAtUtc": "2026-10-18T11:20:12.1329249Z", "authorizationDoesNotCover": ["service changes", "container commands", "owner data/config/secrets", "pull/build", "recovery", "retries", "commit/push/deploy"], "ifPrerequisiteChanges": "Stop without starting or stopping Docker; a different scope needs separate approval"},
+  "immutableArchiveAuthorizationText": "README/manifest preserve preparation-time unapproved state; this external record carries subsequent owner acceptance. ZIP bytes were reverified and were not changed.",
+  "runtimeVersionProvenForNewPair": false,
+  "runtimeVersionObservation": "Owner-returned report declares Docker client/server29.8.2 and Compose5.6.0 under accepted hashes; not independent attestation, provenance or native compatibility qualification",
+  "ownerReportedRuntimeVersionObservedForNewPair": true,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

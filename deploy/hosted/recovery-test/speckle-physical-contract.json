@@ -1,0 +1,1885 @@
+{
+  "bull": {
+    "archiveSha256": "0b64771e5b00b0267221ead447e69d6c318c1de8318f36dd3a5df0976c4d64e1",
+    "files": [
+      {
+        "path": "CHANGELOG.md",
+        "sha256": "50cae099cdb067818ec9c1db861b28d4fc5a8207d354cbfcd5258a0bbf67e3d1"
+      },
+      {
+        "path": "index.d.ts",
+        "sha256": "2151db9166dfd90feaa67f0c3a07efcab39e1640f1b26abc81632d8e1bf95fcb"
+      },
+      {
+        "path": "index.js",
+        "sha256": "d033b4dad78bc19c73e9d68ffe3aa3598d2e5a8b1f76129bc4411433c1ebe7f3"
+      },
+      {
+        "path": "lib/backoffs.js",
+        "sha256": "7e467345b8dec9df92bb47b8bb03f360cae298b957dc488078e3cb3a358d3e76"
+      },
+      {
+        "path": "lib/commands/addJob-6.lua",
+        "sha256": "a8059f6ba81eff3cbfa4adea378f944603b52c191752d3d40917b1701cb70ad7"
+      },
+      {
+        "path": "lib/commands/addLog-2.lua",
+        "sha256": "0d12136752ac2bbafa9702d30bd381acb111599e598e96f85d7c416a23d9e6d2"
+      },
+      {
+        "path": "lib/commands/cleanJobsInSet-3.lua",
+        "sha256": "6f41cc2f828bf5115441bbd7d41f33a2c0ca9dacd0aac5996be169205fa6740f"
+      },
+      {
+        "path": "lib/commands/extendLock-2.lua",
+        "sha256": "cc6c2cd875b8179c9742e7e5298a3836e65acc3aa8ab0a74bc81ab0b4213b3ef"
+      },
+      {
+        "path": "lib/commands/getCountsPerPriority-4.lua",
+        "sha256": "e7f79ae64818a8796b22efbad16b1516f59e06b17e949f6f69207c5183bb678b"
+      },
+      {
+        "path": "lib/commands/includes/addJobWithPriority.lua",
+        "sha256": "e92672cdd7b519d9bfb2821a09ac4a73b8941e736650964863730493a9c562e1"
+      },
+      {
+        "path": "lib/commands/includes/batches.lua",
+        "sha256": "4f60fd74f44041e353e19b95509b1910d085f2a7c357a8606cf0e6e86fd0e424"
+      },
+      {
+        "path": "lib/commands/includes/collectMetrics.lua",
+        "sha256": "a59009e82e3824d9dd99b99c626974c8b28b70d941eaf7bd2b6ab62d55df4e78"
+      },
+      {
+        "path": "lib/commands/includes/debounceJob.lua",
+        "sha256": "1603e06445755aa0292cfafee51a487017acbe05955fac9a845a2927b95c1ea1"
+      },
+      {
+        "path": "lib/commands/includes/getTargetQueueList.lua",
+        "sha256": "3365d873c0da349c9d2cf8488a98adb95225bd017dbc2ab6ab7cd1418da3310c"
+      },
+      {
+        "path": "lib/commands/includes/removeDebounceKey.lua",
+        "sha256": "686542c19f8ae18db6752910e33b0cce86b08079a0720a046e70e80716fb89f2"
+      },
+      {
+        "path": "lib/commands/includes/removeDebounceKeyIfNeeded.lua",
+        "sha256": "571bf0e2c905ad58b61abe3cf2d3cd1ed0465605aebd76aeb5fa0f1878dc5d58"
+      },
+      {
+        "path": "lib/commands/includes/removeLock.lua",
+        "sha256": "b88f066760e53683fd27727b086d7dcd0e792a0d0a65e12e1f3e829339d808ba"
+      },
+      {
+        "path": "lib/commands/isFinished-2.lua",
+        "sha256": "879ce80f35752058b0cb5b0655b541aff1d28d62da1908618b57ab88daa0e21e"
+      },
+      {
+        "path": "lib/commands/isJobInList-1.lua",
+        "sha256": "10c8795c280d48eb1894509c6771ff75b4b4b893ba0d968f32250738e8c9abd8"
+      },
+      {
+        "path": "lib/commands/moveStalledJobsToWait-7.lua",
+        "sha256": "f5515dddd9d2ab26c9ce001e6d2861c5f600f5828d1ef791f782347dda87e7fc"
+      },
+      {
+        "path": "lib/commands/moveToActive-8.lua",
+        "sha256": "239772c411fd51849c55e66c83f37234cd4d7bedb673e50d2fa7e07d3c51ada9"
+      },
+      {
+        "path": "lib/commands/moveToDelayed-4.lua",
+        "sha256": "28eaa739a66f8d3f95774c0519492efbcf50ae996494061957488f9657478ef7"
+      },
+      {
+        "path": "lib/commands/moveToFinished-9.lua",
+        "sha256": "2c4f5aca38d6948430242595ac255e5f50e1d7502eac559fc19d222a9236580f"
+      },
+      {
+        "path": "lib/commands/obliterate-2.lua",
+        "sha256": "74cc07449607debde294d3d3b854f5ebda5b50fdc804a94b021f88c65a9bd3c7"
+      },
+      {
+        "path": "lib/commands/pause-5.lua",
+        "sha256": "6b80363f4d20d027eec7254f1f508d3dcf893ca7c73731e7c41206ec2e0a609a"
+      },
+      {
+        "path": "lib/commands/promote-5.lua",
+        "sha256": "6c39c6b0830fb5f5fa2ef54511dd4ae3eba40eccdfb22183aaa7b78f2b749f23"
+      },
+      {
+        "path": "lib/commands/releaseLock-1.lua",
+        "sha256": "ec7cf697328db0864549c4044356e7bcbe2bfa1df007e11fff1fa020c07a7596"
+      },
+      {
+        "path": "lib/commands/removeJob-11.lua",
+        "sha256": "a0985f3606f49d7b50f602a01f410b0762cfa31b8a3ecd562d12df018c49a6a2"
+      },
+      {
+        "path": "lib/commands/removeJobs-8.lua",
+        "sha256": "dc145e4a1d63aeaae4e557f8aaebab72dede3396e482a15fdc73c903a3d9b51e"
+      },
+      {
+        "path": "lib/commands/removeRepeatable-2.lua",
+        "sha256": "b01a04af923b04f741a85c9c313980f3cefcb4bb1b0898c7dffe71baf8cc8fe5"
+      },
+      {
+        "path": "lib/commands/reprocessJob-6.lua",
+        "sha256": "e1e46b195f72868f11901001676f8824f3c49293370b62605361b2124f8b30d0"
+      },
+      {
+        "path": "lib/commands/retryJob-7.lua",
+        "sha256": "6c74f7316836c2f2c786e45b6d184e8da0a9c386080bcdd4a224aeb9048f69ce"
+      },
+      {
+        "path": "lib/commands/retryJobs-5.lua",
+        "sha256": "5737dc83b6dc400be32dcb11866e99fba19b89810f400040e141980f45750b52"
+      },
+      {
+        "path": "lib/commands/saveStacktrace-1.lua",
+        "sha256": "8c3ae0656d36a7b7b11d7596770955775b35d11a802674299b5c208ec573a3b4"
+      },
+      {
+        "path": "lib/commands/takeLock-1.lua",
+        "sha256": "81a686fee65c8153c22d11a59f6d51d1945d61db5213e984749401ddcba0ac06"
+      },
+      {
+        "path": "lib/commands/updateData-1.lua",
+        "sha256": "3640c889d8502c47fca7016a44c7693c0b04aaafb37a06d18ed8fc7b2f60233b"
+      },
+      {
+        "path": "lib/commands/updateDelaySet-6.lua",
+        "sha256": "eb51fbad30c26602fff491aafe8ecbc6def0ce92d1c016f62e7f0cb3697e73ee"
+      },
+      {
+        "path": "lib/commands/updateProgress-2.lua",
+        "sha256": "61a43dc42d5716b05b9e3504c747ad6bd18b55d598dee569cb2114a1d5b8ebc3"
+      },
+      {
+        "path": "lib/errors.js",
+        "sha256": "399e827addfba203ee1b5a86ecb39f1e86aa0ac4379305e0df9a650d35b0240f"
+      },
+      {
+        "path": "lib/getters.js",
+        "sha256": "8f8f1e77f8b2a977cd7626650bd195e18126e0e28b819a7c77df763155f30302"
+      },
+      {
+        "path": "lib/job.js",
+        "sha256": "c847659df0f420e167482eef2998691e80fd0c3e39a66e5258d894ac045a7925"
+      },
+      {
+        "path": "lib/p-timeout.js",
+        "sha256": "143460f27eea1e8071e2e22f4f519941b33439a6660b04963f18a69a553968fe"
+      },
+      {
+        "path": "lib/process/child-pool.js",
+        "sha256": "3f2d9933534c407cebc15677f87b933bb8e79a5529ac39843c26719d7285ebf1"
+      },
+      {
+        "path": "lib/process/master.js",
+        "sha256": "d2f90c009ac628672d68e08616c7a6167781b8e25f420ba82bea20a1ce46515e"
+      },
+      {
+        "path": "lib/process/sandbox.js",
+        "sha256": "1ffeb3a623d9f61919e66f32ddb5355d06bf73725b1f5bc4220447e34f843358"
+      },
+      {
+        "path": "lib/process/utils.js",
+        "sha256": "8021a860916aa7f8430dbce924e2634a40019b55dd0b119705ee72b3a4aead02"
+      },
+      {
+        "path": "lib/queue.js",
+        "sha256": "7c7d57a6d41945091c5e37d90bf618b7dcfd5350b750b2f6d60c7f0ef20c3d65"
+      },
+      {
+        "path": "lib/repeatable.js",
+        "sha256": "9dfca4f469b8278d80e085f4a8da9f1c6293eae2e1c27394bf6860fbbf3a5c37"
+      },
+      {
+        "path": "lib/scripts/addJob-6.js",
+        "sha256": "6af7ada7657774e190bbe7437a1b2ec4ea592b90d7b82d3a952bd30ed3cbba3a"
+      },
+      {
+        "path": "lib/scripts/addLog-2.js",
+        "sha256": "1f67df29185fa8de7c38b6c1e7456e01b4c43d41e9198b5e7a2ffcfb727dd538"
+      },
+      {
+        "path": "lib/scripts/cleanJobsInSet-3.js",
+        "sha256": "bd605a51bedbccb944301325984792f1500b12f04ebe9eee863a780e13d10941"
+      },
+      {
+        "path": "lib/scripts/extendLock-2.js",
+        "sha256": "9e83ffc293c05c488c7316424ca9aea1897d0d718256d17f06d9dbd9473bb427"
+      },
+      {
+        "path": "lib/scripts/getCountsPerPriority-4.js",
+        "sha256": "4d01da45369ca02e65c85641cc8de91c32a530afaa60b8a37f360bad533fa80b"
+      },
+      {
+        "path": "lib/scripts/index.js",
+        "sha256": "e32186d599e745b530f251375e7f0d8d300408d95bd87a92ba2cfb14c2606f00"
+      },
+      {
+        "path": "lib/scripts/isFinished-2.js",
+        "sha256": "baca802af0e6d0d6e77ed8ec46402bb0d52367ccb4c2de03dd643add5952d1d9"
+      },
+      {
+        "path": "lib/scripts/isJobInList-1.js",
+        "sha256": "2436c11b8df818274d211decb7d6e0f87ff8e952a8e8fe21cc924d3132335caf"
+      },
+      {
+        "path": "lib/scripts/moveStalledJobsToWait-7.js",
+        "sha256": "5197a86d5982cd90ead42c0d0fe49c6790ed8303d6a9616289ba3e31aece305a"
+      },
+      {
+        "path": "lib/scripts/moveToActive-8.js",
+        "sha256": "32d818142e6071877af663e21e85210e5acefcaffe682307a8f2b7e70f249730"
+      },
+      {
+        "path": "lib/scripts/moveToDelayed-4.js",
+        "sha256": "e8db24ad886f31c32cb76d29068a79952467539a8add346458fe0f114ee92cd4"
+      },
+      {
+        "path": "lib/scripts/moveToFinished-9.js",
+        "sha256": "5274301b17952ed3a87ec2f8177ced5ab9010b4ada543cd767b95ec2bc7b44b3"
+      },
+      {
+        "path": "lib/scripts/obliterate-2.js",
+        "sha256": "f9da10af0058c9c55a2f5f875ef2875a5f9b98dd7d6bf723deb289b632e6b8ff"
+      },
+      {
+        "path": "lib/scripts/pause-5.js",
+        "sha256": "6505be0d78d28a095e78c2458dd614fe5e5e1d5cdd85bbf3e0ce23afe529a1c3"
+      },
+      {
+        "path": "lib/scripts/promote-5.js",
+        "sha256": "d93f41c519b26a971926dd19770d05a74fde1668f7549f8999b7ddd361021ab1"
+      },
+      {
+        "path": "lib/scripts/releaseLock-1.js",
+        "sha256": "8ef77c296e2899b58e34e31f3827f251275dfef2e8e1044e2c225d40c92f001e"
+      },
+      {
+        "path": "lib/scripts/removeJob-11.js",
+        "sha256": "c2c8ee295958d3f11ace516f0ea98b7ef5f40daa1a82613a6e1a12fc719f86cb"
+      },
+      {
+        "path": "lib/scripts/removeJobs-8.js",
+        "sha256": "6c265e1a30e9799ed48022bcaa97647b9dde7002721cf1e8dd51b89847414e63"
+      },
+      {
+        "path": "lib/scripts/removeRepeatable-2.js",
+        "sha256": "48395052b79e066e2a38fd9a2298975a40a7ffaf3684b4d333566675d92b5650"
+      },
+      {
+        "path": "lib/scripts/reprocessJob-6.js",
+        "sha256": "4ed121537d6dfdad0860e1cada95ce9f1d65d3aec4bf72a088428dd2420d3c0b"
+      },
+      {
+        "path": "lib/scripts/retryJob-7.js",
+        "sha256": "743e7fcd35481a72a8e0ecdfa2616589ef26c36aad37ada2539798362c4e7407"
+      },
+      {
+        "path": "lib/scripts/retryJobs-5.js",
+        "sha256": "bdc77c61d46585bb410fb7a66ad6056a5a40fdeeee040019bdd864a32a0d01bb"
+      },
+      {
+        "path": "lib/scripts/saveStacktrace-1.js",
+        "sha256": "fdac8304a14a4cc6681f903d16d421d57811ad82298ee0a753b3dc653b41fd42"
+      },
+      {
+        "path": "lib/scripts/takeLock-1.js",
+        "sha256": "6fe8add425a6d8e8c00c1c7f77d65f4a2cbcca3443b5c839d4a8c12ec1191532"
+      },
+      {
+        "path": "lib/scripts/updateData-1.js",
+        "sha256": "a96f2f5cf4bb86a5b62be1db5bdb73aa18f316519f9f27904e1f56cd461b914d"
+      },
+      {
+        "path": "lib/scripts/updateDelaySet-6.js",
+        "sha256": "ed7bb7aecece59da0438d517ac479b2ed9cf1c0942532790bbe4823319180889"
+      },
+      {
+        "path": "lib/scripts/updateProgress-2.js",
+        "sha256": "681677cd0945c715bbf527b34e25f948af512a7972c73af07482775eec760aa4"
+      },
+      {
+        "path": "lib/scripts.js",
+        "sha256": "f229ecc35bd56e77895f9568824177d1217ddd2abe485721e911f8098de097ef"
+      },
+      {
+        "path": "lib/timer-manager.js",
+        "sha256": "73b6349f4703a1fb56333c25501d26ca4fdb3dcb8408b94afb7a23c2cd7d9fa1"
+      },
+      {
+        "path": "lib/utils.js",
+        "sha256": "30bbe1df310a8c62fc89af4acad3fe7807a9013a3f0a0a41b81dbc11904d14ac"
+      },
+      {
+        "path": "lib/worker.js",
+        "sha256": "e11217a3234f5068eca0f8431fe55cf5622f2a49947d102e1c9546280e69d21b"
+      },
+      {
+        "path": "LICENSE.md",
+        "sha256": "02fda0eaff523b55e6f4ba3f209d1ace41ab35bdf71667f29518540788ca138e"
+      },
+      {
+        "path": "package.json",
+        "sha256": "a506a7e3e618ef4795c89703df3f78cf4ac0e57508cde8b5300cc0a23aaf4317"
+      },
+      {
+        "path": "README.md",
+        "sha256": "2416092f6b415a5595d0f866df985c3488e5b21f8122cadfcf939de3287a9e57"
+      }
+    ],
+    "version": "4.16.5"
+  },
+  "catalog": {
+    "background_jobs": {
+      "columns": {
+        "attempt": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "createdAt": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "timestamp(3) with time zone"
+        },
+        "id": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "text"
+        },
+        "jobType": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "text"
+        },
+        "maxAttempt": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "originServerUrl": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "text"
+        },
+        "payload": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "jsonb"
+        },
+        "remainingComputeBudgetSeconds": {
+          "collationDefault": true,
+          "default": "3600",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "status": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "text"
+        },
+        "updatedAt": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "timestamp(3) with time zone"
+        }
+      },
+      "constraints": {
+        "background_jobs_pkey": "PRIMARY KEY (id)"
+      },
+      "forceRowSecurity": false,
+      "indexes": [
+        {
+          "columns": [
+            "jobType"
+          ],
+          "definition": "CREATE INDEX background_jobs_jobtype_index ON public.background_jobs USING btree (\"jobType\")",
+          "expression": null,
+          "method": "btree",
+          "name": "background_jobs_jobtype_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        },
+        {
+          "columns": [
+            "id"
+          ],
+          "definition": "CREATE UNIQUE INDEX background_jobs_pkey ON public.background_jobs USING btree (id)",
+          "expression": null,
+          "method": "btree",
+          "name": "background_jobs_pkey",
+          "predicate": null,
+          "primary": true,
+          "ready": true,
+          "unique": true,
+          "valid": true
+        },
+        {
+          "columns": [
+            "status"
+          ],
+          "definition": "CREATE INDEX background_jobs_status_index ON public.background_jobs USING btree (status)",
+          "expression": null,
+          "method": "btree",
+          "name": "background_jobs_status_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        }
+      ],
+      "kind": "r",
+      "partition": false,
+      "persistence": "p",
+      "policies": [],
+      "rowSecurity": false,
+      "triggers": []
+    },
+    "file_uploads": {
+      "columns": {
+        "branchName": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "convertedCommitId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "character varying(255)"
+        },
+        "convertedLastUpdate": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "timestamp(3) with time zone"
+        },
+        "convertedMessage": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "text"
+        },
+        "convertedStatus": {
+          "collationDefault": true,
+          "default": "0",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "fileName": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "fileSize": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "integer"
+        },
+        "fileType": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "id": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "modelId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "character varying(255)"
+        },
+        "performanceData": {
+          "collationDefault": true,
+          "default": "NULL::jsonb",
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "jsonb"
+        },
+        "streamId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "character varying(10)"
+        },
+        "uploadComplete": {
+          "collationDefault": true,
+          "default": "false",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "boolean"
+        },
+        "uploadDate": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "timestamp(3) with time zone"
+        },
+        "userId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        }
+      },
+      "constraints": {
+        "file_uploads_modelid_foreign": "FOREIGN KEY (\"modelId\") REFERENCES branches(id) ON DELETE SET NULL",
+        "file_uploads_pkey": "PRIMARY KEY (id)",
+        "file_uploads_streamid_foreign": "FOREIGN KEY (\"streamId\") REFERENCES streams(id) ON DELETE CASCADE"
+      },
+      "forceRowSecurity": false,
+      "indexes": [
+        {
+          "columns": [
+            "id"
+          ],
+          "definition": "CREATE UNIQUE INDEX file_uploads_pkey ON public.file_uploads USING btree (id)",
+          "expression": null,
+          "method": "btree",
+          "name": "file_uploads_pkey",
+          "predicate": null,
+          "primary": true,
+          "ready": true,
+          "unique": true,
+          "valid": true
+        },
+        {
+          "columns": [
+            "streamId"
+          ],
+          "definition": "CREATE INDEX file_uploads_streamid_index ON public.file_uploads USING btree (\"streamId\")",
+          "expression": null,
+          "method": "btree",
+          "name": "file_uploads_streamid_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        }
+      ],
+      "kind": "r",
+      "partition": false,
+      "persistence": "p",
+      "policies": [],
+      "rowSecurity": false,
+      "triggers": []
+    },
+    "object_preview": {
+      "columns": {
+        "attempts": {
+          "collationDefault": true,
+          "default": "0",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "lastUpdate": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "timestamp with time zone"
+        },
+        "objectId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "preview": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "jsonb"
+        },
+        "previewStatus": {
+          "collationDefault": true,
+          "default": "0",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "priority": {
+          "collationDefault": true,
+          "default": "1",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "streamId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(10)"
+        }
+      },
+      "constraints": {
+        "object_preview_pkey": "PRIMARY KEY (\"streamId\", \"objectId\")",
+        "object_preview_streamid_foreign": "FOREIGN KEY (\"streamId\") REFERENCES streams(id) ON DELETE CASCADE"
+      },
+      "forceRowSecurity": false,
+      "indexes": [
+        {
+          "columns": [
+            "streamId",
+            "objectId"
+          ],
+          "definition": "CREATE UNIQUE INDEX object_preview_pkey ON public.object_preview USING btree (\"streamId\", \"objectId\")",
+          "expression": null,
+          "method": "btree",
+          "name": "object_preview_pkey",
+          "predicate": null,
+          "primary": true,
+          "ready": true,
+          "unique": true,
+          "valid": true
+        },
+        {
+          "columns": [
+            "previewStatus",
+            "attempts",
+            "lastUpdate",
+            "objectId"
+          ],
+          "definition": "CREATE INDEX object_preview_previewstatus_attempts_lastupdate_objectid_index ON public.object_preview USING btree (\"previewStatus\", attempts, \"lastUpdate\", \"objectId\")",
+          "expression": null,
+          "method": "btree",
+          "name": "object_preview_previewstatus_attempts_lastupdate_objectid_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        },
+        {
+          "columns": [
+            "previewStatus",
+            "priority",
+            "lastUpdate"
+          ],
+          "definition": "CREATE INDEX object_preview_previewstatus_priority_lastupdate_index ON public.object_preview USING btree (\"previewStatus\", priority, \"lastUpdate\")",
+          "expression": null,
+          "method": "btree",
+          "name": "object_preview_previewstatus_priority_lastupdate_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        }
+      ],
+      "kind": "r",
+      "partition": false,
+      "persistence": "p",
+      "policies": [],
+      "rowSecurity": false,
+      "triggers": []
+    },
+    "webhooks_config": {
+      "columns": {
+        "createdAt": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "timestamp(3) with time zone"
+        },
+        "description": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "text"
+        },
+        "enabled": {
+          "collationDefault": true,
+          "default": "true",
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "boolean"
+        },
+        "id": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "secret": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "character varying(255)"
+        },
+        "streamId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "character varying(10)"
+        },
+        "triggers": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "jsonb"
+        },
+        "updatedAt": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "timestamp(3) with time zone"
+        },
+        "url": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "text"
+        }
+      },
+      "constraints": {
+        "webhooks_config_pkey": "PRIMARY KEY (id)"
+      },
+      "forceRowSecurity": false,
+      "indexes": [
+        {
+          "columns": [
+            "id"
+          ],
+          "definition": "CREATE UNIQUE INDEX webhooks_config_pkey ON public.webhooks_config USING btree (id)",
+          "expression": null,
+          "method": "btree",
+          "name": "webhooks_config_pkey",
+          "predicate": null,
+          "primary": true,
+          "ready": true,
+          "unique": true,
+          "valid": true
+        },
+        {
+          "columns": [
+            "streamId"
+          ],
+          "definition": "CREATE INDEX webhooks_config_streamid_index ON public.webhooks_config USING btree (\"streamId\")",
+          "expression": null,
+          "method": "btree",
+          "name": "webhooks_config_streamid_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        }
+      ],
+      "kind": "r",
+      "partition": false,
+      "persistence": "p",
+      "policies": [],
+      "rowSecurity": false,
+      "triggers": []
+    },
+    "webhooks_events": {
+      "columns": {
+        "id": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "character varying(255)"
+        },
+        "lastUpdate": {
+          "collationDefault": true,
+          "default": "CURRENT_TIMESTAMP",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "timestamp with time zone"
+        },
+        "payload": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "text"
+        },
+        "status": {
+          "collationDefault": true,
+          "default": "0",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "integer"
+        },
+        "statusInfo": {
+          "collationDefault": true,
+          "default": "'Pending'::text",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "type": "text"
+        },
+        "webhookId": {
+          "collationDefault": true,
+          "default": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "type": "character varying(255)"
+        }
+      },
+      "constraints": {
+        "webhooks_events_pkey": "PRIMARY KEY (id)",
+        "webhooks_events_webhookid_foreign": "FOREIGN KEY (\"webhookId\") REFERENCES webhooks_config(id) ON DELETE CASCADE"
+      },
+      "forceRowSecurity": false,
+      "indexes": [
+        {
+          "columns": [
+            "id"
+          ],
+          "definition": "CREATE UNIQUE INDEX webhooks_events_pkey ON public.webhooks_events USING btree (id)",
+          "expression": null,
+          "method": "btree",
+          "name": "webhooks_events_pkey",
+          "predicate": null,
+          "primary": true,
+          "ready": true,
+          "unique": true,
+          "valid": true
+        },
+        {
+          "columns": [
+            "status"
+          ],
+          "definition": "CREATE INDEX webhooks_events_status_index ON public.webhooks_events USING btree (status)",
+          "expression": null,
+          "method": "btree",
+          "name": "webhooks_events_status_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        },
+        {
+          "columns": [
+            "webhookId"
+          ],
+          "definition": "CREATE INDEX webhooks_events_webhookid_index ON public.webhooks_events USING btree (\"webhookId\")",
+          "expression": null,
+          "method": "btree",
+          "name": "webhooks_events_webhookid_index",
+          "predicate": null,
+          "primary": false,
+          "ready": true,
+          "unique": false,
+          "valid": true
+        }
+      ],
+      "kind": "r",
+      "partition": false,
+      "persistence": "p",
+      "policies": [],
+      "rowSecurity": false,
+      "triggers": []
+    }
+  },
+  "limitations": [
+    "NOT_PG_EXECUTED: exact Knex/PostgreSQL rendering remains to be checked against the fixed expectations; never learn a replacement from observations.",
+    "Only five queue-relevant public tables have physical expectations. Full DB content belongs to the independent complete-database verifier.",
+    "Exact source has 3 webhooks migrations; a fourth is NOT fabricated.",
+    "No native PG driver/psql executor, authenticated store transport, credentials, producer barrier, or cross-store atomic snapshot.",
+    "Redis DB0 keys outside these exact queues reject until a separately reviewed sessions/cache/subscriptions contract exists.",
+    "Other Redis databases and independent n8n execution queues must be gated separately; no empty Speckle result qualifies n8n.",
+    "Offline admission is not trusted runtime evidence or a recovered/qualified deployment."
+  ],
+  "migrationDirectoryFileCount": 147,
+  "migrationGroups": {
+    "backgroundjobs": [
+      "20250624121042_fileimport_job_queue.js",
+      "20250904122458_compute_budget.js"
+    ],
+    "fileuploads": [
+      "20210915130000-fileuploads.js",
+      "20250508190226_add_modelId_to_file_uploads.js",
+      "20250514131509_add_modelId_foreign_to_file_uploads.js",
+      "20250519074720_fileimport_message_text.js",
+      "20250613070024_add_metadata_to_file_uploads.js",
+      "20250616114012_drop_metadata_in_file_uploads.js",
+      "20250716154353_add_performanceData_to_file_uploads.js"
+    ],
+    "previews": [
+      "20210426200000-previews.js"
+    ],
+    "webhooks": [
+      "20210701180000-webhooks.js",
+      "20221104104921_webhooks_drop_stream_fk.js",
+      "20230919080704_add_webhook_config_timestamps.js"
+    ]
+  },
+  "migrationNonExecutableFiles": [
+    {
+      "path": "packages/server/modules/core/migrations/readme.md",
+      "sha256": "ca60ab116ed2271984decb4de8884418d67f81cc55dce8abbbf924642d17f117"
+    }
+  ],
+  "migrations": [
+    {
+      "name": "20250722122424_create_sync_items_table.js",
+      "path": "packages/server/modules/acc/migrations/20250722122424_create_sync_items_table.ts",
+      "sha256": "05e343686b09306396e5c74c4706534d3ae0d1d14112ca291c50543f7d17edf8"
+    },
+    {
+      "name": "20250806163108_drop_automation_id_fk.js",
+      "path": "packages/server/modules/acc/migrations/20250806163108_drop_automation_id_fk.ts",
+      "sha256": "6f7cf002d10feee0fd94238a2d6a6bd32b7651f68d48c3c86fbd6973f02c9d4a"
+    },
+    {
+      "name": "20220829102231_add_server_access_requests_table.js",
+      "path": "packages/server/modules/accessrequests/migrations/20220829102231_add_server_access_requests_table.ts",
+      "sha256": "4bdff8698bcacb472943d8accc1a68a83b70544ec7e99f7e77e1e390aac25570"
+    },
+    {
+      "name": "20210616173000_stream_activity.js",
+      "path": "packages/server/modules/activitystream/migrations/20210616173000_stream_activity.js",
+      "sha256": "08a66beafab1ce0fd5c6b56e7c2e2410160c6f36c30950e7097aedb51756d080"
+    },
+    {
+      "name": "20250613121055_add_index_on_actionType_to_stream_activity.js",
+      "path": "packages/server/modules/activitystream/migrations/20250613121055_add_index_on_actionType_to_stream_activity.ts",
+      "sha256": "0c09a03117d6f5125c89357b5cd70690aef408fef5560418db03c7144e9d8686"
+    },
+    {
+      "name": "20250625095012_activity.js",
+      "path": "packages/server/modules/activitystream/migrations/20250625095012_activity.ts",
+      "sha256": "8111c220ffb1f4ce56b612d67308b82f5b5c2a536103a4c81e1da76f6ae427bc"
+    },
+    {
+      "name": "2020-05-29-apps.js",
+      "path": "packages/server/modules/auth/migrations/2020-05-29-apps.js",
+      "sha256": "009c92b4174a80c4cc0ca2dbee3d68685158e427b89576103da75a8c4841b0a4"
+    },
+    {
+      "name": "20230905162038_automations.js",
+      "path": "packages/server/modules/automate/migrations/20230905162038_automations.ts",
+      "sha256": "eacff331ed1e2c5246427f8564ed28bbdd509cbde56a090b904c8f7196c64623"
+    },
+    {
+      "name": "20230912114629_automations_tables_normalization.js",
+      "path": "packages/server/modules/automate/migrations/20230912114629_automations_tables_normalization.ts",
+      "sha256": "b74e1334246c407dc38a695b655c02476da07183421a45359af62889028a4ef8"
+    },
+    {
+      "name": "20230914071540_make_function_run_results_nullable.js",
+      "path": "packages/server/modules/automate/migrations/20230914071540_make_function_run_results_nullable.ts",
+      "sha256": "08068fccc4d115e7609f67f9ba6db1327114cdc29e620ccf9947c5872d1c5ef2"
+    },
+    {
+      "name": "20230920130032_fix_project_delete_cascade.js",
+      "path": "packages/server/modules/automate/migrations/20230920130032_fix_project_delete_cascade.ts",
+      "sha256": "1b73cbe7fe5f3d36f36a05187214af5e1410198e487143498a68fe31df63b329"
+    },
+    {
+      "name": "20231025100054_automation_function_name_and_logo.js",
+      "path": "packages/server/modules/automate/migrations/20231025100054_automation_function_name_and_logo.ts",
+      "sha256": "58fd0d00fd606e22fa2d711ffaebb6faee9d2d40409b7030452eefd4fac89256"
+    },
+    {
+      "name": "20240304143445_rename_tables.js",
+      "path": "packages/server/modules/automate/migrations/20240304143445_rename_tables.ts",
+      "sha256": "dd4e2dabaf9b7383c8d1315925d8312d5522346dfbc1c90d50cdf272a51c6961"
+    },
+    {
+      "name": "20240305120620_automate.js",
+      "path": "packages/server/modules/automate/migrations/20240305120620_automate.ts",
+      "sha256": "e7572c8a008ab041d9eb26841e83ce16b7bad117de23ab0601f9be4bee9f6e8d"
+    },
+    {
+      "name": "20240321092858_triggers.js",
+      "path": "packages/server/modules/automate/migrations/20240321092858_triggers.ts",
+      "sha256": "42e4d10069cc4b8cbc45c14e4cae1559467c8235c46911d8cd5410a7d67eb9a7"
+    },
+    {
+      "name": "20240404075414_revision_active.js",
+      "path": "packages/server/modules/automate/migrations/20240404075414_revision_active.ts",
+      "sha256": "503f6214b2fb977442ea2d37f242dae30386a2dbf377e0e8191a235ba8a92ba0"
+    },
+    {
+      "name": "20240404173455_automation_token.js",
+      "path": "packages/server/modules/automate/migrations/20240404173455_automation_token.ts",
+      "sha256": "1bf0adb5de72bc67276505ede90143ff02984af99500847aaf836b78725b14d9"
+    },
+    {
+      "name": "20240507075055_add_function_run_timestamps.js",
+      "path": "packages/server/modules/automate/migrations/20240507075055_add_function_run_timestamps.ts",
+      "sha256": "227f4b850d8e735c468ca2a8b2a00aa4292ac61003ff364e0b67a4f40d9bc5f8"
+    },
+    {
+      "name": "20240507140149_add_encryption_support.js",
+      "path": "packages/server/modules/automate/migrations/20240507140149_add_encryption_support.ts",
+      "sha256": "8448251786f0b707c8b0bb0121163b0078159b2bf191aac953ea80649b2bf863"
+    },
+    {
+      "name": "20240523192300_add_is_test_automation_column.js",
+      "path": "packages/server/modules/automate/migrations/20240523192300_add_is_test_automation_column.ts",
+      "sha256": "cd5900abb8ed1bf4f3c7739a0530c9466ec0e82be201743d4b91142ed7075dee"
+    },
+    {
+      "name": "20240620105859_drop_beta_tables.js",
+      "path": "packages/server/modules/automate/migrations/20240620105859_drop_beta_tables.ts",
+      "sha256": "5da484e36e3d5ba1ef58210584eb3cbe4d98d1b1b22e39701d287a0580f38e62"
+    },
+    {
+      "name": "20241203212110_cascade_delete_automations.js",
+      "path": "packages/server/modules/automate/migrations/20241203212110_cascade_delete_automations.ts",
+      "sha256": "ab71e8a47a534398c2448f3c0ff0fcccb2ba4816df8392eaeba664007ec97a35"
+    },
+    {
+      "name": "20250422161129_soft_delete_automations.js",
+      "path": "packages/server/modules/automate/migrations/20250422161129_soft_delete_automations.ts",
+      "sha256": "d202dd72ab96d2528998ed9bf94381ddb473a21d1407b894cee7312c867c33b9"
+    },
+    {
+      "name": "20250624121042_fileimport_job_queue.js",
+      "path": "packages/server/modules/backgroundjobs/migrations/20250624121042_fileimport_job_queue.ts",
+      "sha256": "2815e8c24c041b6f77bc173a456bce36dfa5bd2c4ee7d1bc31f875d1eb0c2a43"
+    },
+    {
+      "name": "20250904122458_compute_budget.js",
+      "path": "packages/server/modules/backgroundjobs/migrations/20250904122458_compute_budget.ts",
+      "sha256": "5fc571c6d2564b571db489477962922a6ce88161d834942d5e0ffcfc2649af40"
+    },
+    {
+      "name": "202206030936_add_asset_storage.js",
+      "path": "packages/server/modules/blobstorage/migrations/202206030936_add_asset_storage.js",
+      "sha256": "a3ea5b0765d340119a647ee14319323c54769fc78c8a6236ae14ea48087eb7fe"
+    },
+    {
+      "name": "202206231429_add_file_hash_to_blobs.js",
+      "path": "packages/server/modules/blobstorage/migrations/202206231429_add_file_hash_to_blobs.js",
+      "sha256": "84d423e9b3b8a9f66aa47483f4cad8bd6c4d49da7e1890d80de63a319d93de14"
+    },
+    {
+      "name": "20220727091536_blobs-id-length-removal.js",
+      "path": "packages/server/modules/blobstorage/migrations/20220727091536_blobs-id-length-removal.js",
+      "sha256": "8a89bc726f939b1aa4eb87272fbbb6ed760ab5fdc454a6783aafd8a143e735e2"
+    },
+    {
+      "name": "20220222173000_comments.js",
+      "path": "packages/server/modules/comments/migrations/20220222173000_comments.js",
+      "sha256": "35e4449d550c7ccaf009015e6efa4c2c767a098864060fe56a214870cf8a50fc"
+    },
+    {
+      "name": "20220722110643_fix_comments_delete_cascade.js",
+      "path": "packages/server/modules/comments/migrations/20220722110643_fix_comments_delete_cascade.js",
+      "sha256": "b076711e1bff742b247bdcf6405a786f269f9575b1d1b54def2ec6f130408fa8"
+    },
+    {
+      "name": "000-core.js",
+      "path": "packages/server/modules/core/migrations/000-core.js",
+      "sha256": "151d498907908bc90013e7ff2a0a43c751120dc34ffba4a7525ca2b9ea9a10ef"
+    },
+    {
+      "name": "20201222100048_add_sourceapp_to_commits.js",
+      "path": "packages/server/modules/core/migrations/20201222100048_add_sourceapp_to_commits.js",
+      "sha256": "facb1ca078e4430b6418c4cf10dc8fec1b38ae4a52e77b311d7f9cbd2029e3e3"
+    },
+    {
+      "name": "20201222101522_add_totalchildrencount_to_commits.js",
+      "path": "packages/server/modules/core/migrations/20201222101522_add_totalchildrencount_to_commits.js",
+      "sha256": "c74494fc9a95bcfa6b681db835f7057b4970eba8f83ca8f4157bfd85e58a56ff"
+    },
+    {
+      "name": "20201223120532_add_commit_parents_simplification.js",
+      "path": "packages/server/modules/core/migrations/20201223120532_add_commit_parents_simplification.js",
+      "sha256": "e6ff038a5cc9578768a4033386cabde8c7d2740ce00c22228d06432c3e75c283"
+    },
+    {
+      "name": "20201230111428_add_scopes_public_field.js",
+      "path": "packages/server/modules/core/migrations/20201230111428_add_scopes_public_field.js",
+      "sha256": "7a00481dcbdf0b0ca18ae8dbd66201cc855bf3dd74e5a5915595463dfe7f891a"
+    },
+    {
+      "name": "20210225130308_add_roles_public_field.js",
+      "path": "packages/server/modules/core/migrations/20210225130308_add_roles_public_field.js",
+      "sha256": "18ed538abe7fd3c2ed2350e649fbc1c020dea7ee3858b1a50559532a2ae1bb3b"
+    },
+    {
+      "name": "20210314101154_add_invitefield_to_serverinfo.js",
+      "path": "packages/server/modules/core/migrations/20210314101154_add_invitefield_to_serverinfo.js",
+      "sha256": "a9ff55e28324c74a4d7563facef7322b2ac1a6e64bbf991ac188714d87a59285"
+    },
+    {
+      "name": "20210322190000_add_streamid_to_objects.js",
+      "path": "packages/server/modules/core/migrations/20210322190000_add_streamid_to_objects.js",
+      "sha256": "f00dfbe2271d1d524ab049dd8e5a1b6a017574e58096d87ebc51a35f327f749e"
+    },
+    {
+      "name": "20210603160000_optional_user_references.js",
+      "path": "packages/server/modules/core/migrations/20210603160000_optional_user_references.js",
+      "sha256": "7038eabd5b212ab1cbdc3636919b3176ebba9ae80b4b7008331d863f30b57ef9"
+    },
+    {
+      "name": "20211119105730_de_duplicate_users.js",
+      "path": "packages/server/modules/core/migrations/20211119105730_de_duplicate_users.js",
+      "sha256": "c0b4ba0f17581638423d325b16025def66dc00afb01406a975fe41a905e36c58"
+    },
+    {
+      "name": "20220315140000_ratelimit.js",
+      "path": "packages/server/modules/core/migrations/20220315140000_ratelimit.js",
+      "sha256": "a4338fc585f06b69342c3735ec97f697f17a352d28803a9bd390b4c5cb31513f"
+    },
+    {
+      "name": "20220318121405_add_stream_favorites.js",
+      "path": "packages/server/modules/core/migrations/20220318121405_add_stream_favorites.js",
+      "sha256": "01694b39169cc7f87f5b6a172d4c3fd4b876914151361897c7069a743342223d"
+    },
+    {
+      "name": "20220412150558_stream-public-comments.js",
+      "path": "packages/server/modules/core/migrations/20220412150558_stream-public-comments.js",
+      "sha256": "47292b4721e842b14ac35d6ec75bd1b5b0b0a8288c3f71076895809ad9b01f77"
+    },
+    {
+      "name": "20220707135553_make_users_email_not_nullable.js",
+      "path": "packages/server/modules/core/migrations/20220707135553_make_users_email_not_nullable.js",
+      "sha256": "16bd2246f09af732931fb16ed41319abbf47989ec9afcd99402b587515bd4efb"
+    },
+    {
+      "name": "20220803104832_ts_test.js",
+      "path": "packages/server/modules/core/migrations/20220803104832_ts_test.ts",
+      "sha256": "d0be6787cf80f738da3aef8b06ad87db38ec6a8806a5e3fefbbdc68d057b3434"
+    },
+    {
+      "name": "20220819091523_add_stream_discoverable_field.js",
+      "path": "packages/server/modules/core/migrations/20220819091523_add_stream_discoverable_field.ts",
+      "sha256": "634c11e282c683ea5cca9b80e7a0ec1a14ab126074b8ff0d3fa5b91f4cfb9bec"
+    },
+    {
+      "name": "20220823100915_migrate_streams_to_lower_precision_timestamps.js",
+      "path": "packages/server/modules/core/migrations/20220823100915_migrate_streams_to_lower_precision_timestamps.ts",
+      "sha256": "ede2bba21c721900cad128b4601f839bfa43af7bdb501df28f5af50ddc242752"
+    },
+    {
+      "name": "20220921084935_fix_branch_nullability.js",
+      "path": "packages/server/modules/core/migrations/20220921084935_fix_branch_nullability.ts",
+      "sha256": "3a614f106beb2585d73d64307519a6d0e18ff8ad85465130c9a795e163e5caee"
+    },
+    {
+      "name": "20220929141717_scheduled_tasks.js",
+      "path": "packages/server/modules/core/migrations/20220929141717_scheduled_tasks.ts",
+      "sha256": "a12ec1bf4f2250d7187024db0f02d6257d6eb999fbfd66dc98bbf458dc6ea349"
+    },
+    {
+      "name": "20221122133014_add_user_onboarding_data.js",
+      "path": "packages/server/modules/core/migrations/20221122133014_add_user_onboarding_data.ts",
+      "sha256": "be7c92244a506f81f2a100899a8d3ec000e451b2025c5601a48c59affd2c6d6f"
+    },
+    {
+      "name": "20221213124322_migrate_more_table_precisions.js",
+      "path": "packages/server/modules/core/migrations/20221213124322_migrate_more_table_precisions.ts",
+      "sha256": "112b4c3549bab639a981bd6762af6ae65238a78f567b1021a94c11bd9dc84105"
+    },
+    {
+      "name": "20230316091225_create_users_meta_table.js",
+      "path": "packages/server/modules/core/migrations/20230316091225_create_users_meta_table.ts",
+      "sha256": "7a3811564d9bff969598342d69af5a4ba60b0cd946faf28ba32cc16371768186"
+    },
+    {
+      "name": "20230316132827_remove_user_is_onboarding_complete_col.js",
+      "path": "packages/server/modules/core/migrations/20230316132827_remove_user_is_onboarding_complete_col.ts",
+      "sha256": "b8233aae9aa1365292dd55c25017b4be7cabf44bc21ecf55e308c8ae63b465c3"
+    },
+    {
+      "name": "20230330082209_stricter_file_uploads_schema.js",
+      "path": "packages/server/modules/core/migrations/20230330082209_stricter_file_uploads_schema.ts",
+      "sha256": "cdcd76852a5c82859fe6e8f1b4284ea0f0ce4d5b88c3291b48521d5d70db8abc"
+    },
+    {
+      "name": "20230713094611_create_streams_meta_table.js",
+      "path": "packages/server/modules/core/migrations/20230713094611_create_streams_meta_table.ts",
+      "sha256": "618dbfbcdfb51ec0de4410b194c0937e01c5c02b040fea71349b3746bc5b3901"
+    },
+    {
+      "name": "20230727150957_serverGuestMode.js",
+      "path": "packages/server/modules/core/migrations/20230727150957_serverGuestMode.ts",
+      "sha256": "71cfd44ac4436d06dc85a28366242b8d96f122a9d97918cdad3046f9da735eb2"
+    },
+    {
+      "name": "20240109101048_create_token_resource_access_table.js",
+      "path": "packages/server/modules/core/migrations/20240109101048_create_token_resource_access_table.ts",
+      "sha256": "27ddacd9bedd51fc784a0dc4cdb3f4fad5432a231af2ced9be7eacc7e7743217"
+    },
+    {
+      "name": "20240703084247_user-emails.js",
+      "path": "packages/server/modules/core/migrations/20240703084247_user-emails.ts",
+      "sha256": "fa392d0f2d5c7e96e62d921b791d57bd8e6927d3e129e92a0633a8e67e2a5f06"
+    },
+    {
+      "name": "20240710154658_user_emails_backfill.js",
+      "path": "packages/server/modules/core/migrations/20240710154658_user_emails_backfill.ts",
+      "sha256": "958fd809158018bfc90d90ea1f1cd1d466ce21ddf5bb2707d0e3b9d8e03c0abb"
+    },
+    {
+      "name": "20241101055531_project_region.js",
+      "path": "packages/server/modules/core/migrations/20241101055531_project_region.ts",
+      "sha256": "5a9e50dfa3fc3d212150df8d593b7683ad46b5cef2a83d21276e13d3d871b461"
+    },
+    {
+      "name": "20241102055157_project_region_nofk.js",
+      "path": "packages/server/modules/core/migrations/20241102055157_project_region_nofk.ts",
+      "sha256": "788d1421aba58caad353c3a9711e6e72002c5292b134c46b6d01c0765cf9535c"
+    },
+    {
+      "name": "20250127172429_drop_closures.js",
+      "path": "packages/server/modules/core/migrations/20250127172429_drop_closures.ts",
+      "sha256": "bc7f45dbe6d9b5ade426dc55f67b1e0ce2a8fd6171dd2d11c7571d50ab17e1c5"
+    },
+    {
+      "name": "20250506114120_add_streams_visibility_col.js",
+      "path": "packages/server/modules/core/migrations/20250506114120_add_streams_visibility_col.ts",
+      "sha256": "11e0d75341498ac82f5d99893d40d0bc5eced2eeb1bd363f0f4fa8ad4ef53882"
+    },
+    {
+      "name": "20250514125149_remove_streams_ispublic_isdiscoverable.js",
+      "path": "packages/server/modules/core/migrations/20250514125149_remove_streams_ispublic_isdiscoverable.ts",
+      "sha256": "e89f5dd9944126d86f1fd2e02e383150062c58786ce7338419eb35960ff64281"
+    },
+    {
+      "name": "20250630073647_add_embed_tokens.js",
+      "path": "packages/server/modules/core/migrations/20250630073647_add_embed_tokens.ts",
+      "sha256": "56bab3ac002e682ff90d3f6f750cf93051fb630545cdac6723ce79cbdbd9a665"
+    },
+    {
+      "name": "20250701164407_object_preview_attempts.js",
+      "path": "packages/server/modules/core/migrations/20250701164407_object_preview_attempts.ts",
+      "sha256": "decf4e42a11697831d5ff1809f84fa1922e811fc7f8961775220014356f5d3b3"
+    },
+    {
+      "name": "20250722150843_lowercaseify_all_user_emails.js",
+      "path": "packages/server/modules/core/migrations/20250722150843_lowercaseify_all_user_emails.ts",
+      "sha256": "a60e93d53928b6b90be879d2b73915dafee1b3d53610cf7561be4da274cb0f98"
+    },
+    {
+      "name": "20250820101112_drop_user_defaults.js",
+      "path": "packages/server/modules/core/migrations/20250820101112_drop_user_defaults.ts",
+      "sha256": "ad9bd1bd0033770c374d7724da18ccdf49970e25f6a3b2451271945d66c2eda2"
+    },
+    {
+      "name": "20250826074024_drop_stream_defaults.js",
+      "path": "packages/server/modules/core/migrations/20250826074024_drop_stream_defaults.ts",
+      "sha256": "24ff1568973ee96937b3d18ffc4788097ab9fc80a9005420fa361da6ee0d1181"
+    },
+    {
+      "name": "20250826113850_dashboards.js",
+      "path": "packages/server/modules/dashboards/migrations/20250826113850_dashboards.ts",
+      "sha256": "916b2a11fcd8f04daa982d4722e00966939f4e3a25e7f4d9a47e2e5c4302f264"
+    },
+    {
+      "name": "20250826161638_dashboard_tokens.js",
+      "path": "packages/server/modules/dashboards/migrations/20250826161638_dashboard_tokens.ts",
+      "sha256": "98659b459bb05aa4b19010dd463005a5844f041828a187aeaebbd1202c70ac5c"
+    },
+    {
+      "name": "20250916111351_dashboard_shares.js",
+      "path": "packages/server/modules/dashboards/migrations/20250916111351_dashboard_shares.ts",
+      "sha256": "e74f6222015e3f10fb1bfe8bec8aa7f61a0728c286c0652e81f466069dfcacca"
+    },
+    {
+      "name": "20220118181256-email-verifications.js",
+      "path": "packages/server/modules/emails/migrations/20220118181256-email-verifications.js",
+      "sha256": "38bdc5968e94623bec02bc198a26d9fe354f0288f737c3b060e05fa5b7a159e4"
+    },
+    {
+      "name": "20220825082631_drop_email_verifications_used_col.js",
+      "path": "packages/server/modules/emails/migrations/20220825082631_drop_email_verifications_used_col.ts",
+      "sha256": "217f8bf898968152d2cc15d6c6bb1b4d052e55d3b7818f5d378b6fc1338e6856"
+    },
+    {
+      "name": "20250120145453_add_code_column_to_email_verifications.js",
+      "path": "packages/server/modules/emails/migrations/20250120145453_add_code_column_to_email_verifications.ts",
+      "sha256": "7f3838807544e6d832bc7a0c76643da46c609ce130299df2975ce720e0dffe66"
+    },
+    {
+      "name": "20250123133749_remove_unique_email_verifications.js",
+      "path": "packages/server/modules/emails/migrations/20250123133749_remove_unique_email_verifications.ts",
+      "sha256": "6152808b5afffda114277e89af07e60e11054b869f546b924aa9c27fcd9ef86d"
+    },
+    {
+      "name": "20210915130000-fileuploads.js",
+      "path": "packages/server/modules/fileuploads/migrations/20210915130000-fileuploads.js",
+      "sha256": "8916eb2de44669122d0811b1de7c4412e9ade3543dcd5d45d9df37cbe795f104"
+    },
+    {
+      "name": "20250508190226_add_modelId_to_file_uploads.js",
+      "path": "packages/server/modules/fileuploads/migrations/20250508190226_add_modelId_to_file_uploads.ts",
+      "sha256": "779d1e3baea702e11e19aa2b046615f118fe54b7a75ace71c2d2f29d5902468f"
+    },
+    {
+      "name": "20250514131509_add_modelId_foreign_to_file_uploads.js",
+      "path": "packages/server/modules/fileuploads/migrations/20250514131509_add_modelId_foreign_to_file_uploads.ts",
+      "sha256": "346357e1ec83cda416f3c8a2279af0c4e12ec5b35ed9666c4925ae601cd2eff1"
+    },
+    {
+      "name": "20250519074720_fileimport_message_text.js",
+      "path": "packages/server/modules/fileuploads/migrations/20250519074720_fileimport_message_text.ts",
+      "sha256": "f12e5b8d3fbe1bc7f5bffd6ac56c11596bb7b4ab3ea8bdf5b098cb68fd3ce9d5"
+    },
+    {
+      "name": "20250613070024_add_metadata_to_file_uploads.js",
+      "path": "packages/server/modules/fileuploads/migrations/20250613070024_add_metadata_to_file_uploads.ts",
+      "sha256": "886f0de00485d3908bc28b8cc30711ac3d517964014f52272449d9cfe80850f2"
+    },
+    {
+      "name": "20250616114012_drop_metadata_in_file_uploads.js",
+      "path": "packages/server/modules/fileuploads/migrations/20250616114012_drop_metadata_in_file_uploads.ts",
+      "sha256": "415759688607bd2a9b6979018793759844941d9486cb86634fc3d6fe8e2caded"
+    },
+    {
+      "name": "20250716154353_add_performanceData_to_file_uploads.js",
+      "path": "packages/server/modules/fileuploads/migrations/20250716154353_add_performanceData_to_file_uploads.ts",
+      "sha256": "d1d950fdaf9f296a8dc141b7dce9a2b10f968b086bf9e7d397d1bb72bb914413"
+    },
+    {
+      "name": "20241018132400_workspace_checkout.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20241018132400_workspace_checkout.ts",
+      "sha256": "f6f2497e322a384a7e06b46ebc126ea79dea27ddf42b1a2dd3b5a172914122b0"
+    },
+    {
+      "name": "20241105144301_cascade_delete_workspace_plans.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20241105144301_cascade_delete_workspace_plans.ts",
+      "sha256": "963123facd12f7843ebe4ffefcd99224f953bc59091d2721b506eba24a5659a0"
+    },
+    {
+      "name": "20241120063859_cascade_delete_checkout_session.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20241120063859_cascade_delete_checkout_session.ts",
+      "sha256": "ad34ed0ec16abf892c802d18b378cd2b7ec3e44bc0eda930a269ca070d2e7ab4"
+    },
+    {
+      "name": "20241126084242_workspace_plan_rename.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20241126084242_workspace_plan_rename.ts",
+      "sha256": "ab314bd6db469628b77bade4a0418e394387c72edb670f066e2d3a3b982e656f"
+    },
+    {
+      "name": "20241126142602_workspace_plan_date.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20241126142602_workspace_plan_date.ts",
+      "sha256": "5f51859261fe6ff10808803862c3b18014cf2261b58e0fb454cec2f54a3dfdcc"
+    },
+    {
+      "name": "20250224141824_create_workspace_seats_table.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250224141824_create_workspace_seats_table.ts",
+      "sha256": "3a2920e004c8476dc17a54b188d7eda5dd8c99867943c4c91e6a48ea909b954b"
+    },
+    {
+      "name": "20250410144546_subscription_currencies.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250410144546_subscription_currencies.ts",
+      "sha256": "3e69d659a63c701db746f6de80ea4e323ccdd3672520086757f5678ba9072b45"
+    },
+    {
+      "name": "20250424064652_migrate_old_plans.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250424064652_migrate_old_plans.ts",
+      "sha256": "4d0a5428d3dc07e2f6f52b0c8ce6b3c9de3688605187b6560eeca1995ffd6208"
+    },
+    {
+      "name": "20250521102621_add_updatedAt_to_workspace_plans.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250521102621_add_updatedAt_to_workspace_plans.ts",
+      "sha256": "433b795426dc9d712be692306b933a71e71c6d165c8b2a9544839540df2df406"
+    },
+    {
+      "name": "20250528074132_add_default_seat_type.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250528074132_add_default_seat_type.ts",
+      "sha256": "ced5b209b18b3f157807cab3aa3fff90e508c2355a8409545d0a38fc3986f4a4"
+    },
+    {
+      "name": "20250620072434_add_userId_to_workspaceCheckoutSessions.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250620072434_add_userId_to_workspaceCheckoutSessions.ts",
+      "sha256": "11501f1a331a2ec198cd9eaaa03d75886be6ce2a38758983a7db5444b3baa9ef"
+    },
+    {
+      "name": "20250620121314_add_uppdateIntent_to_subscriptions.js",
+      "path": "packages/server/modules/gatekeeperCore/migrations/20250620121314_add_uppdateIntent_to_subscriptions.ts",
+      "sha256": "226234f6aaf505a75d8d9dab5d77a4dc5528d4268e77ae0b62ef13766640a5e4"
+    },
+    {
+      "name": "20240522130000_gendo.js",
+      "path": "packages/server/modules/gendo/migrations/20240522130000_gendo.ts",
+      "sha256": "41d6cb495b415892e960de52ed98b65952ca0dce7d05619e3b73efca81f5806b"
+    },
+    {
+      "name": "20241120140402_gendo_credits.js",
+      "path": "packages/server/modules/gendo/migrations/20241120140402_gendo_credits.ts",
+      "sha256": "e4c150de37adf73bcb641ad610da9bcad796c2f8c37bdf9a54c09a2e4609bf69"
+    },
+    {
+      "name": "20241031081827_create_regions_table.js",
+      "path": "packages/server/modules/multiregion/migrations/20241031081827_create_regions_table.ts",
+      "sha256": "bf646f3705d5dc4e64b9733a13407f500566d991ad7479d6acae12a68381a129"
+    },
+    {
+      "name": "20220825123323_usernotificationpreferences.js",
+      "path": "packages/server/modules/notifications/migrations/20220825123323_usernotificationpreferences.ts",
+      "sha256": "180a579825a370cbb9e34bd68d75a8757635d9cbd7641dcfa6b8e130b08d5cc7"
+    },
+    {
+      "name": "20250915154600_user_notifications.js",
+      "path": "packages/server/modules/notifications/migrations/20250915154600_user_notifications.ts",
+      "sha256": "d2ebc3ed0b43427c8597587b80a5e3bb3f02d655a797edb1cc7696e7055f2914"
+    },
+    {
+      "name": "20210426200000-previews.js",
+      "path": "packages/server/modules/previews/migrations/20210426200000-previews.js",
+      "sha256": "1ec51aed5d54aa3b577b3d4bd0f46abc1f812abbb1d6be026ec8ede8264f8fba"
+    },
+    {
+      "name": "20210304111614_pwdreset.js",
+      "path": "packages/server/modules/pwdreset/migrations/20210304111614_pwdreset.js",
+      "sha256": "d7e08c7bae705094568ce30d82b4c0134cfd9706abaa8ff08aa254b81e5e454d"
+    },
+    {
+      "name": "20210303185834_invites.js",
+      "path": "packages/server/modules/serverinvites/migrations/20210303185834_invites.js",
+      "sha256": "66bb8ff0b6b28cb439001daef757d883dbc18749bd7a2be7f26a4158797e2fd2"
+    },
+    {
+      "name": "20220629110918_server_invites_rework.js",
+      "path": "packages/server/modules/serverinvites/migrations/20220629110918_server_invites_rework.js",
+      "sha256": "178157dedf835533085469be248137438867231f8c8a9b8d88e3b7e090256329"
+    },
+    {
+      "name": "20220722092821_add_invite_token_field.js",
+      "path": "packages/server/modules/serverinvites/migrations/20220722092821_add_invite_token_field.js",
+      "sha256": "15654e5c784a60ac207d731db6751a96c0cfc16d6969d65ce4e07ffa1d72c02e"
+    },
+    {
+      "name": "20230517122919_clean_up_invalid_stream_invites.js",
+      "path": "packages/server/modules/serverinvites/migrations/20230517122919_clean_up_invalid_stream_invites.ts",
+      "sha256": "d4776087a150199234715064c8d99354ab1ad70d27220c909d5b8ca137f85f88"
+    },
+    {
+      "name": "20230818075729_add_invite_server_role_support.js",
+      "path": "packages/server/modules/serverinvites/migrations/20230818075729_add_invite_server_role_support.ts",
+      "sha256": "6fde25774be95c4d79aeadaf068f5e59008a50c829d10000a0d9b7d360f2dbc0"
+    },
+    {
+      "name": "20230907131636_migrate_invites_to_lower_precision_timestamps.js",
+      "path": "packages/server/modules/serverinvites/migrations/20230907131636_migrate_invites_to_lower_precision_timestamps.ts",
+      "sha256": "61d1bb1283fd10607735e360fa9f4df2f147238ce5de836ecbfd10567f7f5fb2"
+    },
+    {
+      "name": "20240716094858_generalized_invite_record_resources.js",
+      "path": "packages/server/modules/serverinvites/migrations/20240716094858_generalized_invite_record_resources.ts",
+      "sha256": "9d06faf0afc8f7ad202e1520249eada7299872eb0868e7c14e8c89b9488a8f1d"
+    },
+    {
+      "name": "20240716134617_migrate_to_resources_array.js",
+      "path": "packages/server/modules/serverinvites/migrations/20240716134617_migrate_to_resources_array.ts",
+      "sha256": "7b6231f5ebdbb0aac8d5e9a06adfb280fd8d2a372fa5a5ea2ca08b95f894f932"
+    },
+    {
+      "name": "20240808140602_add_invite_updated_at.js",
+      "path": "packages/server/modules/serverinvites/migrations/20240808140602_add_invite_updated_at.ts",
+      "sha256": "52eab29471c198d9aaadcc86d2240b42bdd4deebfaaca4138c7b0b4f2d5e6aa0"
+    },
+    {
+      "name": "20250721102623_add_saved_views_tables.js",
+      "path": "packages/server/modules/viewer/migrations/20250721102623_add_saved_views_tables.ts",
+      "sha256": "41626978476dd263be4fe3a89961fc0b54b0df68064bd754a8db69f65d5a0cb9"
+    },
+    {
+      "name": "20250917135031_set_init_manual_positions.js",
+      "path": "packages/server/modules/viewer/migrations/20250917135031_set_init_manual_positions.ts",
+      "sha256": "45bae03005fd87c72515bb116e42f894186d177a31661f526afaa7f138b3ab3b"
+    },
+    {
+      "name": "20250923100148_add_saved_view_groups_shares_table.js",
+      "path": "packages/server/modules/viewer/migrations/20250923100148_add_saved_view_groups_shares_table.ts",
+      "sha256": "fe5ff9965687662db1672f9d35a1d5527432c6dce4d336edf82b4d3469a9a1ee"
+    },
+    {
+      "name": "20250924081359_add_saved_view_thumbnail.js",
+      "path": "packages/server/modules/viewer/migrations/20250924081359_add_saved_view_thumbnail.ts",
+      "sha256": "c4312a67113dd6a8b7f5e627b9aee17fc896c68a3ce5ce3dcd1abe17308363c3"
+    },
+    {
+      "name": "20210701180000-webhooks.js",
+      "path": "packages/server/modules/webhooks/migrations/20210701180000-webhooks.js",
+      "sha256": "bee20d34677f4b6349e653db15ad1dfbb42ab9630b2cc94a94c2c82568b0c4ef"
+    },
+    {
+      "name": "20221104104921_webhooks_drop_stream_fk.js",
+      "path": "packages/server/modules/webhooks/migrations/20221104104921_webhooks_drop_stream_fk.ts",
+      "sha256": "68259017510ec06f6e259dc479d79f2b1a373d900a2c9f7c7e5467981f93a588"
+    },
+    {
+      "name": "20230919080704_add_webhook_config_timestamps.js",
+      "path": "packages/server/modules/webhooks/migrations/20230919080704_add_webhook_config_timestamps.ts",
+      "sha256": "6a01df81d5c04b5697fefa7bb42880506750f4741c4909f2c4e31c2c0da36f35"
+    },
+    {
+      "name": "20240621174016_workspaces.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240621174016_workspaces.ts",
+      "sha256": "959a230e7ff667eda255b7c4eaec080b5c0081c8b955f5d078a690a748609142"
+    },
+    {
+      "name": "20240628112300_dropCreatorId.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240628112300_dropCreatorId.ts",
+      "sha256": "fa5ab802da884bf3f5602f0fcc128b6f67f71042048ab358f734b0adb529a3ed"
+    },
+    {
+      "name": "20240801000000_logos.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240801000000_logos.ts",
+      "sha256": "94ac6bff547a291c974ac5c0f2b61d14773e87118f9adfafd981f508ab338209"
+    },
+    {
+      "name": "20240802212846_cascadeDeleteWorkspaceProjects.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240802212846_cascadeDeleteWorkspaceProjects.ts",
+      "sha256": "3ce5a38f1d6054b0d2271f58878bd67d6d41a080b954a834b5ce492ac6d6c3b1"
+    },
+    {
+      "name": "20240806160740_workspace_domains.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240806160740_workspace_domains.ts",
+      "sha256": "912ec05dcdccc425113be7f74bf4f02485747eb145f2d5f233fa69de1bd04548"
+    },
+    {
+      "name": "20240807174901_add_column_domainBasedMembershipProtection.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240807174901_add_column_domainBasedMembershipProtection.ts",
+      "sha256": "cdc2fb76bfa655c6c28b8eb8620144b0315d50caab5642356115e67a37ed6ffa"
+    },
+    {
+      "name": "20240808091944_add_workspace_discovery_flag.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240808091944_add_workspace_discovery_flag.ts",
+      "sha256": "477f19728b393bc1e7afe845be3097b4f6f418929ee9fdad68d3436fd394da4d"
+    },
+    {
+      "name": "20240813125251_workspaceAclWithTimestamps.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240813125251_workspaceAclWithTimestamps.ts",
+      "sha256": "f35c59c050be8debf8dcf40f6f0fe47cfd9bb9ba96554d4b0e57d3d55d425f4c"
+    },
+    {
+      "name": "20240820131619_fallbackWorkspaceLogo.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240820131619_fallbackWorkspaceLogo.ts",
+      "sha256": "1ecd1b3d043d1704e7438cee87e7474285529a07b387cc46becad1899323c851"
+    },
+    {
+      "name": "20240910163614_add_column_defaultProjectRole.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240910163614_add_column_defaultProjectRole.ts",
+      "sha256": "7a661f84dcce0df85ef256feb10a5ec504f7ae79900dd407be1aba7198712c63"
+    },
+    {
+      "name": "20240912134548_add_workspace_slug.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240912134548_add_workspace_slug.ts",
+      "sha256": "7153a7223758a1a499fc565f1e2f377f279d28baf65e97d53c75d84d6763963d"
+    },
+    {
+      "name": "20240926112407_copy_workspace_slug.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240926112407_copy_workspace_slug.ts",
+      "sha256": "d22b022eea91d0834d39a918517b674a4c0c6f08025018b3cedde7d95945ba71"
+    },
+    {
+      "name": "20240930141322_workspace_sso.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20240930141322_workspace_sso.ts",
+      "sha256": "d5fb6b745f1539726b9e402fa5e2d3f5f46b27c2a94531aef8f5fc1c362d0160"
+    },
+    {
+      "name": "20241014092507_workspace_sso_expiration.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20241014092507_workspace_sso_expiration.ts",
+      "sha256": "ff025b094545fe4ce7d2f5f131d08aeb10908ae3e67b132257d1506cc60e3bde"
+    },
+    {
+      "name": "20241105070219_create_workspace_regions_table.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20241105070219_create_workspace_regions_table.ts",
+      "sha256": "b32924e9e616cdc1f87b7e3fe1132c289ceda39c84c777da3140c643831a4158"
+    },
+    {
+      "name": "20241128153315_workspace_creation_state.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20241128153315_workspace_creation_state.ts",
+      "sha256": "93c12095c2c6d887cb05c43dfec3214e4579171660a9f6eb5b7c98f03a32b5a4"
+    },
+    {
+      "name": "20241202183039_workspace_start_trial.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20241202183039_workspace_start_trial.ts",
+      "sha256": "84a67c9a32bb42f42fa955bd2d12ed6489af76d1f162ff440cc96013bbb9fb86"
+    },
+    {
+      "name": "20241220093308_create_workspace_join_requests_table.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20241220093308_create_workspace_join_requests_table.ts",
+      "sha256": "e471ca1419f63593fcb919329ea46411fbc889a10dfc7eb9c4ae506475627817"
+    },
+    {
+      "name": "20250127110735_drop_default_logo_index.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250127110735_drop_default_logo_index.ts",
+      "sha256": "eb0b7521b39fc78ac1de8cd771372fdf70765482b3ca3a5e99ce72a5aa449157"
+    },
+    {
+      "name": "20250219100906_index_user_id_workspace_join_requests.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250219100906_index_user_id_workspace_join_requests.ts",
+      "sha256": "cdf4c87b1476a5f921d5763a5d22cb665a1919af3a25cefeb670f7f5e7016be1"
+    },
+    {
+      "name": "20250319092538_remove_defaultProjectRole.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250319092538_remove_defaultProjectRole.ts",
+      "sha256": "5858b5873c2f99c04fedf89fc85b42f5185e726b6ea7833c9add658fbda7de3e"
+    },
+    {
+      "name": "20250514092509_add_missing_seats.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250514092509_add_missing_seats.ts",
+      "sha256": "728aa0b9d72cda8f7e65788d208a3b245012fd4414fe66d6e9a5250ef60dca76"
+    },
+    {
+      "name": "20250516130608_add_workspace_embed_options.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250516130608_add_workspace_embed_options.ts",
+      "sha256": "e404e33f4a265676a3f78adb0a425ef899f6262d26bd95690b7fc17c7f013e0f"
+    },
+    {
+      "name": "20250521100349_add_discoverable_workspace_auto_join.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250521100349_add_discoverable_workspace_auto_join.ts",
+      "sha256": "a8e488a687d14423a0ac50187b54598e1beb237ddd096730e871ccd860d01a5f"
+    },
+    {
+      "name": "20250606043717_add_exclusive_workspace_option.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250606043717_add_exclusive_workspace_option.ts",
+      "sha256": "adb4ca3567c68435c97e632bfa910d454ac84df935233db7f65d5fea6c056f17"
+    },
+    {
+      "name": "20250820151448_add_sso_timeout_override.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250820151448_add_sso_timeout_override.ts",
+      "sha256": "19be8641bf1cee6628634b3fa7fc1e43d728fb3cffa3e46c8c386c1376dccb1d"
+    },
+    {
+      "name": "20250822161233_workspace_feature_flags.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250822161233_workspace_feature_flags.ts",
+      "sha256": "ad3f8515f297a39df4d1cda8167f433aca66cc0cb56180ffc850605a390d3fa8"
+    },
+    {
+      "name": "20250905074349_drop_workspace_defaults.js",
+      "path": "packages/server/modules/workspacesCore/migrations/20250905074349_drop_workspace_defaults.ts",
+      "sha256": "e4eb78dc81b042f40845efe8dbc578797939e2561ca83449d5a27ebc28bc8336"
+    }
+  ],
+  "postgres": {
+    "backgroundStatuses": [
+      "queued",
+      "processing",
+      "succeeded",
+      "failed"
+    ],
+    "databases": [
+      "application",
+      "fileimport"
+    ],
+    "drainPolicy": "Block all nonterminal, failed, malformed, exhausted, unknown or foreign-origin/type jobs; successful terminal rows permitted.",
+    "integerStatuses": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "migrationTable": "knex_migrations",
+    "origin": "http://speckle-ingress:8080",
+    "schema": "public"
+  },
+  "qualification": "SOURCE_DERIVED_NOT_PG_EXECUTED",
+  "redis": {
+    "controls": {
+      "id": "string",
+      "limiter": "string",
+      "limiter:index": "hash",
+      "meta": "hash",
+      "meta-paused": "string",
+      "stalled-check": "string"
+    },
+    "database": 0,
+    "policy": "Conservative empty-only: all job/state/lock/debounce/limiter artifacts block, including terminal retention. No repairs. id and live stalled-check are the only inert artifacts. Nonqueue key admission is deliberately absent; unknown DB0 keys reject.",
+    "prefix": "bull",
+    "queues": [
+      "preview-service-jobs",
+      "preview-service-results-speckle-ingress",
+      "default:user-notifications"
+    ],
+    "states": {
+      "active": "list",
+      "completed": "zset",
+      "delayed": "zset",
+      "failed": "zset",
+      "paused": "list",
+      "priority": "zset",
+      "repeat": "zset",
+      "stalled": "set",
+      "wait": "list"
+    }
+  },
+  "runtimeQualified": false,
+  "schemaVersion": 1,
+  "source": {
+    "archiveSha256": "2c178d568a5cc04a6000d0fc61c5488639c3ea61ce518528f47d634f446e73ba",
+    "commit": "51d43b91c4681a75bff8b285da7f443a4599da67",
+    "files": [
+      {
+        "path": "packages/server/knexfile.ts",
+        "sha256": "b455fe2498fe8e8fa18a1af0b7aac1535403090b455dd1aba5c8ad4b72a8dac2"
+      },
+      {
+        "path": "packages/server/modules/core/configs/knexMigrations.ts",
+        "sha256": "303582687c04679552f312894f8432a3a76fa024c8b9cabd96d5fca51c5da684"
+      },
+      {
+        "path": "packages/server/modules/fileuploads/queues/fileimports.ts",
+        "sha256": "706033ada0b2b94ca4b5891ad6430825a1b6b47d3c7812de6e7d22a184288def"
+      },
+      {
+        "path": "packages/server/modules/fileuploads/domain/consts.ts",
+        "sha256": "d9d8d4183808daf56eddcb801c2e7a303b418f6db0d0f4b4d0a3b3fb756af37f"
+      },
+      {
+        "path": "packages/server/modules/backgroundjobs/domain/types.ts",
+        "sha256": "cd1dd22c874c84bb411dcd1b77f918b4ae23cf233e6f65c95862342f9a95b14a"
+      },
+      {
+        "path": "packages/server/modules/backgroundjobs/repositories/backgroundjobs.ts",
+        "sha256": "776903f5481eef4e8222ea24530f316f3cce9746d6ec8bc0adaede64d187e0f4"
+      },
+      {
+        "path": "packages/server/modules/previews/index.ts",
+        "sha256": "3ad8dfd2eefcf1812a2efe7e94f3de1dcc15fef32829cc1e11b505a06c1bd63b"
+      },
+      {
+        "path": "packages/server/modules/previews/tasks/tasks.ts",
+        "sha256": "d9564962446fec0ba74d7a6709c9ee8f053a86d54f5dd8f45fd2491579d7ac31"
+      },
+      {
+        "path": "packages/server/modules/previews/services/retryErrors.ts",
+        "sha256": "0a46245e75e7c0d63b6d6d421ab402ff742fe1b5fdc414928ae7d6cce5b40793"
+      },
+      {
+        "path": "packages/server/modules/previews/domain/consts.ts",
+        "sha256": "9ae1a63bd5995ce4781817db264bcd991901ee869c6ea22f97238aa18247acea"
+      },
+      {
+        "path": "packages/server/modules/previews/queues/previews.ts",
+        "sha256": "6b0b887680c3042a33c789864acde465a1749e03d9fee59037b882499335d1c4"
+      },
+      {
+        "path": "packages/shared/src/workers/fileimport/job.ts",
+        "sha256": "2eaa0624d79130887e67e596820f4a4b74f55d4d403e4ddda08d91ad4a9ff2ce"
+      },
+      {
+        "path": "packages/server/modules/notifications/services/queue.ts",
+        "sha256": "dca5b4190469da1cdce49eac8929364361b7325b286f5c533cab8238b3a2bf17"
+      },
+      {
+        "path": "packages/shared/src/queue/config.ts",
+        "sha256": "8dfda8c1cb37fd3371e71384321c4f0aac779d884ea867dac5ab512a9fa558ff"
+      },
+      {
+        "path": "packages/ifc-import-service/src/ifc_importer/domain.py",
+        "sha256": "908b40a2f3b62a8dc192631c820957455b38848bf205f7f54d49668dab12cb1b"
+      },
+      {
+        "path": "packages/ifc-import-service/src/ifc_importer/repository.py",
+        "sha256": "11b8801d0a3f0bc605c804afe53ba7ee0be4b7c78911b71a38a4660bd3d98e24"
+      },
+      {
+        "path": "packages/webhook-service/src/main.js",
+        "sha256": "0aade7e98f39d888f09fd7dd753d34dbc0ecca83566cc385c40d88e8d69e435a"
+      }
+    ]
+  }
+}

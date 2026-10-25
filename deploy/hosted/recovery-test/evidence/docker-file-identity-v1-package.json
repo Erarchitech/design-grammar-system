@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "docker-file-identity-v1-package-reviewed-one-owner-manual-run-approved",
+  "target": "DESKTOP-OS4Q8CP",
+  "filename": "DG-docker-file-identity-535eb30-v1.zip",
+  "zipSha256": "0a808a90a2f573d155e265933293369514f70cf7247e22f9d0046d78abd84248",
+  "zipBytes": 4768,
+  "files": {
+    "Collect-DockerFileIdentity.ps1": "2a515f46efa5014e61725d19b3219a90780774acb44d73cc2f08f505b7c033fa",
+    "README.md": "8c046d6ebb7809a5cf26f3040b711d549e646a48e04546eae2d55991c21375a7",
+    "manifest.json": "095d59b867917829dab6bbfb0c3d500386f469b5efcac8320fec08f06721b895"
+  },
+  "completeReviewPatchSha256": "8899609910135185001b3e50de364c94b6fcf0441e05d60120e73183d799567e",
+  "testSourceSha256": "3681cf3aa4bba4b928d8800e9a6d2532c9be6d237cb1c8dd0e819820e77f03e6",
+  "strictTests": {"discovered": 3, "ran": 3, "failures": 0, "errors": 0, "skipped": 0},
+  "parentExtractedPreflight": {"exitCode": 0, "dockerInvoked": false, "nativeCommandsStarted": 0, "files": []},
+  "independentReview": {"id": "deleg_75e10cf9", "status": "PASS", "passed": true, "strictTests": {"discovered": 3, "ran": 3, "failures": 0, "errors": 0, "skipped": 0}, "extractedPreflightExit": 0, "preflightDockerInvoked": false, "preflightNativeCommandsStarted": 0, "blockingFindings": [], "nonblockingSuggestion": "Additional synthetic cases for reparse ancestors, empty/oversize files and conflicting write handles are deferred test hardening, not claimed runtime coverage."},
+  "parentPostReviewZipManifestCrcSourceTestsHashesRechecked": true,
+  "approval": {"source": "Owner answered да to one fixed-path file hash and resource-version observation after reporting Docker update", "manualRuns": 1, "nativeExecutableLaunches": 0, "daemonStateChanges": false, "containersImagesOwnerConfigDataSecretReads": false, "targetResultReceived": true, "permissionConsumed": true, "reportedStatus": "FILES_OBSERVED", "reportedExitCode": 0, "ownerObservationSummary": "docker-file-identity-v1-owner-observation.json"},
+  "headAndExactIndexPreserved": true,
+  "issuedInventoryArchivesAndPinsUnchanged": true,
+  "runtimeVersionProven": false,
+  "provenanceVerified": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

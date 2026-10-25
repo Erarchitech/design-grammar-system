@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 1,
+  "kind": "offline-seven-role-queue-binding-synthetic-tests-not-native",
+  "baseline": {
+    "suites": 17,
+    "testsRun": 133,
+    "passed": true,
+    "exitCode": 0
+  },
+  "verification": {
+    "kind": "OFFLINE_SYNTHETIC_SUBSET_NOT_NATIVE_RECOVERY",
+    "passed": true,
+    "suites": [
+      {
+        "module": "test_recovery_checkpoint.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 14,
+          "ran": 14,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "0125379c6e9bea6ff4ac26ca055805cd27807a5475717fd71fbcc49908c8e9a8"
+      },
+      {
+        "module": "test_recovery_postgres.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 20,
+          "ran": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "420772ddc8ed117c81044c6c756f21a29c84f13d1f8df8f6638cd615e23530b4"
+      },
+      {
+        "module": "test_recovery_package.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 3,
+          "ran": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "59612ceb6c451c75e7a56b9c7b837ec8991338f3631bf5f0426a7cb292313523"
+      },
+      {
+        "module": "test_recovery_execution.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 9,
+          "ran": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "4ff0fbb34e18857d74052852cd3afa6083b1180893c4514a1abcf0eec676c5ac"
+      },
+      {
+        "module": "test_recovery_runner.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 2,
+          "ran": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "e052daa9d60a737172257caa8b64838b10b3636f1d345d2505f1edb16eb146f1"
+      },
+      {
+        "module": "test_recovery_probe.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 17,
+          "ran": 17,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "1aa9b6b80d1040a654d55ecf2cbbdd5c06fe5445a69300a7e3c87417f57730de"
+      },
+      {
+        "module": "test_recovery_snapshot.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 20,
+          "ran": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "bae9b0c6296a3e5bac20d84d59407e579ac4cd2b5495948e307f07b8c107dcb4"
+      },
+      {
+        "module": "test_recovery_diagnostic.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 2,
+          "ran": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "cff7c98ef1ab3ee3a2c893f7cf113b5601e04e04153daad8ead7ae5421f223e2"
+      },
+      {
+        "module": "test_recovery_cleanup.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 3,
+          "ran": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "7a0a39151d4b66e939fcba71d47c4a581d691ee49391a9ad1bd6658b4a8430f8"
+      },
+      {
+        "module": "test_recovery_sequence.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 7,
+          "ran": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "71029b7372bfdab17687014ee7f561661473e644d60e83d198b446fb7b503b07"
+      },
+      {
+        "module": "test_recovery_n8n.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 10,
+          "ran": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "ce8d7873cc26490af2873f21f2695016f3754e85be76ba9329eb4af1b6727784"
+      },
+      {
+        "module": "test_recovery_objects.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 10,
+          "ran": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "7b72a5fd7e25cfee1a9c1cab457eff028504950e518349dfd8da97db82818982"
+      },
+      {
+        "module": "test_recovery_queues.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 6,
+          "ran": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "e6b4239dab0bbc9067c847de0cad9049704e31bae04c547a8ee0a3c57fc851e5"
+      },
+      {
+        "module": "test_recovery_pg_init.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 2,
+          "ran": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "7ca778fd1107a0faeaf9fad1c1180dd673228124445582e2c7ddc12e441cba68"
+      },
+      {
+        "module": "test_recovery_transport.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 5,
+          "ran": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "1842180fc24eeec521bb1645f59481c718b6e6a07dd780de7f18ce711231bba7"
+      },
+      {
+        "module": "test_recovery_multistore_offline.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 2,
+          "ran": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "6fc0bd2d107caf7c3cec72b70aabdf8f0522d93dc191ffa364d6da7de34f3dfe"
+      },
+      {
+        "module": "test_recovery_offline_verifier.py",
+        "passed": true,
+        "exitCode": 0,
+        "counts": {
+          "discovered": 3,
+          "ran": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "testSourceSha256": "295c63ce5b004fbd8fdae045b961fee6be395b7df94f6473b6f250d5867a0480"
+      }
+    ],
+    "totalTestsRun": 135,
+    "deadlineExceeded": false,
+    "nativeRecoveryProven": false,
+    "offMachineRestoreProven": false,
+    "cryptographyQualified": false,
+    "releaseAccepted": false,
+    "excluded": [
+      "legacy archive suite (known required-runner skip)",
+      "native containers/services/integration",
+      "image/build/evidence suites outside recovery subset"
+    ]
+  },
+  "verificationExitCode": 0,
+  "focusedSuites": {
+    "test_recovery_queues.py": {
+      "testsRun": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "test_recovery_multistore_offline.py": {
+      "testsRun": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "review": {
+    "status": "PASS",
+    "delegation": "deleg_9ddba3c2",
+    "evidencePath": "C:/Users/Admin/AppData/Local/hermes/cache/scratch/dg-seven-role-independent-review-vgkpsgc9/review.json",
+    "evidenceSha256": "000dec85bc82e1d8ce198373f591399ee60d46ea44cb5827bd4ba0af16386d9b",
+    "securityConcerns": [],
+    "logicErrors": [],
+    "suggestions": [
+      "Неблокирующее: добавить явную перестановку корректных ID между двумя ролями и проверку extra/legacy binding в wait_drained до вызова attest/read; текущая строгая проверка словаря уже отклоняет эти случаи."
+    ],
+    "suggestionDisposition": "Nonblocking extra regression coverage deferred; current exact dictionary key/value matching already rejects swapped IDs and legacy/extra bindings. No production defect or permission change.",
+    "reviewerTestResults": [
+      {
+        "suite": "test_recovery_queues.py",
+        "exitCode": 0,
+        "discovered": 6,
+        "ran": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "logSha256": "e675d47ac10d951bbc44b6645d7f97381ce592d2d9f3e07493ba13d6c0eaf562"
+      },
+      {
+        "suite": "test_recovery_multistore_offline.py",
+        "exitCode": 0,
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "logSha256": "aba2a55ff4e395522083cc1433d243d5ddf979c3a2711d8b83190a315c0b6b78"
+      }
+    ],
+    "parentVerifiedReviewArtifactAndLogs": true,
+    "parentRecheckedReviewedSourceAndPatchHashes": true
+  },
+  "reviewInput": {
+    "completePatchSha256": "79493a7809894c8865c9e75ccdfcacb26e2163d3395b345d0f3a6db00e4f4e38",
+    "deltaPatchSha256": "8501f8bd8474c22be3a699f5cd0f82cf8a0e1d59996263a2dcc7e72769f86dd4",
+    "sourceHashes": {
+      "deploy/hosted/recovery_queues.py": "bc43f3b68de0031a10b8834d02e82921246868a9d8dd89b48a491dd2a67588fd",
+      "deploy/hosted/tests/test_recovery_queues.py": "e6b4239dab0bbc9067c847de0cad9049704e31bae04c547a8ee0a3c57fc851e5",
+      "deploy/hosted/tests/test_recovery_multistore_offline.py": "6fc0bd2d107caf7c3cec72b70aabdf8f0522d93dc191ffa364d6da7de34f3dfe"
+    },
+    "addedLineStaticScan": {
+      "hardcoded_secret": [],
+      "shell_execution": [],
+      "eval_exec": [],
+      "unsafe_deserialization": []
+    }
+  },
+  "candidateArtifact": "offline-queue-image-candidates-v1.json",
+  "git": {
+    "head": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+    "headAndIndexEntriesUnchanged": true,
+    "unrelatedStagedPathsPreserved": 19,
+    "commitCreated": false,
+    "pushPerformed": false
+  },
+  "documentPreservation": {
+    "deploy/hosted/MULTI-STORE-RECOVERY.md": {
+      "outsideNarrowInsertionByteIdentical": true,
+      "outsideNarrowInsertionNewlineNormalizedEqual": true
+    },
+    ".planning/phases/1309-dg-hosting-package-without-local-ollama/.continue-here.md": {
+      "outsideNarrowInsertionByteIdentical": true,
+      "outsideNarrowInsertionNewlineNormalizedEqual": true
+    }
+  },
+  "scope": {
+    "nativeRecoveryProven": false,
+    "physicalQueueProbesExecuted": false,
+    "targetCommandsExecuted": false,
+    "developmentDockerInvoked": false,
+    "servicesStarted": false,
+    "ownerDataOrKeyFilesRead": false,
+    "qualifiedRuntimeProfileCreated": false,
+    "furtherTargetExecutionAuthorized": false,
+    "releaseAccepted": false
+  }
+}

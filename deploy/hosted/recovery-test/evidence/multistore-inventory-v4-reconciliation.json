@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "offline-reconciliation-of-owner-chat-inventory-not-native-qualification",
+  "ownerSummary": "multistore-inventory-v4-owner-observation.json",
+  "ownerSummarySha256": "0456d03fe245f287410354fc5e58358e6eba61f5c24a3324db7dd352b103c419",
+  "reportedStatus": "OBSERVED_NOW",
+  "reportedExitCode": 0,
+  "observedAtUtc": "2026-10-18T11:20:12.1329249Z",
+  "checks": {
+    "exact12FixedReferences": true,
+    "noDuplicateReferences": true,
+    "allConfigIdAndRepoDigestSyntaxValid": true,
+    "allRepoNamesMatchRequestedReferences": true,
+    "allLinuxAmd64": true,
+    "acceptedCliPluginHashesMatch": true,
+    "diagnosticsEmptyAndFailureStageNull": true,
+    "immutableZipHashSizeCrcMembersSourceVerified": true,
+    "headAndExactIndex19Preserved": true
+  },
+  "imageCount": 12,
+  "uniqueReferenceCount": 12,
+  "repoDigestCount": 12,
+  "repoDigestSuffixEqualsConfigIdCount": 12,
+  "interpretation": "The equal digest suffixes are preserved as separately reported local fields, not treated as registry/manifest/source verification. Exact target state was not independently witnessed.",
+  "reportedVersions": {
+    "dockerClient": "29.8.2",
+    "dockerServer": "29.8.2",
+    "compose": "5.6.0"
+  },
+  "permissionConsumed": true,
+  "furtherTargetExecutionAuthorized": false,
+  "daemonStateChangeAuthorized": false,
+  "parentInvokedDocker": false,
+  "registryVerified": false,
+  "historicalRunBindingEstablished": false,
+  "queueCatalogSchemaObserved": false,
+  "fullStackInventory": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

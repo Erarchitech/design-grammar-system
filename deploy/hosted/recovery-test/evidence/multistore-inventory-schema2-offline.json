@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "kind": "offline-diagnostic-increment-not-native-qualification",
+  "collectorSchemaVersion": 2,
+  "collectorSha256": "d6341aca95a37402ccf8d8407311ff6ed56abcc892463178d65ab84e07887857",
+  "testSourceSha256": "ee6751180a6dc747acc9a1a6f5ae183adad33f48bf79cb9ecac53290c0a775ee",
+  "strictTests": {"discovered": 8, "ran": 8, "failures": 0, "errors": 0, "skipped": 0},
+  "independentReview": {"id": "deleg_1fc283ae", "passed": true, "strictTests": 8},
+  "recoveryBaseline": {"suites": 17, "tests": 133, "passedOnSequentialRepeat": true, "earlierConcurrentComposedError": true, "errorCauseEstablished": false},
+  "ownerObservation": {"source": "chat-supplied-v1-report-and-owner-statement", "status": "UNRESOLVED", "exitCode": 2, "dockerWasStopped": true, "imageIdentityEstablished": false, "composeFailureCauseEstablished": false},
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "headAndExactIndexPreserved": true,
+  "issuedV1ZipUnchanged": true,
+  "schema2PackageIssued": false,
+  "targetRerunAuthorized": false,
+  "dockerStarted": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false,
+  "limits": ["Synthetic executables are not Docker qualification", "Fixed error categories are hints, not root-cause proof", "Trusted CLI output capture has no hard memory quota", "No home/plugin environment fallback added", "Expanded native test requires separate approval"]
+}

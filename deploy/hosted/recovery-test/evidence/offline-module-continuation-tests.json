@@ -1,0 +1,199 @@
+{
+  "kind": "offline-synthetic-multistore-module-continuation-not-native-validation",
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "suites": [
+    {
+      "module": "test_recovery_checkpoint.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 14,
+        "ran": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_postgres.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 20,
+        "ran": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_package.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 3,
+        "ran": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_execution.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 9,
+        "ran": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_runner.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_probe.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 17,
+        "ran": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_snapshot.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 20,
+        "ran": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_diagnostic.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_cleanup.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 3,
+        "ran": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_sequence.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_n8n.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_objects.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 7,
+        "ran": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_queues.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_pg_init.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_transport.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "totalTestsRun": 114,
+  "newModulesTestsRun": 24,
+  "normalIndexEntriesPreserved": true,
+  "unrelatedStagedPaths": 19,
+  "review": {
+    "initial": "deleg_86832dd2",
+    "initialPassed": false,
+    "findings": [
+      "provider metadata dictionary aliasing",
+      "eager directory enumeration"
+    ],
+    "parentRedGreenFixed": true,
+    "fixReview": "deleg_062216bb",
+    "fixReviewPending": false,
+    "fixReviewPassed": true,
+    "fixReviewStrictTests": {"objects": 7, "n8n": 10, "skipped": 0}
+  },
+  "reviewPatchSha256": "21321fbce68431df451668b605af0c0cc02c66d5215cc383c371dd4f7c69ce78",
+  "nativeRecoveryProven": false,
+  "offMachineRestoreProven": false,
+  "releaseAccepted": false,
+  "dockerInvoked": false,
+  "limitations": [
+    "No trusted native outer runner, physical queue probes or MinIO client",
+    "Age is pure invocation plan; no installed/qualified executable, no actual transport",
+    "No owner key/data access; protected path/custody/transport pending",
+    "Other 90 image/build/evidence tests not repeated; legacy archive skip remains open"
+  ]
+}

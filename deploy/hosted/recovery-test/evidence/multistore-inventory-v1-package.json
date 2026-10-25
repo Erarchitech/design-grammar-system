@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "kind": "issued-read-only-inventory-package-not-native-recovery",
+  "target": "DESKTOP-OS4Q8CP",
+  "filename": "DG-multistore-inventory-535eb30-v1.zip",
+  "zipSha256": "895e2626ba1af452b187fa52c092f057200d5d69d392c66552d6ac514be7efa0",
+  "zipBytes": 5216,
+  "collectorSha256": "144831d46d02a1229602f787f136f6cd73192c748bb22dc5786951aa3a2d8573",
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "sourceReview": {"id": "deleg_ef0cd9a8", "passed": true, "strictTests": 4, "skipped": 0},
+  "exactZipReview": {"id": "deleg_7307a0ac", "passed": true, "preflightExit": 0, "dockerInvoked": false},
+  "parentFinalPreflightExit": 0,
+  "parentDockerInvoked": false,
+  "normalIndexEntriesPreserved": true,
+  "unrelatedStagedPaths": 19,
+  "targetObservationReceived": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false,
+  "scope": "Fixed 12 local image references plus Docker/Compose versions only; no container/config/data/key inspection, exec, pull, start, export or restore",
+  "knownLimits": ["Config IDs not registry digests or historical run binding", "Missing tags/digests are UNRESOLVED, not automatically fetched", "Queue/catalog schemas and native image tool versions not collected", "Trusted local parent and installed Docker/Compose binaries required"]
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "owner-chat-supplied-inventory-v3-summary-not-independent-attestation",
+  "source": "Selected fields transcribed from complete user-supplied schema3 JSON and outer exit line; not an original report file",
+  "target": "DESKTOP-OS4Q8CP",
+  "reportedExitCode": 1,
+  "reportedStatus": "BLOCKED",
+  "reportedFailureStage": "tool-guard",
+  "reportedObservedAtUtc": null,
+  "reportedDockerInvoked": false,
+  "reportedImages": [],
+  "reportedDiagnostics": [],
+  "reportedTools": {
+    "dockerExecutableSha256": "6c699720bb9523dedb9eb5d22a49951ea9210dbdb1314a3554029eee9be76896"
+  },
+  "approvedExpectedDockerExecutableSha256": "70c9fbdfb6318c2aa910581cdbe1cf4237a600177cabedcd83e95f1dac7f5db5",
+  "interpretation": "Observed CLI bytes no longer match the owner-approved continuity pin. Issued collector verifies this CLI hash before reading the plugin hash or invoking native commands; this directly explains tool-guard BLOCKED. No new Compose/plugin identity, Docker version or image identity was observed. Whether the CLI changed due to an update, repair or another event is not established.",
+  "ownerFollowup": {"updateOccurred": true, "source": "Owner stated in chat: было обновление", "updateVersionAndProvenanceVerified": false, "newIdentityBindingApproved": false, "note": "Owner-reported update is consistent with changed CLI bytes; plugin identity and new executable versions still require a separate bounded observation. No new target execution permission is implied."},
+  "dockerStartupPreviouslyApproved": true,
+  "dockerCurrentState": "not-established-by-this-report",
+  "ownerManualInventoryPermissionConsumed": true,
+  "additionalTargetCommandsAuthorized": false,
+  "automaticHashRebindingAuthorized": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

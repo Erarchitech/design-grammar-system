@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "kind": "owner-chat-supplied-docker-file-identity-summary-not-independent-attestation",
+  "source": "Selected fields transcribed from complete user-supplied JSON and outer exit line; not an original report file",
+  "target": "DESKTOP-OS4Q8CP",
+  "reportedStatus": "FILES_OBSERVED",
+  "reportedExitCode": 0,
+  "observedAtUtc": "2026-10-18T10:45:01.0309056Z",
+  "dockerInvoked": false,
+  "nativeCommandsStarted": 0,
+  "files": [
+    {"slot": "resources/bin/docker.exe", "status": "OBSERVED", "sha256": "6c699720bb9523dedb9eb5d22a49951ea9210dbdb1314a3554029eee9be76896", "bytes": 44829104, "fileVersion": "29.8.2", "productVersion": "29.8.2", "versionMetadata": "BOTH_OBSERVED", "failureStage": null},
+    {"slot": "resources/cli-plugins/docker-compose.exe", "status": "OBSERVED", "sha256": "e6176502e836a7fee8d71cab5fcda736c8dacc79ccefdf9659af977f7eae2375", "bytes": 33362864, "fileVersion": null, "productVersion": null, "versionMetadata": "UNAVAILABLE_OR_REJECTED", "failureStage": null}
+  ],
+  "reportedFailureStage": null,
+  "interpretation": "Both updated files have observed hashes. docker.exe hash matches the earlier blocked v3 report and resource metadata declares 29.8.2. Compose resource fields were absent or rejected by the allowlist, not evidence of plugin failure. File-only collection does not establish executed runtime versions, discovery, authenticity, image identities or native compatibility.",
+  "ownerUpdateReportedPreviously": true,
+  "fileOnlyPermissionConsumed": true,
+  "nextInventoryRuntimeExecutionApproved": false,
+  "daemonStateEstablished": false,
+  "runtimeVersionProven": false,
+  "provenanceVerified": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

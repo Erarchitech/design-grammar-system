@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "kind": "offline-queue-image-candidates-not-a-qualified-binding",
+  "sourceSummary": "multistore-inventory-v4-owner-observation.json",
+  "sourceSummarySha256": "0456d03fe245f287410354fc5e58358e6eba61f5c24a3324db7dd352b103c419",
+  "sourceQualification": "owner-chat-supplied selected-fields summary, not original report or independent attestation",
+  "reportedObservedAtUtc": "2026-10-18T11:20:12.1329249Z",
+  "images": [
+    {
+      "role": "speckle-server",
+      "reference": "speckle/speckle-server:latest",
+      "candidateConfigId": "sha256:ea1bb8317049950ac52cb136871853377a2c8cf06ed9332cdeb3b898ebbc83e3",
+      "returnedRepoDigests": [
+        "speckle/speckle-server@sha256:ea1bb8317049950ac52cb136871853377a2c8cf06ed9332cdeb3b898ebbc83e3"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "role": "speckle-preview-service",
+      "reference": "speckle/speckle-preview-service:latest",
+      "candidateConfigId": "sha256:64fec526c49b475216fa80ff44491f77346ddc9aa500ea6d910fb5f945f8a4f9",
+      "returnedRepoDigests": [
+        "speckle/speckle-preview-service@sha256:64fec526c49b475216fa80ff44491f77346ddc9aa500ea6d910fb5f945f8a4f9"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "role": "speckle-webhook-service",
+      "reference": "speckle/speckle-webhook-service:latest",
+      "candidateConfigId": "sha256:415c3554e1a91720e35228f5e1c873bca7cd460bfbd18ccf99284417a1a7f0f0",
+      "returnedRepoDigests": [
+        "speckle/speckle-webhook-service@sha256:415c3554e1a91720e35228f5e1c873bca7cd460bfbd18ccf99284417a1a7f0f0"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "role": "speckle-fileimport-service",
+      "reference": "speckle/speckle-fileimport-service:latest",
+      "candidateConfigId": "sha256:6d388a20e43bc7740c6860e92f97c771b0e18186d698966bc84eade3d11b5e9d",
+      "returnedRepoDigests": [
+        "speckle/speckle-fileimport-service@sha256:6d388a20e43bc7740c6860e92f97c771b0e18186d698966bc84eade3d11b5e9d"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "role": "n8n",
+      "reference": "n8nio/n8n:2.4.8",
+      "candidateConfigId": "sha256:cae1f28d585a99d9ce9a56f82fbfc99fc100862ffef988d73fa2048d2687b0cc",
+      "returnedRepoDigests": [
+        "n8nio/n8n@sha256:cae1f28d585a99d9ce9a56f82fbfc99fc100862ffef988d73fa2048d2687b0cc"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "role": "postgres",
+      "reference": "postgres:16.4-alpine3.20",
+      "candidateConfigId": "sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c",
+      "returnedRepoDigests": [
+        "postgres@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "role": "valkey",
+      "reference": "valkey/valkey:8.1-alpine",
+      "candidateConfigId": "sha256:77643d152547b446fc15cbafaff22004545663fcd40c6b28038ad283837baa75",
+      "returnedRepoDigests": [
+        "valkey/valkey@sha256:77643d152547b446fc15cbafaff22004545663fcd40c6b28038ad283837baa75"
+      ],
+      "os": "linux",
+      "architecture": "amd64"
+    }
+  ],
+  "probeSha256": null,
+  "schemaSha256": null,
+  "qualifiedRuntimeProfile": false,
+  "physicalQueueMappingEstablished": false,
+  "runningContainerImageIdentityEstablished": false,
+  "producerSetComplete": false,
+  "historicalRunBinding": "not-established",
+  "nativeRecoveryProven": false,
+  "targetExecutionAuthorized": false,
+  "releaseAccepted": false,
+  "interpretation": "Data-only minimum seven-role candidate mapping; never feed as expected_binding or treat as permission. Config IDs are selected from returned fields, RepoDigests retained separately without derivation or registry verification. Real image contents/version/physical schemas, bounded complete probes and all producers still need qualification; frontend/API and any other producers are not discovered by this subset. Legacy backend label redis does not establish Valkey schema compatibility."
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "kind": "compose-discovery-ab-reviewed-package-not-native-result",
+  "target": "DESKTOP-OS4Q8CP",
+  "filename": "DG-compose-discovery-ab-535eb30-v1.zip",
+  "zipSha256": "8366c82fdbdb50ecfca06082a57ae069821c4343bdce0e52ecd1525055616c60",
+  "zipBytes": 6129,
+  "collectorSha256": "8bba2e401e4587559a76a8d76d3774ef9dfdb9db94dc67a236c91b569dcfb1eb",
+  "completeReviewPatchSha256": "d4e5c8e08b1eb8ca3bfcab63d39fe21fe89d4d4c8609602d41091ba0900bd188",
+  "sourceAndExactZipReview": {"id": "deleg_33d1d438", "passed": true, "strictDiscovered": 6, "strictRan": 6, "failures": 0, "errors": 0, "skipped": 0, "extractedPreflightExit": 0, "preflightDockerInvoked": false},
+  "headAndExactIndexPreserved": true,
+  "maximumTopLevelDockerClientLaunches": 2,
+  "ownerApprovedOneManualComparison": true,
+  "dockerMustRemainStopped": true,
+  "targetComparisonReceived": true,
+  "ownerObservationSummary": "compose-discovery-ab-v1-owner-observation.json",
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false,
+  "limits": ["Owner-stated stopped daemon is not independently probed", "Plugin metadata/version may create descendants", "Only direct children managed; trusted installed plugins required", "Matching observed hashes establish continuity, not authenticity", "ReadToEndAsync has no hard memory quota", "Private directory with no hostile mutation required"]
+}

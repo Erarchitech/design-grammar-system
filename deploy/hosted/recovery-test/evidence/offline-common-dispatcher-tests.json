@@ -1,0 +1,92 @@
+{
+  "kind": "offline-synthetic-common-dispatcher-not-trusted-native-runner",
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "suites": [
+    {
+      "module": "test_recovery_sequence.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 7,
+        "ran": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_n8n.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_objects.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_queues.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_pg_init.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_transport.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 5,
+        "ran": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "incrementTestsRun": 37,
+  "sequenceTestsRun": 7,
+  "normalIndexEntriesPreserved": true,
+  "unrelatedStagedPaths": 19,
+  "review": {
+    "id": "deleg_caec32fa",
+    "pending": false,
+    "passed": true,
+    "strictTests": 7
+  },
+  "reviewPatchSha256": "f4feb712edffacd19179248a688d5861575252cf11dc07412becf6b3cc0009a2",
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false,
+  "dockerInvoked": false,
+  "networkInvoked": false,
+  "limitations": [
+    "Exact adapter-map orchestration only; real authorization/ownership/version/deadlines remain trusted outer-runner duties",
+    "No native adapter wiring or completion marker",
+    "Original nine recovery suites90/90 last repeated in preceding transport slice"
+  ]
+}

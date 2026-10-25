@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "summary-of-chat-supplied-compose-diagnostic-not-original-report",
+  "targetReported": "DESKTOP-OS4Q8CP",
+  "observedAtUtcReported": "2026-10-17T17:35:18.0363264Z",
+  "statusReported": "UNRESOLVED",
+  "exitCodeReported": 2,
+  "nativeCommandsStartedReported": 1,
+  "dockerExecutableSha256Reported": "70c9fbdfb6318c2aa910581cdbe1cf4237a600177cabedcd83e95f1dac7f5db5",
+  "pluginSlotsReported": ["resources/cli-plugins/docker-compose.exe", "resources/bin/docker-compose.exe"],
+  "bothPresentReported": true,
+  "bothPluginSha256Reported": "93be120f45f1ef7a5a7c176636933a5ed0fa2e26fd4cb5907303cd395c9149dc",
+  "readReported": {"phase": "EXIT", "started": true, "timedOut": false, "exitCode": 125, "category": "CLI_ARGUMENT_REJECTED", "stdoutChars": 0, "stderrChars": 107, "elapsedMs": 95},
+  "observedLimits": ["Plugin file presence and hash do not prove validity/discovery", "Rejected argument name and emitting component are not included in sanitized report", "Owner-stated Docker OFF is not independently attested"],
+  "offlineSourceFindings": {
+    "sources": ["https://raw.githubusercontent.com/docker/cli/v28.5.1/cli-plugins/manager/manager_windows.go", "https://raw.githubusercontent.com/docker/cli/v28.5.1/cli-plugins/manager/manager.go", "https://raw.githubusercontent.com/docker/cli/v28.5.1/cmd/docker/docker.go", "https://raw.githubusercontent.com/docker/cli/master/cli/cobra.go"],
+    "facts": ["Collector clears child environment except SystemRoot/PATH/DOCKER_CONFIG", "Collector supplies empty private Docker config with no cliPluginsExtraDirs", "Referenced upstream Windows CLI searches config cli-plugins, configured CLIPluginsExtraDirs and ProgramData/ProgramFiles Docker cli-plugins", "Checked Docker Desktop resources paths are not default system plugin dirs in referenced upstream", "Upstream plugin-not-found execution falls through to ordinary CLI execution and flag error can return125"],
+    "targetCliVersionEstablished": false,
+    "leadingHypothesis": "Collector isolation prevents plugin discovery, causing root CLI argument rejection",
+    "targetRootCauseProven": false
+  },
+  "oneRunAuthorizationConsumed": true,
+  "furtherTargetCommandsAuthorized": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

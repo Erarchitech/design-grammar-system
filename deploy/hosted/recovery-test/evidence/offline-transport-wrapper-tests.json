@@ -1,0 +1,202 @@
+{
+  "kind": "offline-synthetic-transport-wrapper-not-cryptographic-qualification",
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "suites": [
+    {
+      "module": "test_recovery_checkpoint.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 14,
+        "ran": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_postgres.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 20,
+        "ran": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_package.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 3,
+        "ran": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_execution.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 9,
+        "ran": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_runner.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_probe.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 17,
+        "ran": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_snapshot.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 20,
+        "ran": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_diagnostic.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 2,
+        "ran": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_cleanup.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 3,
+        "ran": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_sequence.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_n8n.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_objects.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 7,
+        "ran": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_queues.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_pg_init.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_transport.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 5,
+        "ran": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "totalTestsRun": 118,
+  "incrementTestsRun": 28,
+  "transportTestsRun": 5,
+  "normalIndexEntriesPreserved": true,
+  "unrelatedStagedPaths": 19,
+  "review": {
+    "initial": "deleg_f129789c",
+    "initialPassed": false,
+    "findings": [
+      "whole stat equality rejects legitimate access time updates"
+    ],
+    "parentRedGreenFixed": true,
+    "fixReview": "deleg_efee5d1e",
+    "fixReviewPending": false,
+    "fixReviewPassed": true,
+    "fixReviewStrictTests": {"transport": 5, "skipped": 0}
+  },
+  "reviewPatchSha256": "73c9210bb5d817dd41a9c66d9090b10f09bb317dcc7d7fc85c0ca1fff5285cd9",
+  "nativeRecoveryProven": false,
+  "cryptographyQualified": false,
+  "offMachineRestoreProven": false,
+  "releaseAccepted": false,
+  "dockerInvoked": false,
+  "limitations": [
+    "Only synthetic Python subprocess passthrough used, not age encryption",
+    "Monitored output size is not a hard OS quota; only direct child controlled",
+    "Source framing and immutable tool provenance/version are trusted outer-runner duties",
+    "Private parent ACL/quota, custody, decryption and transport are not qualified",
+    "Source plaintext retained; no cleanup success claimed",
+    "Other90 image/build/evidence checks not repeated; legacy archive skip open"
+  ]
+}

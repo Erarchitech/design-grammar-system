@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "reviewed-multistore-inventory-v3-package-owner-run-blocked-identity-change",
+  "target": "DESKTOP-OS4Q8CP",
+  "filename": "DG-multistore-inventory-535eb30-v3.zip",
+  "zipSha256": "a6834dc1de9a78ea8680027953bf4458c483b167d83c58223eaa74b14a5716f4",
+  "zipBytes": 7824,
+  "files": {
+    "Collect-MultiStoreInventory.ps1": "5463737019ff85d10769ba046b0be23543d87186dbb203a83fcaa70d93742e35",
+    "README.md": "15f14d4990e6097da9ab7731f81af018c5ac9148b3585c8531bd3ce7b9035bbf",
+    "manifest.json": "d8c4ec1d653aa4dd9135733caf9f11702c1189aa46d2b2655882d708290c1f37"
+  },
+  "completeReviewPatchSha256": "85b586a9ad3fa9791415b1522265205887d275489a8d91d821d4aa04dd2a1cd2",
+  "testSourceSha256": "317f915ee99ac9070f2d27ce94dd7ac6d7260d0f5083d441f138afbefeda3335",
+  "parentStrictTests": {"discovered": 9, "ran": 9, "failures": 0, "errors": 0, "skipped": 0},
+  "hardening": "Compiled full-collector synthetic child asserts actual environment and cwd. Seeded owner-like variables do not reach child. Scratch-only source mutants disabling environment clearing or selecting wrong cwd are rejected with expected codes 96/97 on all 14 requests. No production behavior change.",
+  "parentExtractedPreflight": {"exitCode": 0, "schemaVersion": 3, "status": "PREFLIGHT_ONLY", "dockerInvoked": false, "images": [], "tools": {}},
+  "independentReview": {"id": "deleg_88629524", "status": "PASS", "passed": true, "strictTests": {"discovered": 9, "ran": 9, "failures": 0, "errors": 0, "skipped": 0}, "extractedPreflightExit": 0, "preflightDockerInvoked": false, "blockingFindings": []},
+  "parentPostReviewZipManifestCrcSourceTestHashesRechecked": true,
+  "headAndExactIndexPreserved": true,
+  "maximumTopLevelDockerClientLaunches": 14,
+  "targetExecutionAuthorized": false,
+  "dockerStartupAuthorized": false,
+  "requiresSeparateOwnerApproval": true,
+  "ownerObservationSummary": "multistore-inventory-v3-owner-observation.json",
+  "oneRunAuthorizationConsumed": true,
+  "authorization": {"source": "Owner selected option 1 in chat after exact package review", "executor": "owner-manual-on-physical-target-only", "target": "DESKTOP-OS4Q8CP", "dockerRestartPolicyAutostartRiskAccepted": true, "maximumInventoryRuns": 1, "maximumTopLevelDockerClientLaunches": 14, "zipSha256": "a6834dc1de9a78ea8680027953bf4458c483b167d83c58223eaa74b14a5716f4", "retriesAuthorized": false, "developmentPcDockerAuthorized": false, "nativeRecoveryAuthorized": false, "ownerDataOrSecretReadsAuthorized": false, "pullBuildContainerInspectExecAuthorized": false, "targetRunResultReceived": true, "resultStatus": "BLOCKED", "resultExitCode": 1, "failureStage": "tool-guard", "reportedDockerInvoked": false, "permissionConsumed": true},
+  "preparedArchiveReadmeAndManifestRemainUnchanged": true,
+  "issuedArchivesModified": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "kind": "summary-of-owner-supplied-diagnostic-report-not-raw-report",
+  "source": "User pasted schemaVersion2 report and PowerShell exit capture in chat",
+  "target": "DESKTOP-OS4Q8CP",
+  "observedAtUtcReported": "2026-10-17T07:02:13.4979814Z",
+  "statusReported": "UNRESOLVED",
+  "exitCodeReported": 2,
+  "dockerState": "owner-stated stopped; not independently attested",
+  "dockerExecutableSha256Reported": "70c9fbdfb6318c2aa910581cdbe1cf4237a600177cabedcd83e95f1dac7f5db5",
+  "version": {"phase": "EXIT", "started": true, "timedOut": false, "exitCode": 1, "errorCategory": "LOCAL_ENDPOINT_UNAVAILABLE", "stdoutChars": 29, "stderrChars": 202, "elapsedMs": 105},
+  "compose": {"phase": "EXIT", "started": true, "timedOut": false, "exitCode": 125, "errorCategory": "UNCLASSIFIED", "stdoutChars": 0, "stderrChars": 107, "elapsedMs": 64},
+  "imageObservations": {"requested": 12, "unresolvedInspection": 12, "configIdsObserved": 0, "allFailurePhases": "EXIT", "allExitCodes": 1, "allErrorCategories": "LOCAL_ENDPOINT_UNAVAILABLE", "anyTimeout": false},
+  "interpretation": [
+    "Local endpoint failures are consistent with owner-stated stopped Docker daemon",
+    "Compose failed as a separate client command; no timeout or schema rejection indicated",
+    "Exit125 and character counts do not establish missing plugin, plugin discovery failure or argument failure",
+    "Image absence, image identities and native recovery remain unproven"
+  ],
+  "manualOneRunCompleted": true,
+  "furtherTargetCommandsAuthorized": false,
+  "nativeRecoveryProven": false,
+  "releaseAccepted": false
+}

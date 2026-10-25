@@ -1,0 +1,95 @@
+{
+  "kind": "offline-synthetic-queue-drain-not-native-qualification",
+  "sourceHead": "535eb3020532a00f7405b02f0c791d8fe1b5522c",
+  "suites": [
+    {
+      "module": "test_recovery_sequence.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_n8n.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 10,
+        "ran": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_objects.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 7,
+        "ran": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_queues.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 4,
+        "ran": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_pg_init.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 1,
+        "ran": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "module": "test_recovery_transport.py",
+      "exitCode": 0,
+      "counts": {
+        "discovered": 5,
+        "ran": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "incrementTestsRun": 31,
+  "queueTestsRun": 4,
+  "normalIndexEntriesPreserved": true,
+  "unrelatedStagedPaths": 19,
+  "review": {
+    "id": "deleg_2907e9b8",
+    "pending": false,
+    "passed": true,
+    "strictTests": 4,
+    "additionalReviewerChecks": 10
+  },
+  "reviewPatchSha256": "fc30c5f72d07ec84d936421a09181992d2b0509e52aa3b8f1d0784b3f0714665",
+  "nativeRecoveryProven": false,
+  "quiescenceProven": false,
+  "releaseAccepted": false,
+  "dockerInvoked": false,
+  "limitations": [
+    "No physical native queue probes; binding identity independently supplied",
+    "Synchronous read callbacks require outer timeout; loop cannot preempt a hung callback",
+    "Drained single sample does not replace writer stop and two stable empty samples",
+    "Trusted producer/consumer enforcement not implemented",
+    "Earlier nine suites90/90 last repeated in preceding transport slice, not repeated for this queue-only increment"
+  ]
+}
