@@ -68,6 +68,9 @@ CONTEXT_API = """Available inside calc_gen (nothing else exists):
 - ctx.solids(box) -> [Autodesk.Revit.DB.Solid] of the box.
 - ctx.intersecting(box, ["OST_StructuralFraming", ...]) -> elements of these BuiltInCategory names whose solid intersects the box.
 - ctx.host_walls(box) -> walls the box intersects.
+- ctx.near(box, ["OST_Columns", ...], max_mm) -> elements of these categories whose bounding box lies within max_mm of the box, nearest first (touching ones included); use it for a distance or clearance to elements that do not touch the box.
+- ctx.host_floors(box) -> floors (slabs) the box sits in. An opening box sits in the slab's hole, so ctx.intersecting(box, ["OST_Floors"]) finds none.
+- ctx.plan_gap_mm(a, b) -> horizontal distance in mm between the bounding boxes of two elements (0.0 when they overlap in plan), None without a bounding box.
 - ctx.wall_frame(wall) -> (origin XYZ, unit direction XYZ along the wall) or None.
 - ctx.rect_in_wall(element, frame) -> (u0, u1, z0, z1) bounding rectangle in the wall plane, feet.
 - ctx.wall_openings(wall, ["OST_Doors", "OST_Windows", "OST_SWallRectOpening"]) -> openings hosted in the wall.

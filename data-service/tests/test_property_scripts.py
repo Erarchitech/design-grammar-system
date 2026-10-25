@@ -1317,3 +1317,60 @@ def test_the_placement_wires_validator_status_into_the_highlighter(catalogue):
     out, _ = _highlighter_verdicts(catalogue)
     assert ["validator.Status", "highlighter.Status"] in out["placement"]["wires"]
     assert {"name": "Status", "access": "tree", "hint": "str"} in out["highlighter"]["inputs"]
+
+
+def _bbox_context(catalogue, elements):
+    out = ps.assemble(PROJECT, ps.resolve(ps.rules_from_rows(_rows()), catalogue), catalogue)
+    ns, element, bic = _shell_namespace(out["calculator"]["source"])
+    types_ns = __import__("types")
+    walls_cat = types_ns.SimpleNamespace(Id=types_ns.SimpleNamespace(IntegerValue=int(bic.OST_Walls)))
+
+    class Bindings:
+        def ForwardIterator(self):
+            items = iter([(types_ns.SimpleNamespace(Name="DG_Class"),
+                           types_ns.SimpleNamespace(Categories=[walls_cat]))])
+
+            class It:
+                Key = Current = None
+
+                def MoveNext(self):
+                    try:
+                        self.Key, self.Current = next(items)
+                        return True
+                    except StopIteration:
+                        return False
+            return It()
+
+    made = [element(*args, **kw) for args, kw in elements]
+    doc = types_ns.SimpleNamespace(elements=made, ParameterBindings=Bindings())
+    return ns["ModelContext"](doc, []), {e.Id.IntegerValue: e for e in made}
+
+
+def test_near_finds_elements_that_do_not_touch_the_box_nearest_first(catalogue):
+    """Phase 1303-25 (D-72), live 2026-10-25: the generated clearance calculator read columns and walls with
+    ctx.intersecting (a solid test), so an element 200 mm from the opening was never found and every box had no data."""
+    ctx, by_id = _bbox_context(catalogue, [
+        ((1, "OST_GenericModel"), {"lo": (10, 10, 0), "hi": (11, 11, 1)}),         # the box
+        ((2, "OST_StructuralColumns"), {"lo": (11.5, 10, 0), "hi": (12, 11, 1)}),  # 152.4 mm away
+        ((3, "OST_StructuralColumns"), {"lo": (14, 10, 0), "hi": (15, 11, 1)}),    # 914.4 mm away
+        ((4, "OST_StructuralColumns"), {"lo": (11, 10, 0), "hi": (11.2, 11, 1)}),  # touching
+        ((5, "OST_Walls", "Column", "confirmed"), {"lo": (8, 10, 0), "hi": (9.8, 11, 1)}),  # pylon mapped Column, 61 mm
+    ])
+    box = by_id[1]
+    near = [e.Id.IntegerValue for e in ctx.near(box, ["OST_StructuralColumns", "OST_Columns"], 500)]
+    assert near == [4, 5, 2]
+    assert ctx.near(box, ["OST_StructuralColumns"], 0) == [by_id[4]]
+    assert abs(ctx.plan_gap_mm(box, by_id[2]) - 152.4) < 1e-6
+    assert ctx.plan_gap_mm(box, by_id[4]) == 0.0
+
+
+def test_host_floors_finds_the_slab_an_opening_box_sits_in(catalogue):
+    """An opening box sits in the slab's hole, so no solid of the slab intersects it; the slab's bounding box contains
+    the box's plan centre and overlaps its height."""
+    ctx, by_id = _bbox_context(catalogue, [
+        ((1, "OST_GenericModel"), {"lo": (10, 10, 0), "hi": (11, 11, 1)}),
+        ((2, "OST_Floors"), {"lo": (0, 0, 0.2), "hi": (50, 50, 0.9)}),
+        ((3, "OST_Floors"), {"lo": (100, 100, 0.2), "hi": (150, 150, 0.9)}),
+        ((4, "OST_Floors"), {"lo": (0, 0, 20), "hi": (50, 50, 21)}),
+    ])
+    assert [e.Id.IntegerValue for e in ctx.host_floors(by_id[1])] == [2]

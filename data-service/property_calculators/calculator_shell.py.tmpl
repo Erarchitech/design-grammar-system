@@ -201,6 +201,60 @@ class ModelContext(object):
         self._hits[key] = hits
         return hits
 
+    @staticmethod
+    def _box_of(element):
+        bb = element.get_BoundingBox(None)
+        if bb is None:
+            return None
+        return (bb.Min.X, bb.Min.Y, bb.Min.Z), (bb.Max.X, bb.Max.Y, bb.Max.Z)
+
+    def near(self, box, categories, max_mm):
+        """Elements of these categories (read by DG mapping, as intersecting) whose bounding box lies within max_mm of
+        the box's bounding box, nearest first; touching ones included. No solid test (Phase 1303-25, D-72, live
+        2026-10-25: a clearance calculator read columns with intersecting and never found one 200 mm away)."""
+        own = self._box_of(box)
+        if own is None:
+            return []
+        lo, hi = own
+        limit = float(max_mm) / FEET_TO_MM + TOL_FT
+        rows = []
+        for e, emin, emax in self.candidates(categories):
+            if e.Id == box.Id:
+                continue
+            gap = math.sqrt(sum(max(0.0, emin[i] - hi[i], lo[i] - emax[i]) ** 2 for i in range(3)))
+            if gap <= limit:
+                rows.append((gap, e.Id.IntegerValue, e))
+        rows.sort(key=lambda r: (r[0], r[1]))
+        return [e for _gap, _id, e in rows]
+
+    def plan_gap_mm(self, a, b):
+        """Horizontal (plan) distance in mm between the bounding boxes of two elements, 0.0 when they overlap in plan;
+        None when either has no bounding box."""
+        ra, rb = self._box_of(a), self._box_of(b)
+        if ra is None or rb is None:
+            return None
+        dx = max(0.0, rb[0][0] - ra[1][0], ra[0][0] - rb[1][0])
+        dy = max(0.0, rb[0][1] - ra[1][1], ra[0][1] - rb[1][1])
+        return math.sqrt(dx * dx + dy * dy) * FEET_TO_MM
+
+    def host_floors(self, box):
+        """Floors whose bounding box contains the box's plan centre and overlaps its height. An opening box sits in
+        the floor's hole, so no solid of the floor intersects it (Phase 1303-25, D-72)."""
+        own = self._box_of(box)
+        if own is None:
+            return []
+        lo, hi = own
+        cx, cy = (lo[0] + hi[0]) / 2.0, (lo[1] + hi[1]) / 2.0
+        floors = []
+        for e, emin, emax in self.candidates(["OST_Floors"]):
+            if e.Id == box.Id:
+                continue
+            if emin[0] <= cx <= emax[0] and emin[1] <= cy <= emax[1] \
+                    and min(hi[2], emax[2]) - max(lo[2], emin[2]) >= -TOL_FT:
+                floors.append(e)
+        floors.sort(key=lambda e: e.Id.IntegerValue)
+        return floors
+
     def host_walls(self, box):
         return [w for w in self.intersecting(box, ["OST_Walls"]) if isinstance(w, DB.Wall)]
 

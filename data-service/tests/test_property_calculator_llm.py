@@ -74,10 +74,12 @@ import logging  # noqa: E402
 # [{'ruleId': 'R1', 'text': 't', 'swrl': 's'}], 'Beam') taken BEFORE 1303-16 changed build_prompt; re-pinned by
 # 1303-24 (D-66), which added two sentences to CONTEXT_API (return None for "nothing found", counts return 0) and
 # changed nothing else (was length 1419, sha256 0c22e77a...).
-PROMPT_BEFORE_SHA256 = "61afb4e26eefbc91e6d0feec5ccf563088bd19ae8c09f06e88cc6b51cf72762e"
-PROMPT_BEFORE_LENGTH = 1746
+PROMPT_BEFORE_SHA256 = "60405fd9898912e1606cea1d237c779ad1f38160ee353c0ee880293d96077c1f"
+PROMPT_BEFORE_LENGTH = 2297
 # (1303-24, second re-pin after two live generations answered with `from ... import`: one more CONTEXT_API line;
 # the first 1303-24 pin was length 1627, sha256 6dad6ef0...)
+# (1303-25, D-72: three CONTEXT_API lines for the bounding-box helpers ctx.near, ctx.host_floors, ctx.plan_gap_mm;
+# the 1303-24 pin was length 1746, sha256 61afb4e2...)
 
 GEN_LOGGER = "dg.property_calculator_generation"
 
@@ -311,3 +313,13 @@ def test_the_contract_text_forbids_imports_and_names_what_is_already_available()
     text = pcl.CONTEXT_API.lower()
     assert "no import" in text and "already available" in text
     assert "math" in pcl.CONTEXT_API and "DB" in pcl.CONTEXT_API
+
+
+def test_the_contract_text_offers_bounding_box_helpers_for_clearances():
+    """Phase 1303-25 (D-72), live 2026-10-25: a clearance calculator read the slab and the columns with
+    ctx.intersecting, a solid test; an opening box sits in the slab's hole and the columns do not touch it, so all
+    313 boxes had no data. The prompt names the helpers that read by bounding box."""
+    text = pcl.CONTEXT_API
+    assert "ctx.near(box, " in text and "max_mm" in text
+    assert "ctx.host_floors(box)" in text and "hole" in text
+    assert "ctx.plan_gap_mm(a, b)" in text
