@@ -2208,7 +2208,7 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
         if (canvas_sha != generated["calculator"]["sha256"]
                 or _PLACED_PLAN_SHA.get(payload.project) != _plan_sha(generated)):
             refreshed = _place_property_scripts(payload.project, generated)
-    _guard_canvas_ready(payload.project)
+    _guard_canvas_ready(payload.project, after_placement=refreshed is not None)
     started_at = datetime.now(timezone.utc).isoformat()
     result = _start_check(payload.model_dump(exclude={"refresh"}))
     if isinstance(result, dict):
@@ -2364,16 +2364,25 @@ def _canvas_busy() -> HTTPException:
         "CANVAS_BUSY", 503)
 
 
-def _guard_canvas_ready(project: str) -> None:
+def _guard_canvas_ready(project: str, after_placement: bool = False) -> None:
     """Phase 1303-24 (D-67): never start a check on a canvas that is solving (a second run queues another solution)
     or whose SendValid is already on (every re-solve then publishes; live 2026-10-25: 50 runs in 54 minutes). A
-    listener that cannot be read is left to the run itself, which reports it."""
-    try:
-        status = gh_bridge.get_property_check_status(project)
-    except HTTPException as exc:
-        if _bridge_code(exc) == "BUSY":
-            raise _canvas_busy() from exc
-        return
+    listener that cannot be read is left to the run itself, which reports it.
+
+    Right after this request placed the chain (``after_placement``) the canvas is solving the new chain: only the
+    status READ is repeated, up to CHECK_POLL_ATTEMPTS, until the canvas is free (live 2026-10-25 16:45: the check
+    answered 503 without running). No run is ever sent while it is BUSY."""
+    attempts = CHECK_POLL_ATTEMPTS if after_placement else 1
+    for attempt in range(attempts):
+        try:
+            status = gh_bridge.get_property_check_status(project)
+            break
+        except HTTPException as exc:
+            if _bridge_code(exc) != "BUSY":
+                return
+            if attempt == attempts - 1:
+                raise _canvas_busy() from exc
+            time.sleep(CHECK_POLL_S)
     toggles = status.get("toggles") if isinstance(status, dict) else None
     if isinstance(toggles, dict) and toggles.get("SendValid") is True:
         raise _structured_error_response(

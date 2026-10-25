@@ -166,3 +166,33 @@ def test_the_status_is_read_again_once_the_published_runs_are_found(monkeypatch)
     out = app_module.post_property_check_run(_request(), request=None)
     assert out["summary"]["ok"] is True and out["summary"]["validationRunIds"] == ["VR-1", "VR-2"]
     assert out["status"]["solutionsEnded"] == 7 and len(bridge.runs) == 1
+
+
+def test_after_a_fresh_placement_the_check_waits_for_the_placement_solution(monkeypatch):
+    """Live 2026-10-25 16:45: the chain was placed with a newly generated calculator, the placement's solution was still
+    running, the pre-run read answered BUSY and the check returned 503 without running. After a placement only the
+    status READ is repeated until the canvas is free; the run itself is still sent once."""
+    generated = {"calculator": {"sha256": "new"}, "placement": {}, "highlighter": {"sha256": "h"}}
+    monkeypatch.setattr(app_module, "_generate_property_scripts", lambda payload, **kw: generated)
+    monkeypatch.setattr(app_module, "_mapping_actor", lambda request: "tester")
+    placed = []
+    monkeypatch.setattr(app_module, "_place_property_scripts", lambda project, gen: placed.append(project) or {"ok": True})
+    run = {"finished": True, "send": False, "clear": False, "paint": True,
+           "status": {"boxes": 313, "violations": [], "validationRunId": [], "messages": []}}
+    bridge = _Bridge(monkeypatch, run, [IDLE, _busy(), _busy(), IDLE])
+    out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", send=False), request=None)
+    assert placed == ["p"] and len(bridge.runs) == 1
+    assert bridge.status_calls == 4  # canvas sha read, two BUSY reads while the placement solves, the free read
+    assert out["finished"] is True and out["refreshed"] == {"ok": True}
+
+
+def test_a_placement_solution_that_never_ends_is_answered_with_503_and_no_run(monkeypatch):
+    generated = {"calculator": {"sha256": "new"}, "placement": {}, "highlighter": {"sha256": "h"}}
+    monkeypatch.setattr(app_module, "_generate_property_scripts", lambda payload, **kw: generated)
+    monkeypatch.setattr(app_module, "_mapping_actor", lambda request: "tester")
+    monkeypatch.setattr(app_module, "_place_property_scripts", lambda project, gen: {"ok": True})
+    bridge = _Bridge(monkeypatch, {"finished": True}, [IDLE, _busy()])
+    with pytest.raises(HTTPException) as err:
+        app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project="p", send=False), request=None)
+    assert err.value.status_code == 503 and err.value.detail["code"] == "CANVAS_BUSY"
+    assert bridge.runs == [] and bridge.status_calls == 1 + app_module.CHECK_POLL_ATTEMPTS
