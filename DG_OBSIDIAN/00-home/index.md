@@ -9,7 +9,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
-- [[sessions/2026-10-26 DeGram plan 1301-45 renderer isolation complete|Session — DGMODE plan45 offline complete; 304 Electron, 143 focused renderer; next computed wave5 / plan46]] (2026-10-26)
+- [[sessions/2026-10-26 DeGram dual-mode offline acceptance and publication|Session — DGMODE plans42–46 offline complete; published child 846d67a and framework 4481fc7; next build and authorised live rehearsal]] (2026-10-26)
+- [[sessions/2026-10-26 DeGram plan 1301-45 renderer isolation complete|Session — DGMODE plan45 offline complete; 304 Electron, 143 focused renderer; superseded by Plan46/47 publication checkpoint]] (2026-10-26)
 - [[knowledge/debugging/DeGram runtime generation must pass through both main wiring layers|Debugging — generation forwarding must survive actual coordinator/main/runtime composition]] (2026-10-26)
 
 - [[sessions/2026-10-26 DeGram plan 1301-44 runtime composition complete|Session — DGMODE plan44 offline complete; 302 Electron / 196 Python checks; next computed wave4, plan45]] (2026-10-26)
@@ -21,7 +22,6 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 - [[sessions/2026-10-25 DeGram dual mode plans 42-47 prepared|Session — DGMODE plans 42–47, structural self-check, execute only waves 29–34]] (2026-10-25)
 - [[knowledge/decisions/DeGram dual mode is an additive plan slice with explicit runtime gates|Decision — additive slice, origin isolation and separate runtime/publication gates]] (2026-10-25)
-
 
 - [[sessions/2026-10-25 DeGram Developer and Demo modes captured in GSD|Session — Developer/Demo modes captured, DGMODE-01..04, Phase1301 priority; executable planning next]] (2026-10-25)
 - [[knowledge/decisions/DeGram Developer Mode uses localhost and Demo Mode uses Contabo|Decision — Developer = localhost, Demo = Contabo; isolated state and safe switching, delivery1301 / hosted1309]] (2026-10-25)
@@ -56,18 +56,29 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - Phase 1303 mapping MVP (branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`): owner run on `v12-hexagonal-facade-01-auto-mapping.gh` per `.planning/phases/1303-pravilo-gh-obekt/1303-TEST-GUIDE.md` (steps 3–5), demo 19.10; 1309 untouched. See [[knowledge/decisions/Mapping is proposed with an LLM and CONNECTOR places DG components bound by identity (Phase 1303)|LLM + placement decision]] and [[00-home/Current priorities|priorities]].
 - [[sessions/2026-10-25 Phase 1309 DG stand live on Contabo VPS|Phase1309 latest — DG test stand LIVE on a Contabo VPS (HTTPS, admin login, project isolation, LLM, n8n verified; object upload/restore not)]] (2026-10-25). Decision [[knowledge/decisions/Hosted stand first and recovery proof in parallel|stand first, recovery proof in parallel]]; traps [[knowledge/debugging/Fresh-server deployment traps found on the first real Linux run|found on the first real Linux run]]. Next-session prompt: `C:/Users/Admin/DG-session-handoffs/2026-10-25-server-update/CONTINUE.md`.
 
-- [[sessions/2026-10-16 Phase 1309 two-store recovery PASS and offline multi-store preparation|Phase1309 session — two-store v3 PASS, offline multi-store90/90, continuation handoff]] (2026-10-16)
-- Phase 1309 latest: synthetic two-store recovery v3 owner-run PASS/exit0, exact ZIP/revision and typed checks reconciled; native Neo4j dump/load + full API state restored to a fresh same-daemon project with cleanup. Retained labelled transcription: `deploy/hosted/recovery-test/evidence/c82b92b-v3-owner-success.json`. Full multi-store/off-machine/hosted/registry/freeze remain open; [[00-home/Current priorities|priorities]].
-- Phase 1309 latest: four-image runtime v2 owner report completed, readiness/smoke/cleanup matched to issued ZIP; process exit unknown (empty `$LASTEXITCODE`), no rerun solely for exit. Retained transcription/disposition: `deploy/hosted/image-runtime/evidence/`. Full hosted/registry/recovery/freeze remain open; [[00-home/Current priorities|priorities]].
-- Phase 1309 latest: owner-returned actual-candidate `2dedbfb` subset PASS + exit 0 matched to issued ZIP; full hosted/images/restore/freeze remain open. Earlier runner-pending entry below is historical. See [[00-home/Current priorities|priorities]] and `deploy/hosted/runtime-evidence/README.md`.
-- Phase 1309 owner clarification (2026-10-16): ALNST web-use rights confirmed by owner; no further licence investigation. Physical-only access to `DESKTOP-OS4Q8CP`: manual ZIP/run/sanitized-report handoff, separate hosted-bundle runner not yet ready; see [[00-home/Current priorities|priorities]] and [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|design decision]].
+- [[sessions/2026-10-19 Phase 1309 HTTP review failed and PG bounded sink handoff|Phase1309 latest — HTTP review v12 FAIL despite21/21; PG bounded sink prototype13/13, native runner OPEN]] (2026-10-19). Durable evidence and continuation: `C:/Users/Admin/DG-session-handoffs/2026-10-19-phase1309/`. Overrides older Phase1309 «latest» summaries below; no native/release approval.
 
+- [[sessions/2026-10-17 Phase 1309 offline multi-store modules and strict verification|Phase1309 latest —133/133 strict offline tests, independent reviews PASS; native identities/approval/custody gates open]] (2026-10-17)
+
+- [[sessions/2026-10-16 Phase 1309 two-store recovery PASS and offline multi-store preparation|Phase1309 session — two-store v3 PASS, offline multi-store90/90, continuation handoff]] (2026-10-16)
+
+- Phase 1309 latest: synthetic two-store recovery v3 owner-run PASS/exit0, exact ZIP/revision and typed checks reconciled; native Neo4j dump/load + full API state restored to a fresh same-daemon project with cleanup. Retained labelled transcription: `deploy/hosted/recovery-test/evidence/c82b92b-v3-owner-success.json`. Full multi-store/off-machine/hosted/registry/freeze remain open; [[00-home/Current priorities|priorities]].
+
+- Phase 1309 latest: four-image runtime v2 owner report completed, readiness/smoke/cleanup matched to issued ZIP; process exit unknown (empty `$LASTEXITCODE`), no rerun solely for exit. Retained transcription/disposition: `deploy/hosted/image-runtime/evidence/`. Full hosted/registry/recovery/freeze remain open; [[00-home/Current priorities|priorities]].
+
+- Phase 1309 latest: owner-returned actual-candidate `2dedbfb` subset PASS + exit 0 matched to issued ZIP; full hosted/images/restore/freeze remain open. Earlier runner-pending entry below is historical. See [[00-home/Current priorities|priorities]] and `deploy/hosted/runtime-evidence/README.md`.
+
+- Phase 1309 owner clarification (2026-10-16): ALNST web-use rights confirmed by owner; no further licence investigation. Physical-only access to `DESKTOP-OS4Q8CP`: manual ZIP/run/sanitized-report handoff, separate hosted-bundle runner not yet ready; see [[00-home/Current priorities|priorities]] and [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|design decision]].
 - [[sessions/2026-10-15 Phase 1302 executable plans verified|Phase 1302 — 10 plans / 25 tasks independently checked; product gates open]] (2026-10-15)
+- Server pilot preparation: owner chose **3 — defer platform; portable package and offline checks only**. Framework `.planning/PILOT-2026-10-22.md` rev. 2 (v13 foundation + bounded v14 scenario; v14 stays isolated); deployment/live handoff date unconfirmed — [[knowledge/decisions/Server pilot combines v13 foundation and bounded v14 scenario|decision]] (2026-10-15)
+- [[sessions/2026-10-14 Phase 1309 sandbox V11 runtime verified release open|Phase 1309 — synthetic V11 runtime PASS; production release still open]] (2026-10-14)
 - [[sessions/2026-10-14 Phase 1302 context research and planning gate|Phase 1302 — context, preliminary research and blocked GSD planning]] (2026-10-14)
 - [[sessions/2026-10-14 Phase 1308 rollout, UAT C-E and phase closed|Phase 1308 rollout (rebuild from HEAD, D-49 cleanup), UAT C–E, verification and security — phase closed]] (2026-10-14)
 - [[sessions/2026-10-13 Phase 1308 UAT audit, DeGram c476c236 build and group F pass|Phase 1308 UAT audit, DeGram c476c236 build, group F passed — rollout 19/20 open]] (2026-10-13)
 - [[sessions/2026-10-13 SVOD rebrand, ALNST and Tektur design system, drawn landing hero|SVOD rebrand, ALNST + Tektur design system, drawn landing hero — design accepted]] (2026-10-13)
 - [[sessions/2026-10-13 Browser language dropdown and DeGram host locale recheck|Browser language dropdown and DeGram host locale recheck — live acceptance open]] (2026-10-13)
+- [[sessions/2026-10-12 Hosting pilot Phase 1309 planned in parallel with 1308|Hosting pilot Phase 1309 session — planned alongside Phase 1308]] (2026-10-12)
+
 - [[sessions/2026-10-13 DeGram language setting and local test build|DeGram language setting and unpacked test build — manual acceptance open]] (2026-10-13)
 - [[sessions/2026-10-12 Building code integration research and v14 planning|Building-code integration research and future v14.0 GSD plan]] (2026-10-12)
 - [[knowledge/decisions/Building code integration is isolated as future v14.0|Decision: normative integration is a separate, unactivated v14.0 milestone]] (2026-10-12)
@@ -120,6 +131,7 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 - [[knowledge/decisions/Automated mapping MVP uses group questions and learned profiles (Phase 1303)|Phase 1303 mapping MVP — evidence, group questions, learned profiles; deterministic engine, LLM only explains]] (2026-10-17)
 - [[knowledge/decisions/Mapping MVP is developed in a separate git worktree so Phase 1309 is not interrupted|Mapping MVP in git worktree `dg-mapping` on `feature/mapping-mvp`; 1309 untouched]] (2026-10-17)
 - [[knowledge/decisions/Hosted stand first and recovery proof in parallel|Decision: Phase 1309 hosted stand first with test data; full multi-store recovery proof afterwards on the server]] (2026-10-25)
+- [[knowledge/decisions/Server pilot combines v13 foundation and bounded v14 scenario|Decision: server pilot to 2026-10-22 = v13 foundation + bounded v14 normative scenario]] (2026-10-15)
 - [[knowledge/decisions/Phase 1302 source vocabulary and revision boundaries|Phase 1302 — source, vocabulary, rule revision and lessons-learned boundaries]] (2026-10-14)
 - [[knowledge/decisions/SVOD name, ALNST and Tektur design system, drawn landing hero|SVOD name; ALNST + Tektur design system; uppercase headings without full stops; crescent ring and drawn hero]] (2026-10-13)
 - [[knowledge/decisions/Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54)|Interface language is switched only in DeGram settings, Russian and English only (D-50..D-54, Phase 1308)]] (2026-10-12)
