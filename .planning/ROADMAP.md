@@ -290,7 +290,7 @@ Plans:
 - [ ] DGMODE-01..04 — executable plans 1301-42–47 подготовлены из [1301-DUAL-MODE.md](phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md); требования остаются Pending до полной acceptance, 1301-16/full phase gates открыты.
 - [x] 1301-42-PLAN.md — Target config + durable ownership, offline complete (SUMMARY; source uncommitted).
 - [x] 1301-43-PLAN.md — Origin-owned profiles, scoped destructive operations, restartable local migration; offline complete 2026-10-26: Python 69/69, Electron 295/295, typecheck passed. Computed DAG wave 2, declared wave 30; no commit/build/install/live.
-- [ ] 1301-44-PLAN.md — Safe target switching/runtime lifecycle (next, computed wave 3).
+- [x] 1301-44-PLAN.md — Main-owned target/runtime lifecycle and atomic backend admission; offline complete 2026-10-26: Electron 302/302, gateway/security/contracts/retirement 196/196, workspace tests 27/27, typecheck passed. Computed wave 3; renderer lease adoption remains plan 45, product/live acceptance open. No component commit/build/install/live; framework session notes saved separately.
 - [ ] 1301-45-PLAN.md — Target selector and selected/effective mode visibility.
 - [ ] 1301-46-PLAN.md — Offline cross-environment acceptance coverage.
 - [ ] 1301-47-PLAN.md — Separately gated publication/build/install and localhost/Contabo UAT.

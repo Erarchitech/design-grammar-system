@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-26 DeGram plan 1301-44 runtime composition complete|Session — DGMODE plan44 offline complete; 302 Electron / 196 Python checks; next computed wave4, plan45]] (2026-10-26)
+- [[knowledge/debugging/DeGram quiescence must reserve RPC work before enqueue|Debugging — atomic backend admission/quiescence, queued-work reservations and transport metadata]] (2026-10-26)
+
 - [[sessions/2026-10-26 DeGram plan 1301-44 switch controller partial|Session — DGMODE plan44 Task 1 controller/backend fence complete; Task 2 Electron composition remains open]] (2026-10-26)
 - [[sessions/2026-10-26 DeGram plan 1301-43 environment profiles and restartable migration|Session — DGMODE profiles/migration offline complete; 69 Python + 295 Electron tests]] (2026-10-26)
 - [[knowledge/debugging/Environment-owned profile names must remain covered by the scope backend gate|Debugging — new 32-hex identities must not bypass the inactive-scope backend-start guard]] (2026-10-26)
