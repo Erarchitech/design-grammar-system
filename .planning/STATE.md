@@ -32,6 +32,8 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 
 ## Current Position
 
+**Bounded client execution (2026-10-26):** `/gsd-execute-phase 1301 --wave 2 --no-transition` completed plan 1301-43 offline (computed DAG wave 2; declared wave 30). Origin-owned profiles and restartable local migration: Python 69/69, Electron 295/295, Desktop typecheck passed. No commit/push/build/install/launch/live operations; DGMODE/DGCL/HOST-05 and Phase 1301 acceptance remain open. Next DGMODE plan is 1301-44 (computed wave 3); primary Phase 1303 position and counters below are preserved. See `1301-43-SUMMARY.md`.
+
 **Priority update (2026-10-17, branch `feature/mapping-mvp`, worktree `C:\Users\Admin\source\repos\dg-mapping`):** the owner made the MVP slice of Phase 1303 — automated GH/Revit → DG mapping with group questions and learned profiles — the priority for a demo on 2026-10-19 (DGMAP-01…06, outside the 51 MVP IDs; `.planning/phases/1303-pravilo-gh-obekt/1303-CONTEXT.md`). Deferred until after the demo: 1302 (incl. gate 1302-08), remaining 1300/1301 work (incl. the 1301-16 live UAT), 1304–1307, v14 activation and Phase 35. Phase 1309 is **not** deferred: it continues in a parallel session on `feature/hosting-dg-pilot` in the main folder; this branch merges after the demo and after a 1309 commit point. Historical 1308/1302 lines below are kept unchanged.
 
 Phase: 1303 (pravilo-gh-obekt) — MVP slice EXECUTING (2026-10-17)

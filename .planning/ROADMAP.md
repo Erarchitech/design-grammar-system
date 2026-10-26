@@ -287,7 +287,13 @@ Plans:
 
 **Ближайший client follow-up — Developer Mode / Demo Mode (owner 2026-10-25):**
 
-- [ ] DGMODE-01..04 — подготовить executable plans из [1301-DUAL-MODE.md](phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md): A — mode config + environment isolation (component); B — selector + safe switching + real-path A→B→A tests (component, после A); C — published gitlink/docs + отдельно разрешённые build/install и localhost/Contabo UAT (framework, после A/B). Это capture/planning brief, не готовые PLAN и не execution/acceptance. Номера выделить после проверки текущего набора планов; 1301-16/full phase gates не закрывать автоматически.
+- [ ] DGMODE-01..04 — executable plans 1301-42–47 подготовлены из [1301-DUAL-MODE.md](phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-DUAL-MODE.md); требования остаются Pending до полной acceptance, 1301-16/full phase gates открыты.
+- [x] 1301-42-PLAN.md — Target config + durable ownership, offline complete (SUMMARY; source uncommitted).
+- [x] 1301-43-PLAN.md — Origin-owned profiles, scoped destructive operations, restartable local migration; offline complete 2026-10-26: Python 69/69, Electron 295/295, typecheck passed. Computed DAG wave 2, declared wave 30; no commit/build/install/live.
+- [ ] 1301-44-PLAN.md — Safe target switching/runtime lifecycle (next, computed wave 3).
+- [ ] 1301-45-PLAN.md — Target selector and selected/effective mode visibility.
+- [ ] 1301-46-PLAN.md — Offline cross-environment acceptance coverage.
+- [ ] 1301-47-PLAN.md — Separately gated publication/build/install and localhost/Contabo UAT.
 
 **Entry gate**: Независимый read-only `ui-v2` client code/offline tests разрешён сейчас в local single-user scope, пока 1300 incomplete. Перед semantic consumption/live handshake применимые G-01/V8/security gates и independent ownership acceptance должны быть приняты; blanket завершение всего 1300 для независимой разработки не требуется. Reviewer/второй ПК нужны для поздних acceptance criteria, не для predevelopment identity/spec. Service-only endpoint не используется как обход отсутствующего user-facing path.
 

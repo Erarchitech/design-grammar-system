@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-26 DeGram plan 1301-43 environment profiles and restartable migration|Session — DGMODE profiles/migration offline complete; 69 Python + 295 Electron tests; next computed wave3 / plan44]] (2026-10-26)
+- [[knowledge/debugging/Environment-owned profile names must remain covered by the scope backend gate|Debugging — new 32-hex identities must not bypass the inactive-scope backend-start guard]] (2026-10-26)
+
 - [[sessions/2026-10-25 DeGram dual mode plans 42-47 prepared|Session — DGMODE plans 42–47, structural self-check, execute only waves 29–34]] (2026-10-25)
 - [[knowledge/decisions/DeGram dual mode is an additive plan slice with explicit runtime gates|Decision — additive slice, origin isolation and separate runtime/publication gates]] (2026-10-25)
 
