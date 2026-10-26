@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-26 DeGram plan 1301-45 renderer isolation complete|Session — DGMODE plan45 offline complete; 304 Electron, 143 focused renderer; next computed wave5 / plan46]] (2026-10-26)
+- [[knowledge/debugging/DeGram runtime generation must pass through both main wiring layers|Debugging — generation forwarding must survive actual coordinator/main/runtime composition]] (2026-10-26)
+
 - [[sessions/2026-10-26 DeGram plan 1301-44 runtime composition complete|Session — DGMODE plan44 offline complete; 302 Electron / 196 Python checks; next computed wave4, plan45]] (2026-10-26)
 - [[knowledge/debugging/DeGram quiescence must reserve RPC work before enqueue|Debugging — atomic backend admission/quiescence, queued-work reservations and transport metadata]] (2026-10-26)
 
