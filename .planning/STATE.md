@@ -639,6 +639,7 @@ Shipped from Phase 20 Plan 02:
 | 260711-i63 | Graph core thinking-sphere animation during Ingest/Query/Edit with node-emergence streams (Higgsfield loop video + procedural streams) | 2026-07-11 | d1e3483 | [260711-i63-add-graph-core-thinking-sphere-animation](./quick/260711-i63-add-graph-core-thinking-sphere-animation/) |
 | 260723-s82 | Fix Graph Viewer core animation: theme-aware transparent GIFs (dark/light) | 2026-07-23 | 963159c | [260723-s82-fix-graph-viewer-core-animation-theme-aw](./quick/260723-s82-fix-graph-viewer-core-animation-theme-aw/) |
 | 260723-tgi | Graph Viewer search bar: adaptive value dropdown listing all unique values for the selected field | 2026-07-23 | f132719 | [260723-tgi-in-graph-viewer-for-search-bar-add-dropd](./quick/260723-tgi-in-graph-viewer-for-search-bar-add-dropd/) |
+| 261027-sgc | Install the DG connectors (Revit, Grasshopper) from the DeGram Connectors tab: Installed column, native confirmation, bundled DG.gha | 2026-10-27 | ba10f004 (component) | [261027-sgc-install-connectors-from-the-degram-conne](./quick/261027-sgc-install-connectors-from-the-degram-conne/) |
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 | Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
 | Phase 821 P01 | 40min | 2 tasks | 8 files |

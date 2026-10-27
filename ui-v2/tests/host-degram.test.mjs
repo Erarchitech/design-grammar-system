@@ -106,6 +106,46 @@ test("host new-session announcement is transient and absent outside host mode", 
   assert.equal(globalThis.location.hash, "#unchanged");
 });
 
+test("connector install signals: closed vocabulary both ways, absent outside host mode (quick 261027-sgc)", async () => {
+  const hosted = await hostMode("?host=degram");
+  assert.deepEqual(hosted.INSTALLABLE_CONNECTORS, ["revit", "grasshopper"]);
+  assert.deepEqual(hosted.parseHostSignal("#degram-installed=revit:ready,grasshopper:install"), { installed: { revit: "ready", grasshopper: "install" } });
+  assert.deepEqual(hosted.parseHostSignal("#degram-installed=grasshopper:needs-host"), { installed: { grasshopper: "needs-host" } });
+  for (const hash of [
+    "#degram-installed=",
+    "#degram-installed=revit:done",
+    "#degram-installed=dynamo:ready",
+    "#degram-installed=revit:ready,grasshopper:install,revit:ready",
+    "#degram-installed=revit:ready&x=1",
+    "#degram-install=revit",
+    "#degram-connectors-check"
+  ]) {
+    assert.equal(hosted.parseHostSignal(hash), null, hash);
+  }
+
+  const calls = [];
+  globalThis.history = { replaceState(...args) { calls.push(args); } };
+  hosted.requestConnectorStatus();
+  assert.equal(globalThis.location.hash, "#degram-connectors-check");
+  hosted.requestConnectorInstall("grasshopper");
+  assert.equal(globalThis.location.hash, "#degram-install=grasshopper");
+  globalThis.location.hash = "#unchanged";
+  for (const id of ["dynamo", "Revit", "../revit", "", undefined]) hosted.requestConnectorInstall(id);
+  assert.equal(globalThis.location.hash, "#unchanged");
+  assert.equal(calls.length, 2);
+
+  const normal = await hostMode("");
+  globalThis.location.hash = "#unchanged";
+  assert.equal(normal.parseHostSignal("#degram-installed=revit:ready"), null);
+  normal.requestConnectorStatus();
+  normal.requestConnectorInstall("revit");
+  assert.equal(globalThis.location.hash, "#unchanged");
+
+  // App hands the reported state to the Connectors table.
+  const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(app, /signal\.installed\) window\.dispatchEvent\(new CustomEvent\("dg-connector-install", \{ detail: signal\.installed \}\)\)/);
+});
+
 test("host-only ring centre is wired without altering the normal root selector", async () => {
   const main = await readFile(new URL("../src/main.jsx", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");

@@ -82,6 +82,8 @@ function AppShell() {
         // <html lang> and dispatches dg-lang for the canvas engines.
         if (signal.lang) setLang(signal.lang);
         // F-07: the host reports the project that is actually open (or none) after a refused or failed pick, so the
+        // Quick 261027-sgc: the install state of DeGram's bundled connectors, for the Connectors table.
+        if (signal.installed) window.dispatchEvent(new CustomEvent("dg-connector-install", { detail: signal.installed }));
         // ring never shows the refused project as selected. No announceProject: this is not a choice to echo back.
         if (signal.project !== undefined) {
           setProject(signal.project);

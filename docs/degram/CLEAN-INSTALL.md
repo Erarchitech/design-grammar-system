@@ -14,7 +14,7 @@ Signing and an update channel are deferred.
 | PC | Windows 11 x64. The pilot PC is Windows 11 Home 10.0.26200. Windows 10 is not verified. |
 | Disk | About 3 GB free for the installer, about 10 GB free for the installed payload (it carries the bundled Python agent and its tools). |
 | Revit | Revit 2024, with a project you can open. |
-| Rhino | Rhino 8 with Grasshopper, and the DG plugin (`DG.gha`) installed as in `docs/RELEASE-NOTES-v9.0.md` (Grasshopper libraries folder, Rhino closed while copying). |
+| Rhino | Rhino 8 with Grasshopper. The DG plugin (`DG.gha`) is installed from DeGram (step 2). |
 | DG server | A reachable Design Grammar System (the compose stack) and a DG account that is a member of the project you will use. |
 | Installer | `DeGram-Setup-<version>.exe` and its SHA-256 from `.planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-BUILD.md`. Check the hash before running it. |
 | Python for the Revit adapter | Python 3.13 and `uv` (step 7). The bundled agent Python (3.14) cannot run the locked adapter. |
@@ -31,25 +31,41 @@ other versions are not verified.
 1. Download the pyRevit 6.5.3 installer from the pyRevit releases page and install it.
 2. Start Revit 2024. A **pyRevit** tab appears in the ribbon.
 
-## 2. pyRevit extension (Расширение pyRevit)
+## 2. DG connectors: install from DeGram (Коннекторы → Установить)
 
-The DeGram adapter ships inside the installer as `resources\revit-mcp` (the same files are in the
-repository under `apps/revit-mcp`). Its pyRevit half is `startup.py`, `degram_readonly.py`,
-`revit_mcp\` and `extension.json`.
+No script is run for this. Do it after DeGram is installed and signed in to DG (step 6).
 
-1. Create a folder for pyRevit extensions, for example `C:\pyRevitExtensions`.
-2. Copy the four items above into `C:\pyRevitExtensions\revit-mcp.extension\` (the folder name must
-   end in `.extension`).
-3. In Revit: **pyRevit tab, Settings, Custom Extension Directories**, add `C:\pyRevitExtensions`.
-   After the first load, open `%APPDATA%\pyRevit\pyRevit_config.ini` and confirm the section
-   `[revit-mcp.extension]` reads `disabled = false`. If pyRevit wrote `disabled = true`, set it to
-   `false` and reload pyRevit (this happened with installers up to 0.1.5; the extension from 0.1.6 is
-   enabled by default). pyRevit 6.5.3 on the pilot PC runs the **IronPython 3.4** engine (runtime log:
-   "Building on IronPython engine: 342"), so the pyRevit half of the adapter is written for IronPython
-   3.4 and also 2.7: no `async`, f-strings or annotations.
-4. Do **not** install "MCP Server for Revit Python" from the pyRevit extension manager, and remove any
-   other extension that registers `/revit_mcp/` routes: it is the unrestricted upstream project and
-   it would answer the same route names with write routes.
+DeGram carries both add-ins in its installer. The Revit connector is in `resources\revit-mcp`, built
+from `apps/dg-revit-connector`. The DG Grasshopper plugin is in `resources\dg-grasshopper`, the
+`net48` Release build of `DG/src/DG.Grasshopper`.
+
+1. Open a project in DeGram, then the **Коннекторы** (Connectors) row in the sidebar.
+2. The **Установка** (Installed) column shows, for Revit and Grasshopper:
+   - **Готов** (Ready): the installed copy matches the one in this DeGram build;
+   - **Установить** (Install): not installed, or an older copy is installed;
+   - **Сначала установите pyRevit** (Revit only): pyRevit was not found (step 1);
+   - **Нет в этой сборке DeGram**: this installer does not carry the add-in.
+
+   Other connectors show «—».
+3. Click **Установить**. DeGram asks for confirmation in its own dialog and names the target folder.
+   - Revit: the pyRevit half of the connector is copied to
+     `%APPDATA%\pyRevit\Extensions\dg-revit-connector.extension` (the same files as
+     `apps/dg-revit-connector/install.py`). Afterwards use **pyRevit tab → Reload**, or restart Revit.
+     A **DG** ribbon tab appears.
+   - Grasshopper: the plugin is copied to `%APPDATA%\Grasshopper\Libraries\DG`. Close Rhino first.
+     If Rhino still holds the plugin, the column says **Закройте Rhino и повторите** and nothing is changed.
+     Start Rhino again afterwards.
+4. An earlier installation is kept under `%LOCALAPPDATA%\DG\connector-backups\<revit|grasshopper>\<UTC time>`.
+   To roll back, delete the installed folder and move the backup copy back.
+
+Do **not** install "MCP Server for Revit Python" from the pyRevit extension manager. The upstream
+`revit-mcp.extension` is left untouched, and the DG connector answers under its own Routes name
+`dg_revit`. pyRevit 6.5.3 on the pilot PC runs the **IronPython 3.4** engine, so the pyRevit half is
+written for IronPython 3.4 and 2.7: no `async`, f-strings or annotations.
+
+For a build: `python tools/degram/stage_connector_payloads.py --out <empty folder>` builds the plugin
+at the current commit and stages both payloads with `connector-manifest.json`. Point the build at the
+staged folders with `DEGRAM_DG_GRASSHOPPER_SOURCE` and `DEGRAM_REVIT_MCP_SOURCE`.
 
 ## 3. pyRevit Routes: `[routes]`, loopback only
 

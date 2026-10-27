@@ -4,6 +4,13 @@ const DEGRAM_HOST = new URLSearchParams(globalThis.location?.search || "").get("
 
 export const HOST_REGIONS = ["graph", "model", "projects", "connectors"];
 
+// Quick 261027-sgc: the connectors DeGram can install from its own bundle, and the install states it reports.
+// Paired with the fork's PAGE_INSTALL_FRAGMENT / HOST_INSTALLED_FRAGMENT in apps/degram/apps/desktop/electron/degram/dg-view.ts.
+export const INSTALLABLE_CONNECTORS = ["revit", "grasshopper"];
+export const CONNECTOR_INSTALL_STATES = ["ready", "install", "installing", "unavailable", "needs-host", "locked", "failed"];
+const CONNECTOR_STATE = `(${INSTALLABLE_CONNECTORS.join("|")}):(${CONNECTOR_INSTALL_STATES.join("|")})`;
+const INSTALLED_SIGNAL = new RegExp(`^#degram-installed=${CONNECTOR_STATE}(?:,${CONNECTOR_STATE})?$`);
+
 export function isDegramHost() {
   return DEGRAM_HOST;
 }
@@ -31,6 +38,16 @@ export function parseHostSignal(hash) {
   // capability (D-52).
   if (/^#degram-lang=(ru|en)$/.test(hash)) return { lang: hash.slice(13) };
   // The project DeGram actually opened (empty: none). Display-only: it moves the page's selection back after a
+  // What DeGram reports about its bundled connectors (quick 261027-sgc). Display-only: the page can ask for an
+  // install, DeGram confirms it natively; this signal never authorizes anything.
+  if (INSTALLED_SIGNAL.test(hash)) {
+    const installed = {};
+    for (const pair of hash.slice(18).split(",")) {
+      const [id, state] = pair.split(":");
+      installed[id] = state;
+    }
+    return { installed };
+  }
   // refused pick and grants no capability. Bounded like announceProject.
   const project = /^#degram-project=([^&#]{0,200})$/.exec(hash);
   if (project) {
@@ -57,5 +74,19 @@ export function announceProject(name) {
 export function announceNewSession() {
   if (!DEGRAM_HOST) return;
   globalThis.location.hash = "#degram-new-session";
+  clearHostSignal();
+}
+
+/** Ask DeGram for the install state of its bundled connectors (answered with #degram-installed=). */
+export function requestConnectorStatus() {
+  if (!DEGRAM_HOST) return;
+  globalThis.location.hash = "#degram-connectors-check";
+  clearHostSignal();
+}
+
+/** Ask DeGram to install a bundled connector; DeGram shows its own confirmation before writing anything. */
+export function requestConnectorInstall(id) {
+  if (!DEGRAM_HOST || !INSTALLABLE_CONNECTORS.includes(id)) return;
+  globalThis.location.hash = `#degram-install=${id}`;
   clearHostSignal();
 }

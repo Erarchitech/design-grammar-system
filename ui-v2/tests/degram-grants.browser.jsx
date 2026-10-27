@@ -140,6 +140,36 @@ async function run(id, action) {
       await until(() => !!row('degram'), 'Table rendered');
       assert(row('degram').textContent.includes('Available') && !row('degram').textContent.includes('Create token'), 'DeGram available without a token action');
     });
+    await run('GRANTS-host-installed-column', async () => {
+      const hashes = []; const onHash = e => hashes.push(new URL(e.newURL).hash);
+      window.addEventListener('hashchange', onHash);
+      try {
+        queue.push(registry({ grasshopper: 'available', revit: 'requestable', dynamo: 'requestable' }), [200, { grants: [], requests: [] }]);
+        await render(<ConnectorsScreen {...props} onBack={() => {}} />);
+        await until(() => !!row('revit'), 'Table rendered');
+        equal([...host.querySelectorAll('thead th')].map(h => h.textContent), ['Connector', 'Access', 'Installed', 'Status'], 'Installed column between Access and Status');
+        await until(() => hashes.includes('#degram-connectors-check'), 'The table asked DeGram for the install state');
+        assert(['grasshopper', 'revit', 'dynamo', 'degram'].every(id => row(id).querySelectorAll('td')[1].textContent === '—'), 'Dash until DeGram answers');
+        const installed = detail => act(async () => window.dispatchEvent(new CustomEvent('dg-connector-install', { detail })));
+        await installed({ revit: 'install', grasshopper: 'ready' });
+        const cellOf = id => row(id).querySelectorAll('td')[1];
+        assert(cellOf('grasshopper').textContent.includes('Ready') && !cellOf('grasshopper').querySelector('button'), 'Installed connector shows Ready');
+        assert(cellOf('dynamo').textContent === '—' && cellOf('degram').textContent === '—', 'Not installable rows show a dash');
+        await act(async () => cellOf('revit').querySelector('button').click());
+        await until(() => hashes.includes('#degram-install=revit'), 'Install asked DeGram for revit');
+        assert(cellOf('revit').textContent.includes('Confirm in DeGram') && !cellOf('revit').querySelector('button'), 'Waiting for the native confirmation');
+        await installed({ revit: 'installing', grasshopper: 'ready' });
+        assert(cellOf('revit').textContent.includes('Installing'), 'Installing state');
+        await installed({ revit: 'ready', grasshopper: 'locked' });
+        assert(cellOf('revit').textContent.includes('Ready'), 'Revit ready after install');
+        assert(cellOf('grasshopper').querySelector('button') && cellOf('grasshopper').textContent.includes('Close Rhino and try again.'), 'Locked shows Install and the hint');
+        await installed({ revit: 'needs-host', grasshopper: 'unavailable' });
+        await act(async () => setLang('ru'));
+        assert(cellOf('revit').textContent.includes('Сначала установите pyRevit.') && cellOf('grasshopper').textContent.includes('Нет в этой сборке DeGram.'), 'Russian hints');
+        assert(host.querySelector('thead').textContent.includes('Установка'), 'Russian header');
+        equal(calls.map(c => c.url), ['/data-service/connectors?project=A', '/data-service/degram/grants/mine'], 'Install state never calls DG');
+      } finally { window.removeEventListener('hashchange', onHash); }
+    });
   } else {
     await run('GRANTS-eligible-members', async () => {
       equal(eligibleGrantMembers([{ username: 'a', role: 'viewer' }, { username: 'b', role: 'editor' }, { username: 'c', role: 'owner' }, { username: 'd', role: 'viewer' }], [{ username: 'a', connector_id: 'grasshopper', active: true }, { username: 'b', connector_id: 'revit', active: true }, { username: 'd', connector_id: 'grasshopper', active: false }], 'grasshopper').map(m => m.username), ['b', 'd'], 'Only eligible members');

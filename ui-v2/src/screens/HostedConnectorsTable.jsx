@@ -1,10 +1,13 @@
 import React from "react";
 import { Button } from "../components/index.js";
 import { DEGRAM_CONNECTOR_ID } from "../lib/connectorsApi.js";
+import { INSTALLABLE_CONNECTORS, requestConnectorInstall, requestConnectorStatus } from "../lib/hostMode.js";
 import { useT } from "../i18n/LanguageProvider.jsx";
 
 // DeGram-hosted table: one registry connector per row, with its own access
 // request flow. The hosted status dots intentionally keep their green/red colors.
+// The Installed column (quick 261027-sgc) installs DeGram's bundled add-ins: the
+// page only asks; DeGram confirms natively, copies, and reports the state back.
 
 const muted = { color: "var(--text-muted)", font: "400 12px/1.4 var(--font-sans)" };
 const errorStyle = { color: "var(--status-fail)", font: "400 12px/1.4 var(--font-sans)" };
@@ -19,6 +22,33 @@ const noteField = {
   color: "var(--color-ink)",
   font: "400 12px/1 var(--font-sans)"
 };
+
+// What a locked install needs the user to close first.
+const HOST_APP = { revit: "Revit", grasshopper: "Rhino" };
+
+function InstalledCell({ connector, state, waiting, onInstall, t }) {
+  if (!INSTALLABLE_CONNECTORS.includes(connector.id)) return <span style={muted}>—</span>;
+  if (waiting) return <span data-installed="waiting" style={muted}>{t("Confirm in DeGram...")}</span>;
+  if (state === "installing") return <span data-installed="installing" style={muted}>{t("Installing...")}</span>;
+  if (state === "ready") {
+    return (
+      <span data-installed="ready" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--color-ink)" }}>
+        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--status-on)", flex: "none" }} />
+        {t("Ready")}
+      </span>
+    );
+  }
+  if (state === "needs-host") return <span data-installed="needs-host" style={muted}>{t("Install pyRevit first.")}</span>;
+  if (state === "unavailable") return <span data-installed="unavailable" style={muted}>{t("Not included in this DeGram build.")}</span>;
+  if (state !== "install" && state !== "locked" && state !== "failed") return <span style={muted}>—</span>;
+  return (
+    <span data-installed={state} style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <Button size="sm" onClick={() => onInstall(connector.id)} aria-label={`${t("Install")}: ${connector.name}`}>{t("Install")}</Button>
+      {state === "locked" && <span style={muted}>{t("Close {app} and try again.", { app: HOST_APP[connector.id] })}</span>}
+      {state === "failed" && <span style={errorStyle}>{t("Installation failed.")}</span>}
+    </span>
+  );
+}
 
 function StatusCell({ active, t }) {
   const color = active ? "var(--status-on)" : "var(--status-fail)";
@@ -47,6 +77,30 @@ export default function HostedConnectorsTable({
 }) {
   const { t } = useT();
   const [notes, setNotes] = React.useState({});
+  const [installs, setInstalls] = React.useState({});
+  const [waiting, setWaiting] = React.useState(null);
+
+  // DeGram answers every check and every install request with #degram-installed= (App -> dg-connector-install).
+  React.useEffect(() => {
+    const onInstalled = (event) => {
+      setInstalls((prev) => ({ ...prev, ...event.detail }));
+      setWaiting(null);
+    };
+    window.addEventListener("dg-connector-install", onInstalled);
+    requestConnectorStatus();
+    return () => window.removeEventListener("dg-connector-install", onInstalled);
+  }, []);
+
+  const refresh = () => {
+    onRefresh();
+    requestConnectorStatus();
+  };
+
+  const install = (id) => {
+    if (waiting) return;
+    setWaiting(id);
+    requestConnectorInstall(id);
+  };
 
   const accessOf = (connector) => {
     if (connector.id === DEGRAM_CONNECTOR_ID) {
@@ -94,7 +148,7 @@ export default function HostedConnectorsTable({
     <section data-testid="hosted-connectors" style={{ padding: "16px 18px", display: "grid", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <strong style={{ font: "500 15px/1.3 var(--font-sans)" }}>{t("Connectors")}</strong>
-        <Button size="sm" variant="secondary" onClick={onRefresh} disabled={loading} style={{ marginLeft: "auto" }}>
+        <Button size="sm" variant="secondary" onClick={refresh} disabled={loading} style={{ marginLeft: "auto" }}>
           {t("Refresh")}
         </Button>
       </div>
@@ -108,6 +162,7 @@ export default function HostedConnectorsTable({
             <tr>
               <th scope="col" style={{ ...cell, ...muted, textAlign: "left", fontWeight: 500 }}>{t("Connector")}</th>
               <th scope="col" style={{ ...cell, ...muted, textAlign: "left", fontWeight: 500 }}>{t("Access")}</th>
+              <th scope="col" style={{ ...cell, ...muted, textAlign: "left", fontWeight: 500 }}>{t("Installed")}</th>
               <th scope="col" style={{ ...cell, ...muted, textAlign: "right", fontWeight: 500 }}>{t("Status")}</th>
             </tr>
           </thead>
@@ -117,12 +172,15 @@ export default function HostedConnectorsTable({
                 <tr data-connector={connector.id}>
                   <th scope="row" style={{ ...cell, textAlign: "left", fontWeight: 500, color: "var(--color-ink)" }}>{connector.name}</th>
                   <td style={cell}>{renderAccess(connector)}</td>
+                  <td style={cell}>
+                    <InstalledCell connector={connector} state={installs[connector.id]} waiting={waiting === connector.id} onInstall={install} t={t} />
+                  </td>
                   <td style={{ ...cell, textAlign: "right" }}>
                     <StatusCell active={connector.status === "active"} t={t} />
                   </td>
                 </tr>
                 {errors?.[connector.id] && (
-                  <tr><td colSpan={3} style={cell}><p role="alert" style={errorStyle}>{errors[connector.id]}</p></td></tr>
+                  <tr><td colSpan={4} style={cell}><p role="alert" style={errorStyle}>{errors[connector.id]}</p></td></tr>
                 )}
               </React.Fragment>
             ))}
