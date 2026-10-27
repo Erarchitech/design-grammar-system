@@ -22,10 +22,10 @@ status: pending-live-observation
 | Child revision / branch | `846d67a54b1875984cc8122cfba1fb2db9ba5d1a` / `degram/milestone13` |
 | Child published remote revision | `846d67a54b1875984cc8122cfba1fb2db9ba5d1a`, verified at `origin/degram/milestone13` after owner-authorized commit/push |
 | Framework gitlink equals published child | pending this framework update; verify immediately after the gitlink is staged |
-| Build clone revision / clean state | pending observation |
-| Client artifact path | pending observation |
-| Client artifact version | pending observation |
-| Client artifact SHA-256 | pending observation |
+| Build clone revision / clean state | `D:\dgb\src`, detached `846d67a54b1875984cc8122cfba1fb2db9ba5d1a`, clean after build (observed 2026-10-27) |
+| Client artifact path | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.11.exe`; unpacked `release\win-unpacked\DeGram.exe` |
+| Client artifact version | exe ProductVersion `0.1.11.0`, FileVersion `0.1.11`; reused version, contrary to WORKSPACE.md unique installer patch rule; install/launch held |
+| Client artifact SHA-256 | installer `E31491D74851393A68D138DED4DC48C714A39DEF6FADCE182B0AB9DD1F4345ED` (490656773 bytes); unpacked `resources\app.asar` `3E5C654A705880308BBC0D0C2C08381B3E878B291DA6F8C080A346C277659220` |
 | Install path | pending observation |
 | Local DG version/revision and source | pending observation |
 | Demo DG version/revision and source | pending observation |
@@ -38,9 +38,9 @@ status: pending-live-observation
 
 | ID | Requirement link | Expected | Actual | Status | Redacted evidence |
 | --- | --- | --- | --- | --- | --- |
-| LIVE-00 | DGMODE-04 | `workspace.py verify` identifies the working pair and context; no silent pair substitution | not-run | not-run | pending |
-| LIVE-01 | DGMODE-04 | Artifact metadata is DeGram / `com.erarchitech.degram`; SHA-256/version/path recorded before launch | not-run | not-run | pending |
-| LIVE-02 | DGMODE-04 | Build clone is `D:\dgb\src`, at recorded selected revision and clean; no development occurs there | not-run | not-run | pending |
+| LIVE-00 | DGMODE-04 | `workspace.py verify` identifies the working pair and context; no silent pair substitution | verifier exit 0; child HEAD = gitlink = `846d67a54b1875984cc8122cfba1fb2db9ba5d1a`; componentContextInstalled true; productAccepted false | pass-preflight-only | observed 2026-10-27 before install/launch |
+| LIVE-01 | DGMODE-04 | Artifact metadata is DeGram / `com.erarchitech.degram`; SHA-256/version/path recorded before launch | ProductName DeGram, CompanyName Erarchitech; packaged main contains app ID and target selector/config markers; no resources/app-update.yml; hashes recorded above. Installer version 0.1.11 is reused; stamp base/displayVersion 0.0.0 | blocked-version-policy | stamp commit matches, dirty false, variant degram, payload bundled, updateMechanism external; install/launch not performed |
+| LIVE-02 | DGMODE-04 | Build clone is `D:\dgb\src`, at recorded selected revision and clean; no development occurs there | exact selected commit, detached, clean after owner-run build | pass-build-preflight-only | owner-reported build exit 0 at 2026-10-27T08:03:19Z; stamp builtAt 2026-10-27T07:57:17.048Z; artifact independently inspected |
 | LIVE-03 | DGMODE-04 | Existing Hermes stays running/unchanged according to control-window attribution; DeGram home/userData are isolated | not-run | not-run | pending |
 | LIVE-04 | DGMODE-01 | Effective configured origins are Developer `http://localhost:8080` and Demo `https://dg.173-249-46-99.nip.io`; no unconfigured override | not-run | not-run | pending |
 
@@ -78,6 +78,38 @@ status: pending-live-observation
 | Deterministic controller race and TLS-shaped failed Demo start | DGMODE-03 switch refusal/no fallback state machine | Real TLS chain/stand outage handling or Desktop renderer presentation |
 | Renderer generation/store fencing | DGMODE-02/03 stale-response defense | Native WebContents bounds, live visual/focus behavior |
 | Electron/UI/typecheck/Python green bounded suites | DGMODE-04 offline reproducibility prerequisite | Packaged artifact, launch, local/hosted login or stock-Hermes nonmutation |
+
+## Version-policy correction (2026-10-27)
+
+The artifact metadata above describes the completed `846d67a…` build and is retained as historical evidence, not as the next install candidate. No installation or launch of that artifact occurred in this run.
+
+- Owner requested the version correction in the canonical submodule and a build from the published new revision.
+- Component `apps/desktop/electron-builder.config.cjs`: DeGram-only installer version `0.1.11` → `0.1.12`; no shared package version or runtime behavior changed.
+- Published component commit: `aee247efc6bf92349aeff4161079e62133755cfb`, confirmed by `ls-remote origin refs/heads/degram/milestone13`. Only the one-line version change was committed/pushed.
+- Framework gitlink staged to that published commit; workspace verifier passed on the exact pair. No framework commit/push performed.
+- Build identity/isolation tests: initial default-timeout run 38 passed / 2 timed out at 5000 ms; repeat with explicit 30000 ms timeout 40/40 passed. Framework helper tests 27/27 passed, with socket ResourceWarnings.
+- Build-only clone `D:\dgb\src` fetched from the canonical submodule and is clean/detached at `aee247efc6bf92349aeff4161079e62133755cfb`.
+- Owner subsequently reported build exit 0 at `2026-10-27T08:26:50Z`. Independent artifact inspection at `2026-10-27T08:35:44Z` confirms the new build below. Earlier execution-permission denial was not bypassed; the build was owner-run.
+
+### Verified 0.1.12 install candidate
+
+This candidate supersedes the historical 0.1.11 artifact above for the next installation. LIVE-01's version-policy blocker is resolved for this candidate only; no runtime acceptance is implied.
+
+| Field | Observed value |
+| --- | --- |
+| Installer | `D:\dgb\src\apps\desktop\release\DeGram-Setup-0.1.12.exe` |
+| Installer bytes / SHA-256 | `490659129` / `A08F838B172B09E4FB1C2405E020E115804054FA4983CD26C7DA4013799535A4` |
+| Unpacked app.asar SHA-256 | `D9C8FB3D496BCCB3DE8A589F18FE0865B3754F769E5C892651E41DD42D5393F3` |
+| ProductName / CompanyName / ProductVersion / FileVersion | `DeGram` / `Erarchitech` / `0.1.12.0` / `0.1.12` |
+| Install stamp | commit `aee247efc6bf92349aeff4161079e62133755cfb`, dirty false, variant degram, payload bundled, updateMechanism external |
+| Stamp builtAt | `2026-10-27T08:22:37.705Z` |
+| Stamp upstream version fields | baseVersion/displayVersion remain `0.0.0`; actual exe metadata is `0.1.12.0` |
+| Packaged main | contains `com.erarchitech.degram`, `persist:degram-dg-`, `activeDgTarget`, `DEGRAM_DG_ORIGIN` |
+| Updater feed file | `resources/app-update.yml` absent |
+| Build clone after build | clean, detached at `aee247efc6bf92349aeff4161079e62133755cfb` |
+| Framework/component pair | workspace verify exit 0, gitlink = component HEAD = `aee247ef…`, componentContextInstalled true, productAccepted false |
+| Installation / launch / target rehearsal | not performed or observed for 0.1.12 at this checkpoint |
+- Git emitted a permission warning while pruning the old `dgp-t` worktree metadata during the component commit; no cleanup/bypass attempted. Commit/push and remote SHA verification succeeded.
 
 ## Result ledger
 

@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-27 DeGram 0.1.12 build verified awaiting isolated installation|Session — DeGram0.1.12 published/built/verified; installation unconfirmed, launch and live rehearsal next]] (2026-10-27)
+- [[knowledge/debugging/DeGram installer builds must bump the variant version before packaging|Debugging — variant version must be bumped before packaging; stamp upstream version is not exe version]] (2026-10-27)
+
 - [[sessions/2026-10-26 DeGram dual-mode offline acceptance and publication|Session — DGMODE plans42–46 offline complete; published child 846d67a and framework 4481fc7; next build and authorised live rehearsal]] (2026-10-26)
 - [[sessions/2026-10-26 DeGram plan 1301-45 renderer isolation complete|Session — DGMODE plan45 offline complete; 304 Electron, 143 focused renderer; superseded by Plan46/47 publication checkpoint]] (2026-10-26)
 - [[knowledge/debugging/DeGram runtime generation must pass through both main wiring layers|Debugging — generation forwarding must survive actual coordinator/main/runtime composition]] (2026-10-26)
