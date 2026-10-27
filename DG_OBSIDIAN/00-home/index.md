@@ -9,6 +9,8 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-27 DG connectors install from the DeGram Connectors tab|Session — Revit/Grasshopper connectors install by button in the DeGram Connectors tab; payload staging script]] (2026-10-27)
+- [[knowledge/decisions/DG connectors install from the DeGram Connectors tab with a native confirmation|Decision — connectors install from DeGram with native confirmation; build stages current DG.gha + Revit connector]] (2026-10-27)
 - [[sessions/2026-10-27 DeGram 0.1.12 build verified awaiting isolated installation|Session — DeGram0.1.12 published/built/verified; installation unconfirmed, launch and live rehearsal next]] (2026-10-27)
 - [[knowledge/debugging/DeGram installer builds must bump the variant version before packaging|Debugging — variant version must be bumped before packaging; stamp upstream version is not exe version]] (2026-10-27)
 
