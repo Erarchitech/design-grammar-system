@@ -75,6 +75,41 @@ public static class DataServiceRequestAuth
             && !uri.IsLoopback;
     }
 
+    /// <summary>The data-service address CONNECTOR uses when its Server input is left empty.</summary>
+    public const string DefaultServerUrl = "http://localhost:8000";
+
+    /// <summary>
+    /// Turns what a user typed in CONNECTOR's Server input into a base URL: blank is the local
+    /// default, a bare host name gets <c>https://</c>, and a trailing slash is dropped.
+    /// </summary>
+    public static string NormalizeServerUrl(string? server)
+    {
+        var trimmed = server?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return DefaultServerUrl;
+        }
+
+        if (!trimmed.Contains("://"))
+        {
+            trimmed = "https://" + trimmed;
+        }
+
+        return trimmed.TrimEnd('/');
+    }
+
+    /// <summary>
+    /// True when <paramref name="dataServiceUrl"/> names a host other than this machine. A remote
+    /// DG server is read through its HTTPS graph API even if it would hand out a Bolt bundle: that
+    /// bundle addresses the server's own loopback, not a route from here.
+    /// </summary>
+    public static bool IsRemoteServer(string? dataServiceUrl)
+    {
+        return !string.IsNullOrWhiteSpace(dataServiceUrl)
+            && Uri.TryCreate(dataServiceUrl.Trim(), UriKind.Absolute, out var uri)
+            && !uri.IsLoopback;
+    }
+
     /// <summary>
     /// Maps an HTTP status code from a publish response to a
     /// <see cref="PublishAuthOutcome"/>: any 2xx is <see cref="PublishAuthOutcome.Ok"/>,

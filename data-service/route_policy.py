@@ -272,6 +272,8 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # ── validation ──
     ("POST", "/validation/publish"): _p(_MEM, _CON, source="body", role="editor"),
     ("GET", "/validation/runs/{project}"): _p(_MEM, source="path", role="viewer"),
+    # Connector read of the graph over HTTPS (multi-user profile withholds the Neo4j bundle).
+    ("GET", "/connector-graph/{project}/{query_id}"): _p(_CON, source="path", role="viewer"),
     ("DELETE", "/validation/run/{project}/{run_id}"): _p(_MEM, source="path", role="editor"),
     ("GET", "/validation/view/{project}"): _p(_MEM, _CON, source="path", role="viewer"),
     ("GET", "/validation/view/{project}/{run_id}"): _p(_MEM, _CON, source="path", role="viewer"),

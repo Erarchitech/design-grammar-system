@@ -3,14 +3,11 @@ using System.Text.Json.Serialization;
 using DG.Core.Contracts;
 using DG.Core.Models;
 using DG.Core.Serialization;
-using Neo4j.Driver;
 
 namespace DG.Core.Data;
 
 public sealed class Neo4jValidGraphRepository : IValidGraphRepository
 {
-    private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(20);
-
     private const string RunsQuery = """
         MATCH (run:ValidationRun {graph:'ValidGraph', project:$project})
         RETURN
@@ -51,54 +48,47 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
     public async Task<ValidGraphQueryResult> GetRunsAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        using var driver = GraphDatabase.Driver(
-            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(
-            options => options.WithDatabase(connection.Database));
+        using var session = GraphQuerySession.Open(connection);
 
-        var cursor = await session
-            .RunAsync(RunsQuery, new { project = connection.Project })
-            .WaitAsync(QueryTimeout, cancellationToken);
+        var runRecords = await session.QueryAsync("runs", RunsQuery, null, cancellationToken);
 
         var rawRuns = new List<(RunInfo, IReadOnlyList<bool>, DesignState?)>();
-        await cursor
-            .ForEachAsync(record =>
+        foreach (var record in runRecords)
+        {
+            var runId = record.GetString("runId") ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(runId)) continue;
+
+            var project = record.GetString("project") ?? connection.Project;
+            var createdAt = ParseTimestamp(record.GetString("createdAt"));
+            var rulesJson = record.GetString("rulesJson") ?? "[]";
+            var statePayloadJson = record.GetString("statePayloadJson");
+
+            // Parse rules and status
+            var (ruleIds, results) = ParseRulesJson(rulesJson);
+
+            // Parse design state
+            var state = TryParseDesignState(statePayloadJson);
+
+            // D-14: the per-run inner list is honestly the per-RULE pass/fail sequence
+            // ParseRulesJson already returns -- one boolean per rule evaluated for this
+            // run, never a per-object list. The former construction here fabricated a
+            // per-object-shaped list from a run-level AND over rules by repeating that
+            // single boolean once per ObjState; this is a missing feature, not a mapping
+            // bug (Correction 2), and GetPerObjectVerdictsAsync is the canonical
+            // per-object read path (D-10).
+            var statusList = (IReadOnlyList<bool>)results;
+
+            var runInfo = new RunInfo
             {
-                var runId = record["runId"].As<string?>() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(runId)) return;
+                RunId = runId,
+                Project = project,
+                CapturedAtUtc = createdAt,
+                RuleIds = ruleIds,
+                StateId = state?.StateId,
+            };
 
-                var project = record["project"].As<string?>() ?? connection.Project;
-                var createdAt = ParseTimestamp(record["createdAt"].As<string?>());
-                var rulesJson = record["rulesJson"].As<string?>() ?? "[]";
-                var statePayloadJson = record["statePayloadJson"].As<string?>();
-
-                // Parse rules and status
-                var (ruleIds, results) = ParseRulesJson(rulesJson);
-
-                // Parse design state
-                var state = TryParseDesignState(statePayloadJson);
-
-                // D-14: the per-run inner list is honestly the per-RULE pass/fail sequence
-                // ParseRulesJson already returns -- one boolean per rule evaluated for this
-                // run, never a per-object list. The former construction here fabricated a
-                // per-object-shaped list from a run-level AND over rules by repeating that
-                // single boolean once per ObjState; this is a missing feature, not a mapping
-                // bug (Correction 2), and GetPerObjectVerdictsAsync is the canonical
-                // per-object read path (D-10).
-                var statusList = (IReadOnlyList<bool>)results;
-
-                var runInfo = new RunInfo
-                {
-                    RunId = runId,
-                    Project = project,
-                    CapturedAtUtc = createdAt,
-                    RuleIds = ruleIds,
-                    StateId = state?.StateId,
-                };
-
-                rawRuns.Add((runInfo, statusList, state));
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
+            rawRuns.Add((runInfo, statusList, state));
+        }
 
         // Build Run/Status (parallel, index-matched)
         var runs = new List<RunInfo>(rawRuns.Count);
@@ -124,18 +114,15 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
         // working when this query cannot run.
         try
         {
-            var standaloneCursor = await session
-                .RunAsync(StandaloneStatesQuery, new { project = connection.Project })
-                .WaitAsync(QueryTimeout, cancellationToken);
+            var standaloneRecords = await session.QueryAsync(
+                "standaloneStates", StandaloneStatesQuery, null, cancellationToken);
 
-            await standaloneCursor
-                .ForEachAsync(record =>
-                {
-                    var statePayloadJson = record["statePayloadJson"].As<string?>();
-                    var state = TryParseDesignState(statePayloadJson);
-                    if (state is not null) allStates.Add(state);
-                })
-                .WaitAsync(QueryTimeout, cancellationToken);
+            foreach (var record in standaloneRecords)
+            {
+                var statePayloadJson = record.GetString("statePayloadJson");
+                var state = TryParseDesignState(statePayloadJson);
+                if (state is not null) allStates.Add(state);
+            }
         }
         catch (Exception)
         {
@@ -185,25 +172,22 @@ public sealed class Neo4jValidGraphRepository : IValidGraphRepository
             throw new ArgumentException("Run id must not be null or whitespace.", nameof(runId));
         }
 
-        using var driver = GraphDatabase.Driver(
-            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(
-            options => options.WithDatabase(connection.Database));
+        using var session = GraphQuerySession.Open(connection);
 
         string? evidenceEnvelopeJson = null;
 
         try
         {
-            var cursor = await session
-                .RunAsync(EvidenceQuery, new { project = connection.Project, runId })
-                .WaitAsync(QueryTimeout, cancellationToken);
+            var evidenceRecords = await session.QueryAsync(
+                "evidence",
+                EvidenceQuery,
+                new Dictionary<string, object?> { ["runId"] = runId },
+                cancellationToken);
 
-            await cursor
-                .ForEachAsync(record =>
-                {
-                    evidenceEnvelopeJson = record["evidenceEnvelopeJson"].As<string?>();
-                })
-                .WaitAsync(QueryTimeout, cancellationToken);
+            foreach (var record in evidenceRecords)
+            {
+                evidenceEnvelopeJson = record.GetString("evidenceEnvelopeJson");
+            }
         }
         catch (Exception)
         {

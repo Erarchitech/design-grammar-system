@@ -61,6 +61,7 @@ from llm_gateway import (
 )
 
 import connector_access
+import connector_graph
 import connector_session
 import connectors
 import degram_grants
@@ -4058,6 +4059,32 @@ def publish_validation(payload: ValidationPublishRequest):
 @router.get("/validation/runs/{project}")
 def get_validation_runs(project: str):
     return {"project": project, "runs": list_validation_runs(project)}
+
+
+@router.get("/connector-graph/{project}/{query_id}")
+def connector_graph_read(project: str, query_id: str, runId: str | None = None):
+    """Named read-only graph query for a connector session (Grasshopper over
+    HTTPS when Neo4j is not exposed to it). Connector-only; the policy layer has
+    already matched the session's bound project to the path project. The query is
+    chosen by name from `connector_graph.QUERIES`; the connector never sends Cypher."""
+    _check_project_name(project)
+    if not connector_graph.is_known(query_id):
+        raise _structured_error_response(
+            "Unknown graph query.",
+            "Use one of: " + ", ".join(sorted(connector_graph.QUERIES)),
+            "GRAPH_QUERY_NOT_FOUND",
+            404,
+        )
+    if connector_graph.needs_run_id(query_id) and not (runId or "").strip():
+        raise _structured_error_response(
+            "This graph query needs a run id.",
+            "Pass ?runId=<run id>.",
+            "RUN_ID_REQUIRED",
+            422,
+        )
+    rows = connector_graph.run(query_id, project, (runId or "").strip() or None, read_many)
+    return {"project": project, "query": query_id, "rows": _graph_json_safe(rows)}
+
 
 
 @router.delete("/validation/run/{project}/{run_id}")

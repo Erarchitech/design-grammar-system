@@ -179,7 +179,7 @@ public sealed class ValidationGraphComponent : GH_Component
 
     private static string BuildRequestKey(ConnectionInfo connection)
     {
-        return $"{connection.Uri}|{connection.User}|{connection.Password}|{connection.Database}|{connection.Project}";
+        return $"{connection.Uri}|{connection.User}|{connection.Password}|{connection.Database}|{connection.Project}|{connection.GraphApiUrl}|{connection.GraphApiToken}";
     }
 
     private void SetOutputs(IGH_DataAccess da)

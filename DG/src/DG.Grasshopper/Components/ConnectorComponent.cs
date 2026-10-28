@@ -16,8 +16,13 @@ public sealed class ConnectorComponent : GH_Component
     // project scope and the Neo4j connection bundle from data-service. The
     // session is exposed on the Session output; VALIDATOR and COMPUTGRAPH
     // PUBLISH take it on their Token input. data-service base URL is a compile
-    // default (ADR-825-4); a future CONN-F can re-expose it.
-    private const string DataServiceUrl = "http://localhost:8000";
+    // default (ADR-825-4) unless the Server input names another DG server (quick 261028-vm9).
+    // With a remote server, or when the server hands out no Neo4j bundle (multi-user profile),
+    // graph reads go through the server's /connector-graph route instead of Bolt.
+    private string _dataServiceUrl = DataServiceRequestAuth.DefaultServerUrl;
+    // The server the live session was minted on: it must be ended there even after the input changes.
+    private string _sessionServerUrl = DataServiceRequestAuth.DefaultServerUrl;
+    private string _mappingServerUrl = string.Empty;
 
     private readonly INeo4jConnectorService _connectorService = new Neo4jConnectorService();
     private readonly IConnectorSessionClient _sessionClient = new ConnectorSessionClient();
@@ -50,7 +55,7 @@ public sealed class ConnectorComponent : GH_Component
     internal MappingAutoRunner? Mapping => _mapping;
 
     public ConnectorComponent()
-        : base("CONNECTOR", "CONNECTOR", "Sign in with your DG account and connect to Neo4j for DG validation.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
+        : base("CONNECTOR", "CONNECTOR", "Sign in with your DG account (local or on a DG server) and connect to the DG graph for validation.", DgComponentCategory.Category, DgComponentCategory.GraphSubcategory)
     {
     }
 
@@ -88,10 +93,17 @@ public sealed class ConnectorComponent : GH_Component
             "Propose the mapping of this definition to DG classes and properties automatically after sign-in. Questions are answered in the DG Web UI → Projects → Mapping.",
             GH_ParamAccess.item,
             true);
+        pManager.AddTextParameter(
+            "Server",
+            "Server",
+            "DG server address, for example https://dg.example.com. Leave empty for the DG on this computer (http://localhost:8000). Wire the Server output to VALIDATOR and COMPUTGRAPH PUBLISH DataServiceUrl.",
+            GH_ParamAccess.item,
+            string.Empty);
         pManager[0].Optional = true;
         pManager[1].Optional = true;
         pManager[2].Optional = true;
         pManager[4].Optional = true;
+        pManager[5].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -104,6 +116,7 @@ public sealed class ConnectorComponent : GH_Component
         pManager.AddTextParameter("ClassNames", "ClassNames", "Classes of the applied mapping, aligned with ByClass branches.", GH_ParamAccess.list);
         pManager.AddGenericParameter("ClassObjects", "ClassObjects", "DG classes aligned with ByClass branches. Feed OBJECT STATE Object.", GH_ParamAccess.list);
         pManager.AddTextParameter("Sliders", "Sliders", "Named sliders and the DG property proposed or confirmed for each.", GH_ParamAccess.list);
+        pManager.AddTextParameter("Server", "Server", "The DG server address in use. Wire it to the DataServiceUrl input of VALIDATOR and COMPUTGRAPH PUBLISH.", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess da)
@@ -113,12 +126,15 @@ public sealed class ConnectorComponent : GH_Component
         var project = string.Empty;
         var connect = false;
         var autoMap = true;
+        var server = string.Empty;
 
         da.GetData(0, ref username);
         da.GetData(1, ref password);
         da.GetData(2, ref project);
         da.GetData(3, ref connect);
         da.GetData(4, ref autoMap);
+        da.GetData(5, ref server);
+        _dataServiceUrl = DataServiceRequestAuth.NormalizeServerUrl(server);
 
         if (!connect)
         {
@@ -140,10 +156,10 @@ public sealed class ConnectorComponent : GH_Component
         }
         else
         {
-            var requestKey = HashRequest(username, project, password);
+            var requestKey = HashRequest(username, project, password, _dataServiceUrl);
             if (_connectTask is null || !string.Equals(_activeRequestKey, requestKey, StringComparison.Ordinal))
             {
-                StartConnection(username, password, project, requestKey);
+                StartConnection(username, password, project, _dataServiceUrl, requestKey);
             }
 
             if (_connectTask is { Status: TaskStatus.RanToCompletion })
@@ -183,7 +199,14 @@ public sealed class ConnectorComponent : GH_Component
 
         // Automatic mapping (Phase 1303): reads the canvas after the solution settles; never
         // blocks this solve. The token stays inside the plugin (Authorization header only).
-        _mapping ??= new MappingAutoRunner(this, DataServiceUrl);
+        if (_mapping is not null && !string.Equals(_mappingServerUrl, _dataServiceUrl, StringComparison.Ordinal))
+        {
+            _mapping.Dispose();
+            _mapping = null;
+        }
+
+        _mappingServerUrl = _dataServiceUrl;
+        _mapping ??= new MappingAutoRunner(this, _dataServiceUrl);
         _mapping.Configure(OnPingDocument(), sessionToken, _latestConnection.Project ?? _latestAuth.Project, autoMap);
         var mapping = _mapping.Outputs;
         da.SetData(3, mapping.Summary);
@@ -191,6 +214,7 @@ public sealed class ConnectorComponent : GH_Component
         da.SetDataList(5, mapping.ClassNames);
         da.SetDataList(6, mapping.ClassObjects);
         da.SetDataList(7, mapping.Sliders);
+        da.SetData(8, _dataServiceUrl);
         if (sessionToken is not null)
         {
             Message += mapping.MessageSuffix;
@@ -217,7 +241,7 @@ public sealed class ConnectorComponent : GH_Component
         base.DocumentContextChanged(document, context);
     }
 
-    private void StartConnection(string username, string password, string project, string requestKey)
+    private void StartConnection(string username, string password, string project, string dataServiceUrl, string requestKey)
     {
         // A new account or project: end the previous session before opening another.
         CancelPendingConnection();
@@ -226,7 +250,7 @@ public sealed class ConnectorComponent : GH_Component
         _activeRequestKey = requestKey;
         _latestConnection = NotConnected("Signing in...");
         _connectCts = new CancellationTokenSource();
-        _connectTask = RunConnectAsync(username, password, project, _connectCts.Token);
+        _connectTask = RunConnectAsync(username, password, project, dataServiceUrl, _connectCts.Token);
 
         _ = _connectTask.ContinueWith(
             _ =>
@@ -237,10 +261,10 @@ public sealed class ConnectorComponent : GH_Component
             TaskScheduler.Default);
     }
 
-    private async Task<ConnectResult> RunConnectAsync(string username, string password, string project, CancellationToken cancellationToken)
+    private async Task<ConnectResult> RunConnectAsync(string username, string password, string project, string dataServiceUrl, CancellationToken cancellationToken)
     {
         var auth = await _sessionClient
-            .SignInAsync(DataServiceUrl, username, password, string.IsNullOrWhiteSpace(project) ? null : project.Trim(), cancellationToken: cancellationToken)
+            .SignInAsync(dataServiceUrl, username, password, string.IsNullOrWhiteSpace(project) ? null : project.Trim(), cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
         if (auth.Outcome == ConnectorSessionOutcome.SignedIn && !string.IsNullOrEmpty(auth.SessionToken))
@@ -249,21 +273,19 @@ public sealed class ConnectorComponent : GH_Component
             {
                 // Superseded or switched off while the sign-in was in flight: end the session
                 // we just received instead of leaving it live until its TTL.
-                await _sessionClient.SignOutAsync(DataServiceUrl, auth.SessionToken).ConfigureAwait(false);
+                await _sessionClient.SignOutAsync(dataServiceUrl, auth.SessionToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
+            _sessionServerUrl = dataServiceUrl;
             Interlocked.Exchange(ref _session, auth);
         }
 
-        // Only a signed-in account yields a connection bundle; otherwise there is
-        // nothing to connect with, so we skip the bolt attempt entirely and report
-        // the reason on a not-connected ConnectionInfo.
-        if (auth.Outcome != ConnectorSessionOutcome.SignedIn || auth.Bundle is not { } bundle)
+        // Only a signed-in account can read the graph; otherwise there is nothing to
+        // connect with, so we report the reason on a not-connected ConnectionInfo.
+        if (auth.Outcome != ConnectorSessionOutcome.SignedIn)
         {
-            // D-07: a signed-in session with no bundle means this deployment
-            // (multi-user profile) doesn't hand out a direct graph connection.
-            var reason = SignInMessage(auth);
+            var reason = SignInMessage(auth, dataServiceUrl);
             var info = new ConnectionInfo
             {
                 IsConnected = false,
@@ -271,6 +293,22 @@ public sealed class ConnectorComponent : GH_Component
                 Project = auth.Project ?? "default-project",
             };
             return new ConnectResult(info, auth);
+        }
+
+        // Server mode (quick 261028-vm9): a multi-user server withholds the Neo4j bundle (D-07), and a
+        // remote server's bundle points at its own loopback. Either way the graph is read through the
+        // server's HTTPS graph API with the connector session, and no Bolt connection is made.
+        if (auth.Bundle is not { } bundle || DataServiceRequestAuth.IsRemoteServer(dataServiceUrl))
+        {
+            var serverRequest = new ConnectionInfo
+            {
+                Project = auth.Project ?? "default-project",
+                GraphApiUrl = dataServiceUrl,
+                GraphApiToken = auth.SessionToken,
+            };
+
+            var serverConnection = await _connectorService.TryConnectAsync(serverRequest, cancellationToken).ConfigureAwait(false);
+            return new ConnectResult(serverConnection, auth);
         }
 
         var request = new ConnectionInfo
@@ -286,7 +324,7 @@ public sealed class ConnectorComponent : GH_Component
         return new ConnectResult(connection, auth);
     }
 
-    private static string SignInMessage(ConnectorSessionResult auth)
+    private static string SignInMessage(ConnectorSessionResult auth, string dataServiceUrl)
     {
         return auth.Outcome switch
         {
@@ -294,8 +332,8 @@ public sealed class ConnectorComponent : GH_Component
             ConnectorSessionOutcome.Forbidden => ErrorMessageTemplates.ConnectorSignInForbidden(auth.ServerCode),
             ConnectorSessionOutcome.ProjectRequired => ErrorMessageTemplates.ConnectorProjectRequired(auth.ServerMessage),
             ConnectorSessionOutcome.Throttled => ErrorMessageTemplates.ConnectorSignInThrottled(),
-            ConnectorSessionOutcome.InsecureTransport => ErrorMessageTemplates.ConnectorSignInInsecureTransport(DataServiceUrl),
-            ConnectorSessionOutcome.Unreachable => ErrorMessageTemplates.ConnectorSignInUnreachable(DataServiceUrl),
+            ConnectorSessionOutcome.InsecureTransport => ErrorMessageTemplates.ConnectorSignInInsecureTransport(dataServiceUrl),
+            ConnectorSessionOutcome.Unreachable => ErrorMessageTemplates.ConnectorSignInUnreachable(dataServiceUrl),
             ConnectorSessionOutcome.SignedIn => ErrorMessageTemplates.ConnectorNoGraphBundle(),
             _ => ErrorMessageTemplates.ConnectorSignInMissing(),
         };
@@ -309,16 +347,15 @@ public sealed class ConnectorComponent : GH_Component
             case ConnectorSessionOutcome.Forbidden:
             case ConnectorSessionOutcome.ProjectRequired:
             case ConnectorSessionOutcome.InsecureTransport:
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, SignInMessage(auth));
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, SignInMessage(auth, _dataServiceUrl));
                 break;
             case ConnectorSessionOutcome.Throttled:
             case ConnectorSessionOutcome.Unreachable:
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, SignInMessage(auth));
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, SignInMessage(auth, _dataServiceUrl));
                 break;
-            case ConnectorSessionOutcome.SignedIn when auth.Bundle is null:
-                // D-07: multi-user profile withholds the Neo4j bundle -- signed in,
-                // but no direct graph connection is available in this deployment.
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ErrorMessageTemplates.ConnectorNoGraphBundle());
+            case ConnectorSessionOutcome.SignedIn when !_latestConnection.IsConnected:
+                // Signed in, but the graph read over the server failed: show why (the safe text of GraphApiException).
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, _latestConnection.StatusMessage);
                 break;
         }
     }
@@ -335,11 +372,12 @@ public sealed class ConnectorComponent : GH_Component
             return;
         }
 
+        var sessionUrl = _sessionServerUrl;
         _ = Task.Run(async () =>
         {
             try
             {
-                await _sessionClient.SignOutAsync(DataServiceUrl, sessionToken).ConfigureAwait(false);
+                await _sessionClient.SignOutAsync(sessionUrl, sessionToken).ConfigureAwait(false);
             }
             catch
             {
@@ -384,12 +422,12 @@ public sealed class ConnectorComponent : GH_Component
         };
     }
 
-    private static string HashRequest(string username, string project, string password)
+    private static string HashRequest(string username, string project, string password, string server)
     {
         // The raw username, project and password never enter the dedup key — only their SHA-256 hash.
         return DG.Core.Compat.DgCompat.ToHex(
             DG.Core.Compat.DgCompat.Sha256(
-                System.Text.Encoding.UTF8.GetBytes($"{username}\u0000{project}\u0000{password}")));
+                System.Text.Encoding.UTF8.GetBytes($"{username}\u0000{project}\u0000{password}\u0000{server}")));
     }
 
     private readonly record struct ConnectResult(ConnectionInfo Connection, ConnectorSessionResult Auth);

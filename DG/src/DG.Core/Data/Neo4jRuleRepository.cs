@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using DG.Core.Models;
 using DG.Core.Parsing;
-using Neo4j.Driver;
 
 namespace DG.Core.Data;
 
@@ -17,8 +16,6 @@ public sealed class Neo4jRuleRepository : IRuleRepository
             return string.Empty;
         return EditPrefixPattern.Replace(raw, string.Empty).Trim();
     }
-
-    private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(20);
 
     // WHERE NOT EXISTS SUPERSEDED_BY (debug session rule-ingest-no-conflict-check,
     // 2026-09-19): a Replace/Update action from the new ingest conflict-check gate
@@ -72,16 +69,15 @@ public sealed class Neo4jRuleRepository : IRuleRepository
 
     public async Task<IReadOnlyList<Rule>> GetRulesAsync(ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        using var driver = GraphDatabase.Driver(connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(options => options.WithDatabase(connection.Database));
+        using var session = GraphQuerySession.Open(connection);
 
-        var rules = await LoadRulesAsync(session, connection.Project, cancellationToken);
+        var rules = await LoadRulesAsync(session, cancellationToken);
         if (rules.Count == 0)
         {
             return rules.Values.ToList();
         }
 
-        await LoadAtomsAsync(session, connection.Project, rules, cancellationToken);
+        await LoadAtomsAsync(session, rules, cancellationToken);
         PopulateVariables(rules.Values);
         return rules.Values.ToList();
     }
@@ -89,147 +85,121 @@ public sealed class Neo4jRuleRepository : IRuleRepository
     public async Task<IReadOnlyList<OntologyClass>> GetObjectsAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        using var driver = GraphDatabase.Driver(
-            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(
-            options => options.WithDatabase(connection.Database));
+        using var session = GraphQuerySession.Open(connection);
 
-        var cursor = await session
-            .RunAsync(ObjectsQuery, new { project = connection.Project })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        var objects = new List<OntologyClass>();
-        await cursor
-            .ForEachAsync(record =>
-            {
-                objects.Add(new OntologyClass
-                {
-                    Iri = record["iri"].As<string>(),
-                    Label = record["label"].As<string>(),
-                });
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        return objects;
+        var rows = await session.QueryAsync("objects", ObjectsQuery, null, cancellationToken);
+        return rows
+            .Select(record => new OntologyClass { Iri = record.GetString("iri")!, Label = record.GetString("label")! })
+            .ToList();
     }
 
     private static async Task<Dictionary<string, Rule>> LoadRulesAsync(
-        IAsyncSession session,
-        string project,
+        IGraphQuerySession session,
         CancellationToken cancellationToken)
     {
-        var cursor = await session
-            .RunAsync(RulesQuery, new { project })
-            .WaitAsync(QueryTimeout, cancellationToken);
+        var records = await session.QueryAsync("rules", RulesQuery, null, cancellationToken);
         var rules = new Dictionary<string, Rule>(StringComparer.Ordinal);
 
-        await cursor
-            .ForEachAsync(record =>
+        foreach (var record in records)
+        {
+            var id = record.GetString("id")!;
+            rules[id] = new Rule
             {
-                var id = record["id"].As<string>();
-                rules[id] = new Rule
-                {
-                    Id = id,
-                    Name = record["name"].As<string>(),
-                    Description = CleanDescription(record["description"].As<string>()),
-                    Kind = record["kind"].As<string>(),
-                    Text = record["text"].As<string>(),
-                    Swrl = record["swrl"].As<string>(),
-                    Project = record["project"].As<string>(),
-                    Graph = record["graph"].As<string>(),
-                };
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
+                Id = id,
+                Name = record.GetString("name")!,
+                Description = CleanDescription(record.GetString("description")!),
+                Kind = record.GetString("kind")!,
+                Text = record.GetString("text")!,
+                Swrl = record.GetString("swrl")!,
+                Project = record.GetString("project")!,
+                Graph = record.GetString("graph")!,
+            };
+        }
 
         return rules;
     }
 
     private static async Task LoadAtomsAsync(
-        IAsyncSession session,
-        string project,
+        IGraphQuerySession session,
         IDictionary<string, Rule> rules,
         CancellationToken cancellationToken)
     {
-        var cursor = await session
-            .RunAsync(AtomsQuery, new { project })
-            .WaitAsync(QueryTimeout, cancellationToken);
+        var records = await session.QueryAsync("atoms", AtomsQuery, null, cancellationToken);
         var atomCache = new Dictionary<string, Atom>(StringComparer.Ordinal);
 
-        await cursor
-            .ForEachAsync(record =>
+        foreach (var record in records)
+        {
+            var ruleId = record.GetString("ruleId")!;
+            if (!rules.TryGetValue(ruleId, out var rule))
             {
-                var ruleId = record["ruleId"].As<string>();
-                if (!rules.TryGetValue(ruleId, out var rule))
+                continue;
+            }
+
+            var atomId = record.GetString("atomId")!;
+            var relationType = record.GetString("relationType")!;
+            var side = relationType.Equals("HAS_HEAD", StringComparison.OrdinalIgnoreCase) ? AtomSide.Head : AtomSide.Body;
+            var cacheKey = $"{ruleId}|{atomId}";
+
+            if (!atomCache.TryGetValue(cacheKey, out var atom))
+            {
+                atom = new Atom
                 {
-                    return;
+                    Id = atomId,
+                    Type = record.GetString("atomType")!,
+                    PredicateIri = record.GetString("predicateIri"),
+                    PredicateLabel = record.GetString("predicateLabel"),
+                    Side = side,
+                    Order = record.GetInt("atomOrder"),
+                };
+                atomCache[cacheKey] = atom;
+
+                if (side == AtomSide.Body)
+                {
+                    rule.BodyAtoms.Add(atom);
                 }
-
-                var atomId = record["atomId"].As<string>();
-                var relationType = record["relationType"].As<string>();
-                var side = relationType.Equals("HAS_HEAD", StringComparison.OrdinalIgnoreCase) ? AtomSide.Head : AtomSide.Body;
-                var cacheKey = $"{ruleId}|{atomId}";
-
-                if (!atomCache.TryGetValue(cacheKey, out var atom))
+                else
                 {
-                    atom = new Atom
-                    {
-                        Id = atomId,
-                        Type = record["atomType"].As<string>(),
-                        PredicateIri = record["predicateIri"].As<string?>(),
-                        PredicateLabel = record["predicateLabel"].As<string?>(),
-                        Side = side,
-                        Order = record["atomOrder"].As<int>(),
-                    };
-                    atomCache[cacheKey] = atom;
-
-                    if (side == AtomSide.Body)
-                    {
-                        rule.BodyAtoms.Add(atom);
-                    }
-                    else
-                    {
-                        rule.HeadAtoms.Add(atom);
-                    }
+                    rule.HeadAtoms.Add(atom);
                 }
+            }
 
-                var labels = record["argLabels"].As<List<string>>();
-                if (labels.Count == 0)
-                {
-                    return;
-                }
+            var labels = record.GetStringList("argLabels");
+            if (labels.Count == 0)
+            {
+                continue;
+            }
 
-                var isVariable = labels.Contains("Var", StringComparer.OrdinalIgnoreCase);
-                var isLiteral = labels.Contains("Literal", StringComparer.OrdinalIgnoreCase);
-                if (isVariable == isLiteral)
-                {
-                    // Both or neither — malformed ARG target, skip rather than silently misclassify.
-                    return;
-                }
+            var isVariable = labels.Contains("Var", StringComparer.OrdinalIgnoreCase);
+            var isLiteral = labels.Contains("Literal", StringComparer.OrdinalIgnoreCase);
+            if (isVariable == isLiteral)
+            {
+                // Both or neither — malformed ARG target, skip rather than silently misclassify.
+                continue;
+            }
 
-                var argValue = isVariable
-                    ? record["varName"].As<string?>()
-                    : record["litLex"].As<string?>();
+            var argValue = isVariable
+                ? record.GetString("varName")
+                : record.GetString("litLex");
 
-                if (string.IsNullOrWhiteSpace(argValue))
-                {
-                    return;
-                }
+            if (string.IsNullOrWhiteSpace(argValue))
+            {
+                continue;
+            }
 
-                var argPos = record["argPos"].As<int>();
-                if (argPos <= 0 || atom.Args.Any(arg => arg.Pos == argPos))
-                {
-                    return;
-                }
+            var argPos = record.GetInt("argPos");
+            if (argPos <= 0 || atom.Args.Any(arg => arg.Pos == argPos))
+            {
+                continue;
+            }
 
-                atom.Args.Add(new AtomArg
-                {
-                    Pos = argPos,
-                    Kind = isVariable ? ArgKind.Variable : ArgKind.Literal,
-                    Value = argValue,
-                    Datatype = isVariable ? null : record["litDatatype"].As<string?>(),
-                });
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
+            atom.Args.Add(new AtomArg
+            {
+                Pos = argPos,
+                Kind = isVariable ? ArgKind.Variable : ArgKind.Literal,
+                Value = argValue,
+                Datatype = isVariable ? null : record.GetString("litDatatype"),
+            });
+        }
 
         foreach (var rule in rules.Values)
         {

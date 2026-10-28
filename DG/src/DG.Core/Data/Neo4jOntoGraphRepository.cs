@@ -1,12 +1,9 @@
 using DG.Core.Models;
-using Neo4j.Driver;
 
 namespace DG.Core.Data;
 
 public sealed class Neo4jOntoGraphRepository : IOntoGraphRepository
 {
-    private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(20);
-
     private const string ClassesQuery = """
         MATCH (c:Class {graph:'OntoGraph', project:$project})
         RETURN c.iri AS iri, c.label AS label
@@ -28,81 +25,30 @@ public sealed class Neo4jOntoGraphRepository : IOntoGraphRepository
     public async Task<IReadOnlyList<OntologyClass>> GetClassesAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        using var driver = GraphDatabase.Driver(
-            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(
-            options => options.WithDatabase(connection.Database));
-
-        var cursor = await session
-            .RunAsync(ClassesQuery, new { project = connection.Project })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        var items = new List<OntologyClass>();
-        await cursor
-            .ForEachAsync(record =>
-            {
-                items.Add(new OntologyClass
-                {
-                    Iri = record["iri"].As<string>(),
-                    Label = record["label"].As<string>(),
-                });
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        return items;
+        using var session = GraphQuerySession.Open(connection);
+        var rows = await session.QueryAsync("classes", ClassesQuery, null, cancellationToken);
+        return rows
+            .Select(record => new OntologyClass { Iri = record.GetString("iri")!, Label = record.GetString("label")! })
+            .ToList();
     }
 
     public async Task<IReadOnlyList<OntologyProperty>> GetObjPropertiesAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        using var driver = GraphDatabase.Driver(
-            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(
-            options => options.WithDatabase(connection.Database));
-
-        var cursor = await session
-            .RunAsync(ObjPropertiesQuery, new { project = connection.Project })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        var items = new List<OntologyProperty>();
-        await cursor
-            .ForEachAsync(record =>
-            {
-                items.Add(new OntologyProperty
-                {
-                    Iri = record["iri"].As<string>(),
-                    Label = record["label"].As<string>(),
-                });
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        return items;
+        using var session = GraphQuerySession.Open(connection);
+        var rows = await session.QueryAsync("objProperties", ObjPropertiesQuery, null, cancellationToken);
+        return rows
+            .Select(record => new OntologyProperty { Iri = record.GetString("iri")!, Label = record.GetString("label")! })
+            .ToList();
     }
 
     public async Task<IReadOnlyList<OntologyProperty>> GetDataPropertiesAsync(
         ConnectionInfo connection, CancellationToken cancellationToken = default)
     {
-        using var driver = GraphDatabase.Driver(
-            connection.Uri, AuthTokens.Basic(connection.User, connection.Password));
-        using var session = driver.AsyncSession(
-            options => options.WithDatabase(connection.Database));
-
-        var cursor = await session
-            .RunAsync(DataPropertiesQuery, new { project = connection.Project })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        var items = new List<OntologyProperty>();
-        await cursor
-            .ForEachAsync(record =>
-            {
-                items.Add(new OntologyProperty
-                {
-                    Iri = record["iri"].As<string>(),
-                    Label = record["label"].As<string>(),
-                });
-            })
-            .WaitAsync(QueryTimeout, cancellationToken);
-
-        return items;
+        using var session = GraphQuerySession.Open(connection);
+        var rows = await session.QueryAsync("dataProperties", DataPropertiesQuery, null, cancellationToken);
+        return rows
+            .Select(record => new OntologyProperty { Iri = record.GetString("iri")!, Label = record.GetString("label")! })
+            .ToList();
     }
 }
