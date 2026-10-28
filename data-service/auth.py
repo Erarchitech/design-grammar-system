@@ -276,14 +276,17 @@ def set_password(username: str, new_password: str) -> bool:
 # ── Sessions (D-01) ──
 
 
-def create_session(username: str, *, now: int | None = None) -> str:
+REMEMBER_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60
+
+
+def create_session(username: str, *, now: int | None = None, remember_me: bool = False) -> str:
     """Mint a new opaque session token (dgs_ + 32 random bytes). Only the
     SHA-256 hash of the token is persisted. Prunes every revoked/expired
     session (all users, WR-20) opportunistically so the store cannot grow
     without bound."""
     normalized = username.strip().lower()
     current = _now(now)
-    ttl = int(os.getenv("DG_SESSION_TTL_SECONDS", "43200"))
+    ttl = REMEMBER_SESSION_TTL_SECONDS if remember_me else int(os.getenv("DG_SESSION_TTL_SECONDS", "43200"))
     token = SESSION_TOKEN_PREFIX + secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     with _STORE_LOCK:
@@ -301,6 +304,8 @@ def create_session(username: str, *, now: int | None = None) -> str:
             "expires_at": current + ttl,
             "revoked": False,
         }
+        if remember_me:
+            record["remember_me"] = True
         kept.append(record)
         _save(SESSIONS_FILE, "sessions", kept)
     return token
@@ -312,7 +317,8 @@ def authenticate_session(token: str, *, now: int | None = None) -> dict[str, Any
     last_seen_at only when at least SESSION_TOUCH_INTERVAL_SECONDS elapsed.
 
     Boundary rules (inclusive-expired): now >= expires_at is expired;
-    now - last_seen_at >= idle is expired.
+    now - last_seen_at >= idle is expired for ordinary/legacy sessions.
+    Explicitly remembered sessions use their absolute expiry without an idle limit.
     """
     if not token or not token.startswith(SESSION_TOKEN_PREFIX):
         return None
@@ -329,7 +335,7 @@ def authenticate_session(token: str, *, now: int | None = None) -> dict[str, Any
             if current >= int(s.get("expires_at", 0)):
                 return None
             last_seen = int(s.get("last_seen_at", 0))
-            if current - last_seen >= idle:
+            if s.get("remember_me") is not True and current - last_seen >= idle:
                 return None
             if current - last_seen >= SESSION_TOUCH_INTERVAL_SECONDS:
                 s["last_seen_at"] = current
@@ -361,7 +367,7 @@ def authenticate_session_hash(
                 return None
             if current >= int(s.get("expires_at", 0)):
                 return None
-            if current - int(s.get("last_seen_at", 0)) >= idle:
+            if s.get("remember_me") is not True and current - int(s.get("last_seen_at", 0)) >= idle:
                 return None
             result = dict(s)
             result.pop("token_hash", None)

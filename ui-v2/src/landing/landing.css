@@ -2,6 +2,30 @@
    Dynamic props (top / opacity / transform / filter) are written per-frame
    by landingEngine.js; keep them OUT of React style props and out of here. */
 
+.dgl-remember {
+  font: 400 12px/1.4 var(--font-sans);
+  color: var(--text-muted);
+}
+.dgl-remember label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+.dgl-remember input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-signal);
+}
+.dgl-remember input:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+
 .dgl-canvas {
   position: absolute;
   inset: 0;

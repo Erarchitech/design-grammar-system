@@ -72,8 +72,8 @@ async function establish(sessionResponse) {
   throw new ApiError(t("Session could not be established. Sign in again."), { status: 401 });
 }
 
-export async function login(username, password) {
-  const res = await apiFetch(url("/auth/login"), { method: "POST", body: { username, password } });
+export async function login(username, password, rememberMe = false) {
+  const res = await apiFetch(url("/auth/login"), { method: "POST", body: { username, password, rememberMe: rememberMe === true } });
   return establish(res);
 }
 

@@ -37,7 +37,7 @@ test('AUTH-01 login must not establish identity when the session expires before 
 });
 
 const onboarding = [
-  ['login', () => auth.login('requested', 'SYNTHETIC-PASSWORD'), '/auth/login', { username: 'requested', password: 'SYNTHETIC-PASSWORD' }],
+  ['login', () => auth.login('requested', 'SYNTHETIC-PASSWORD'), '/auth/login', { username: 'requested', password: 'SYNTHETIC-PASSWORD', rememberMe: false }],
   ['acceptInvite', () => auth.acceptInvite('SYNTHETIC-INVITE', 'SYNTHETIC-PASSWORD'), '/auth/accept-invite', { inviteCode: 'SYNTHETIC-INVITE', password: 'SYNTHETIC-PASSWORD' }],
   ['register', () => auth.register('requested', 'SYNTHETIC-PASSWORD'), '/auth/register', { username: 'requested', password: 'SYNTHETIC-PASSWORD' }]
 ];
@@ -62,6 +62,12 @@ for (const [name, invoke, path, body] of onboarding) {
     replies.push([200, { username: 'stale-owner', isAdmin: true }], [401, { detail: 'Expired' }]); await assert.rejects(invoke(), e => e.status === 401); assert.deepEqual(events, [AUTH_EXPIRED_EVENT]);
   });
 }
+for (const value of [true, false, undefined, 'true', 1]) test(`AUTH-remember-${typeof value}-${String(value)} explicit boolean opt-in without browser storage`, async () => {
+  replies.push([200, { username: 'member' }], [200, { username: 'member', memberships: [] }]);
+  await auth.login('member', 'SYNTHETIC-PASSWORD', value);
+  assert.deepEqual(JSON.parse(calls[0].init.body), { username: 'member', password: 'SYNTHETIC-PASSWORD', rememberMe: value === true });
+  assert.equal(storage.size, 0);
+});
 test('AUTH-current-user-401 null and expiry event', async () => { replies.push([401, { detail: 'Expired' }]); assert.equal(await auth.currentUser(), null); assert.deepEqual(events, [AUTH_EXPIRED_EVENT]); });
 test('AUTH-current-user-403 not signed-out success', async () => { replies.push([403, { detail: 'Forbidden' }]); await assert.rejects(auth.currentUser(), e => e.status === 403); });
 for (const value of [true, false, undefined, 1, 'true']) test(`AUTH-options-${typeof value}-${String(value)} registration enabled only for boolean true`, async () => { replies.push([200, { selfRegistration: value }]); assert.deepEqual(await auth.authOptions(), { selfRegistration: value === true }); assert.equal(calls[0].init.method, 'GET'); });

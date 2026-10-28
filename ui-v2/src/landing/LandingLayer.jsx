@@ -67,6 +67,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
   const [authUser, setAuthUser] = React.useState("");
   const [authPass, setAuthPass] = React.useState("");
   const [authPass2, setAuthPass2] = React.useState("");
+  const [rememberMe, setRememberMe] = React.useState(false);
   const [authErr, setAuthErr] = React.useState(null);
   // Register is offered only when the server says so; any failure hides it.
   const [canRegister, setCanRegister] = React.useState(false);
@@ -177,6 +178,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
   const openAuth = () => {
     engineRef.current?.setHeroPhase("dissolving");
     setAuthMode("login");
+    setRememberMe(false);
     setAuthErr(null);
     refreshAuthOptions();
     setAuthOpen(true);
@@ -216,7 +218,7 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
         ? await auth.acceptInvite(code, authPass)
         : register
           ? await auth.register(username, authPass)
-          : await auth.login(username, authPass);
+          : await auth.login(username, authPass, rememberMe);
       onUser(u);
       setAuthOpen(false);
       setAuthErr(null);
@@ -370,6 +372,15 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
               onChange={(e) => { setAuthPass2(e.target.value); setAuthErr(null); }}
               onKeyDown={(e) => { if (e.key === "Enter") submitAuth(); }}
             />
+          )}
+          {mode === "login" && (
+            <div className="dgl-remember">
+              <label>
+                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} aria-describedby="dgl-remember-hint" />
+                {t("Remember me")}
+              </label>
+              <div id="dgl-remember-hint">{t("Stay signed in for 30 days. Use only on your own device.")}</div>
+            </div>
           )}
           {authErr && <div style={{ font: "400 12px/1.4 var(--font-sans)", color: "var(--color-signal)" }}>{authMessage(t, authErr)}</div>}
           <Button size="lg" style={{ width: "100%" }} onClick={submitAuth}>

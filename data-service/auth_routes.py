@@ -23,7 +23,7 @@ import threading
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool
 
 import auth
 import company
@@ -84,6 +84,7 @@ def _verify_with_slot(password: str, stored_hash: str) -> bool:
 class LoginRequest(BaseModel):
     username: str
     password: str
+    rememberMe: StrictBool = False
 
 
 class LoginResponse(BaseModel):
@@ -112,14 +113,14 @@ class DelegatedTokenRequest(BaseModel):
     project: str
 
 
-def set_session_cookie(response: Response, token: str) -> None:
-    """Set the dg_session cookie. Shared by login and accept-invite (app.py)
-    so both paths issue identical cookie attributes."""
-    ttl = int(os.environ.get("DG_SESSION_TTL_SECONDS", "43200"))
+def set_session_cookie(response: Response, token: str, *, remember_me: bool | None = None) -> None:
+    """Login explicitly selects persistence. None preserves the existing
+    register/accept-invite cookie lifetime for callers outside the login form."""
+    ttl = auth.REMEMBER_SESSION_TTL_SECONDS if remember_me else int(os.environ.get("DG_SESSION_TTL_SECONDS", "43200"))
     response.set_cookie(
         key=auth.SESSION_COOKIE_NAME,
         value=token,
-        max_age=ttl,
+        max_age=None if remember_me is False else ttl,
         path="/",
         httponly=True,
         samesite="strict",
@@ -170,8 +171,8 @@ def login(payload: LoginRequest, request: Request, response: Response):
         )
 
     auth.throttle_clear(user_key)
-    token = auth.create_session(user["username"])
-    set_session_cookie(response, token)
+    token = auth.create_session(user["username"], remember_me=payload.rememberMe)
+    set_session_cookie(response, token, remember_me=payload.rememberMe)
     return LoginResponse(username=user["username"], isAdmin=bool(user.get("is_admin")))
 
 

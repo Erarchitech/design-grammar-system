@@ -100,6 +100,77 @@ def test_login_success_sets_httponly_samesite_cookie_and_no_token_in_body(client
     assert "samesite=strict" in set_cookie.lower()
 
 
+@pytest.mark.parametrize("remember", [False, True])
+def test_login_remember_cookie_and_server_lifetime(client, deployment_profile, monkeypatch, remember):
+    monkeypatch.setenv("DG_COOKIE_SECURE", "true")
+    monkeypatch.setattr(auth, "_now", lambda now=None: 1000 if now is None else now)
+    auth.create_user("user-a", PASSWORD_A)
+    resp = client.post("/auth/login", json={"username": "user-a", "password": PASSWORD_A, "rememberMe": remember}, headers=CSRF_HEADERS)
+    assert resp.status_code == 200
+    cookie = resp.headers["set-cookie"].lower()
+    assert "httponly" in cookie and "samesite=strict" in cookie and "secure" in cookie and "path=/" in cookie
+    assert ("max-age=" in cookie) is remember
+    assert ("expires=" in cookie) is False
+    if remember:
+        assert f"max-age={auth.REMEMBER_SESSION_TTL_SECONDS}" in cookie
+    token = resp.cookies[auth.SESSION_COOKIE_NAME]
+    record = auth.authenticate_session(token, now=1000)
+    ttl = auth.REMEMBER_SESSION_TTL_SECONDS if remember else int(os.environ.get("DG_SESSION_TTL_SECONDS", "43200"))
+    assert record["expires_at"] == 1000 + ttl
+    assert (record.get("remember_me") is True) is remember
+    assert resp.json() == {"username": "user-a", "isAdmin": False}
+    digest = auth.hashlib.sha256(token.encode()).hexdigest()
+    idle = int(os.environ.get("DG_SESSION_IDLE_SECONDS", "7200"))
+    assert (auth.authenticate_session_hash(digest, now=1000 + idle) is not None) is remember
+    assert (auth.authenticate_session(token, now=1000 + idle) is not None) is remember
+    if remember:
+        assert auth.authenticate_session_hash(digest, now=1000 + ttl - 1) is not None
+        assert auth.authenticate_session(token, now=1000 + ttl - 1) is not None
+    assert auth.authenticate_session_hash(digest, now=1000 + ttl) is None
+    assert auth.authenticate_session(token, now=1000 + ttl) is None
+    assert auth.revoke_session(token)
+    assert auth.authenticate_session(token, now=1001) is None
+    assert auth.authenticate_session_hash(digest, now=1001) is None
+
+
+def test_remembered_login_logout_and_password_revocation(client, deployment_profile):
+    auth.create_user("user-a", PASSWORD_A)
+    other_token = auth.create_session("user-a", remember_me=True)
+    resp = client.post("/auth/login", json={"username": "user-a", "password": PASSWORD_A, "rememberMe": True}, headers=CSRF_HEADERS)
+    assert resp.status_code == 200
+    token = resp.cookies[auth.SESSION_COOKIE_NAME]
+    changed = client.post("/auth/password", json={"currentPassword": PASSWORD_A, "newPassword": "new-synthetic-password-only"}, headers=CSRF_HEADERS)
+    assert changed.status_code == 204
+    assert auth.authenticate_session(other_token) is None
+    assert auth.authenticate_session(token) is not None
+    ended = client.post("/auth/logout", headers=CSRF_HEADERS)
+    assert ended.status_code == 204
+    assert "max-age=0" in ended.headers["set-cookie"].lower()
+    assert auth.authenticate_session(token) is None
+    assert client.get("/auth/me").status_code == 401
+
+
+def test_login_default_cookie_is_not_persistent(client, deployment_profile):
+    auth.create_user("user-a", PASSWORD_A)
+    resp = client.post("/auth/login", json={"username": "user-a", "password": PASSWORD_A}, headers=CSRF_HEADERS)
+    assert resp.status_code == 200
+    assert "max-age" not in resp.headers["set-cookie"].lower()
+    assert "expires=" not in resp.headers["set-cookie"].lower()
+
+
+@pytest.mark.parametrize("remember", ["true", "false", 1, 0, None, [], {}])
+def test_login_remember_requires_boolean(client, deployment_profile, remember):
+    resp = client.post("/auth/login", json={"username": "user-a", "password": PASSWORD_A, "rememberMe": remember}, headers=CSRF_HEADERS)
+    assert resp.status_code == 422
+    assert "set-cookie" not in resp.headers
+
+
+def test_remember_failed_login_sets_no_cookie(client, deployment_profile):
+    resp = client.post("/auth/login", json={"username": "missing", "password": PASSWORD_A, "rememberMe": True}, headers=CSRF_HEADERS)
+    assert resp.status_code == 401
+    assert "set-cookie" not in resp.headers
+
+
 def test_login_wrong_password_and_unknown_user_both_401_auth_failed_identical_message(client, deployment_profile):
     auth.create_user("user-a", PASSWORD_A)
 
