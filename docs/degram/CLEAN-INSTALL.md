@@ -17,7 +17,7 @@ Signing and an update channel are deferred.
 | Rhino | Rhino 8 with Grasshopper. The DG plugin (`DG.gha`) is installed from DeGram (step 2). |
 | DG server | A reachable Design Grammar System (the compose stack) and a DG account that is a member of the project you will use. |
 | Installer | `DeGram-Setup-<version>.exe` and its SHA-256 from `.planning/phases/1301-rabochiy-klient-i-bezopasnoe-chtenie/1301-BUILD.md`. Check the hash before running it. |
-| Python for the Revit adapter | Python 3.13 and `uv` (step 7). The bundled agent Python (3.14) cannot run the locked adapter. |
+| Python for the Revit adapter | Nothing to install from DeGram 0.1.15: the installer carries its own Python 3.11 with `mcp` 1.x and `httpx` (step 7). The agent's own Python (3.14, `mcp` 2.x) cannot run the adapter. |
 | Security software | It must trust the installed DeGram executables: `DeGram.exe` and `resources\agent-payload\bin\degram.exe` with its Python. On the pilot PC Kaspersky Total Security terminated the installer and reset every connection the installed `DeGram.exe` made to DG (1301-BUILD.md, F-11). Add the exclusion before step 6, or DG is unreachable from DeGram. |
 
 Nothing below touches an installed Hermes. DeGram keeps its own data under `%LOCALAPPDATA%\DeGram`
@@ -128,13 +128,22 @@ default: DeGram reports `DG_ORIGIN_INVALID` instead, so a typo cannot send a sig
    when you revoke it on the Connectors tab, change your password or the user is removed (D-25..D-27). The DG
    sign-in of step 6.4 stays for the embedded DG page.
 
-## 7. Adapter interpreter (known gap)
+## 7. Adapter interpreter
 
-The adapter must run on an interpreter that carries `mcp` 1.x. The locked environment of
+The adapter must run on an interpreter that carries `mcp` 1.x and `httpx`; the agent payload is CPython 3.14
+with `mcp` 2.0.0, which has no `mcp.server.fastmcp`. **From DeGram 0.1.15 the installer carries one:**
+`resources\revit-python` is the official embeddable CPython 3.11.9 with `mcp<2` and `httpx` unpacked into its
+`Lib\site-packages`, staged by `tools/degram/stage_revit_python.py` (the interpreter's Authenticode signature
+must be the Python Software Foundation's). DeGram uses it when nothing else is set, so there is nothing to do.
+It does not touch any Python on the machine. A build without the staged folder has no `resources\revit-python`;
+then use the fallback below.
+
+The order DeGram resolves the interpreter in: the environment variable `DEGRAM_PYTHON`, then `revitPython` in
+`degram.json`, then `resources\revit-mcp\.venv`, then `resources\revit-python\python.exe`.
+
+Fallback for a build without the bundled interpreter, or to use your own: the locked environment of
 `resources\revit-mcp\uv.lock` pins `mcp` 1.9.0 and `pydantic-core` 2.33.2, which has wheels for CPython
-3.11 to 3.13 only; the agent payload is CPython 3.14 and carries `mcp` 2.0.0, which has no
-`mcp.server.fastmcp`. So the installer carries the adapter source and its lock, not an interpreter. Create
-its environment once, next to the installed adapter:
+3.11 to 3.13 only. Create its environment once, next to the installed adapter:
 
 ```powershell
 cd "$env:LOCALAPPDATA\Programs\DeGram\resources\revit-mcp"
