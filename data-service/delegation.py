@@ -144,6 +144,7 @@ def issue_delegated_token(
     session_hash: str | None = None,
     pairing_id: str | None = None,
     grant_id: str | None = None,
+    exempt: bool = False,
     username: str,
     project: str,
     now: int | None = None,
@@ -153,11 +154,12 @@ def issue_delegated_token(
     `pairing_id` -- and to the project's current company. Returns
     ``(raw_token, public_record)``; the record never carries a hash. The caller
     must already have proved membership and a live parent. `grant_id` (a
-    session parent only) records the DeGram grant the token was issued under."""
+    session parent only) records the DeGram grant the token was issued under;
+    `exempt` marks a DeGram token of an owner or admin issued without one."""
     if bool(session_hash) == bool(pairing_id):
         raise ValueError("exactly one parent: session_hash or pairing_id")
-    if grant_id and not session_hash:
-        raise ValueError("grant_id needs a session parent")
+    if (grant_id or exempt) and not session_hash:
+        raise ValueError("grant_id and exempt need a session parent")
     current = auth._now(now)
     normalized = username.strip().lower()
     token = DELEGATED_TOKEN_PREFIX + secrets.token_urlsafe(32)
@@ -167,6 +169,7 @@ def issue_delegated_token(
         "session_hash": session_hash,
         "pairing_id": pairing_id,
         "grant_id": grant_id,
+        "exempt": bool(exempt),
         "username": normalized,
         "project": project,
         "company": company.company_for_project(project),
@@ -231,6 +234,10 @@ def authenticate_delegated_token(token: str, *, now: int | None = None) -> "auth
                 import degram_grants  # noqa: PLC0415 -- degram_grants imports this module
 
                 parent_live = degram_grants.is_live(record["grant_id"], username, project)
+            elif parent_live and record.get("exempt"):
+                import degram_grants  # noqa: PLC0415
+
+                parent_live = degram_grants.is_exempt(username, project)
         if not parent_live or auth.get_user(username) is None:
             raise _session_ended()
 

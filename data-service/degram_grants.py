@@ -8,6 +8,9 @@ carries no secret and no route returns one. The user signs in to DG, and
 usual short-lived ``dgd_`` token (``delegation.py``) once an active grant for
 the project exists.
 
+The project's owner and a DG admin who is a member need no grant
+(``is_exempt``); their token is re-checked against that role instead.
+
 A grant is bound to one ``(username, project)`` pair; there is at most one
 active grant per pair (issuing again replaces the old one and ends its
 tokens). A grant is active while it is not revoked, its user still exists and
@@ -267,6 +270,18 @@ def active_grant(username: str, project: str) -> dict[str, Any] | None:
     )
 
 
+def is_exempt(username: str, project: str) -> bool:
+    """True for a stored member of `project` who is its owner or a DG admin:
+    they need no grant (amends D-39, like the connector exemption of Phase
+    1308 D-29). Membership stays required, so an admin who is not a member is
+    not exempt. ``delegation`` re-checks it on every request of a token minted
+    without a grant."""
+    normalized = username.strip().lower()
+    role = auth.get_role(normalized, project)
+    user = auth.get_user(normalized)
+    return role is not None and user is not None and (role == "owner" or bool(user.get("is_admin")))
+
+
 def is_live(grant_id: str, username: str, project: str) -> bool:
     """True while grant `grant_id` is active and belongs to `username` and
     `project` (the re-check ``delegation`` runs on every ``dgd_`` request)."""
@@ -367,7 +382,7 @@ def create_request(
     normalized = username.strip().lower()
     current = auth._now(now)
     with auth._STORE_LOCK:
-        if active_grant(normalized, project) is not None:
+        if active_grant(normalized, project) is not None or is_exempt(normalized, project):
             raise grant_exists()
         rows = auth._load(_requests_file(), _REQUESTS_KEY)
         record = next(

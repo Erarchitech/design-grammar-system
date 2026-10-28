@@ -327,9 +327,11 @@ def exchange_degram_session(payload: DelegatedTokenRequest, request: Request, re
     the caller DeGram access to it (``degram_grants``). The stored membership is
     required (no admin elevation, like the cookie mint): 403 ``PROJECT_FORBIDDEN``
     for a non-member, 403 ``GRANT_REQUIRED`` for a member without an active
-    grant. The token's parent is the session, so logout ends it, and it records
-    the grant, so revoking the grant ends it. The answer is the cookie mint's
-    plus ``username``."""
+    grant, unless the member is the project's owner or a DG admin (exempt, no
+    grant needed). The token's parent is the session, so logout ends it, and it
+    records the grant, so revoking the grant ends it (an exempt token is
+    re-checked against the owner/admin role instead). The answer is the cookie
+    mint's plus ``username``."""
     principal = request.state.principal
     project = payload.project
     username = principal.username or ""
@@ -341,15 +343,17 @@ def exchange_degram_session(payload: DelegatedTokenRequest, request: Request, re
             403,
         )
     grant = degram_grants.active_grant(username, project)
-    if grant is None:
+    if grant is None and not degram_grants.is_exempt(username, project):
         raise degram_grants.grant_required()
     token, record = delegation.issue_delegated_token(
         session_hash=principal.session_hash,
-        grant_id=grant["grant_id"],
+        grant_id=grant["grant_id"] if grant else None,
+        exempt=grant is None,
         username=username,
         project=project,
     )
-    degram_grants.record_use(grant["grant_id"])
+    if grant:
+        degram_grants.record_use(grant["grant_id"])
     return {**_delegated_answer(response, token, record), "username": record["username"]}
 
 

@@ -476,6 +476,53 @@ def test_a_grant_covers_only_its_own_project(client, world):
     assert _code(response) == "GRANT_REQUIRED"
 
 
+def _token_records():
+    return json.loads(_tokens_file().read_text(encoding="utf-8"))["tokens"]
+
+
+def test_the_owner_needs_no_grant(client, world):
+    response = _exchange(client, world["olga"])
+    assert response.status_code == 201, response.text
+    assert response.json()["username"] == OLGA
+    record = _token_records()[0]
+    assert record["grant_id"] is None and record["exempt"] is True
+    assert not _grants_file().exists()
+    token = response.json()["token"]
+    assert client.get("/graph/P1", headers=_bearer(token)).status_code == 200
+
+
+def test_an_admin_member_needs_no_grant(client, world):
+    ada = _session("ada@dg.local", admin=True, memberships={"P1": "viewer"})[0]
+    response = _exchange(client, ada)
+    assert response.status_code == 201, response.text
+    assert _token_records()[0]["exempt"] is True
+
+
+def test_an_editor_still_needs_a_grant(client, world):
+    response = _exchange(client, world["eric"])
+    assert response.status_code == 403
+    assert _code(response) == "GRANT_REQUIRED"
+
+
+def test_an_owner_with_a_grant_exchanges_under_the_grant(client, world):
+    grant = _issue(client, world["olga"], username=OLGA).json()
+    assert _exchange(client, world["olga"]).status_code == 201
+    record = _token_records()[0]
+    assert record["grant_id"] == grant["grant_id"] and not record.get("exempt")
+
+
+def test_losing_ownership_ends_the_exempt_token(client, world):
+    token = _exchange(client, world["olga"]).json()["token"]
+    auth.set_membership(OLGA, "P1", "editor")
+    assert client.get("/graph/P1", headers=_bearer(token)).status_code == 401
+
+
+def test_the_owner_cannot_request_a_grant(client, world):
+    response = client.post("/degram/grant-requests", json={"project": "P1"}, headers=world["olga"])
+    assert response.status_code == 409
+    assert _code(response) == "GRANT_EXISTS"
+
+
 def test_the_exchanged_token_reads_the_bound_project_only(client, world):
     _issue(client, world["olga"])
     token = _exchange(client, world["alice"]).json()["token"]

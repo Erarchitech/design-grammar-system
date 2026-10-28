@@ -134,7 +134,8 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     ("POST", "/auth/degram/exchange"): _p(_PAIR, source="body", role="viewer"),
     # Phase 1301-30 (D-39): trade the cookie session (+ CSRF) for a delegated
     # token of a project the caller is a stored member of AND holds an active
-    # owner/admin grant for (403 GRANT_REQUIRED otherwise).
+    # owner/admin grant for (403 GRANT_REQUIRED otherwise); the owner and an
+    # admin member need no grant.
     ("POST", "/auth/degram/session-exchange"): _p(_MEM, source="body", role="viewer"),
     # ── project tenancy + invitations (Phase 1205-12, D-02/D-05) ──
     ("POST", "/auth/invites"): _p(_MEM, source="body", role="owner"),
