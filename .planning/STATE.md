@@ -43,7 +43,7 @@ Current Plan: 23
 Total Plans in Phase: 23 (MVP slice 01–14; 15 MEP opening check; 16–18 D-54 calculator review; 19–23 DGOPN-06 multi-participant rules)
 Plan: 23 of 23
 Status: GH rehearsal through proposal answers/undo, apply, placement and VALIDATOR V1/V2 recorded in 1303-10-SUMMARY.md. Revit connector/server/DeGram implementation and build complete, but real Revit reads, writes, transfer and gold metrics remain unverified. Prior pyRevit installation was denied and has not been retried. Demo profiles remain retired; 1309 continues separately; 1300 gates remain open for full 1303 acceptance.
-Last activity: 2026-10-18 — plans 11–13 implemented; data-service 82378ca1 from committed export, connector 400 tests and mapping 63 tests passed; DeGram 1aa3b39c built (exit 0), launched isolated; bundled MCP lists 54 tools and status returns BRIDGE_OFF (Revit not running)
+Last activity: 2026-10-28 — Completed quick task 261028-jug: opt-in 30-day remembered DG login in WebUI and DeGram; 201 auth + 16 contract + 392 UI tests, 12 browser checks; 07dd8a9. Deployment and installed-client restart acceptance remain open.
 Last Activity Description: Revit live act 3 awaits owner installation/open/sign-in; see 1303-14-CHECKPOINT.md
 
 **Workspace update (2026-10-04, owner accepted):** official fork `Erarchitech/degram` is registered at `apps/degram`; shared planning/vault remain here. Bidirectional context and code indexing are framework infrastructure, not a completed Phase 1301 product slice. See `spec/degram/WORKSPACE.md` and `DG_OBSIDIAN/degram/index.md`. Remaining 1300 gates and prior scope revision are unchanged. No installed Hermes/profile or Docker changes. Automatic context installed 2026-10-04 (root AGENTS.md/CLAUDE.md + generated child `.hermes.md` via `tools/degram/workspace.py install-context`); DeGram work continues from the framework root.
@@ -640,6 +640,7 @@ Shipped from Phase 20 Plan 02:
 | 260723-s82 | Fix Graph Viewer core animation: theme-aware transparent GIFs (dark/light) | 2026-07-23 | 963159c | [260723-s82-fix-graph-viewer-core-animation-theme-aw](./quick/260723-s82-fix-graph-viewer-core-animation-theme-aw/) |
 | 260723-tgi | Graph Viewer search bar: adaptive value dropdown listing all unique values for the selected field | 2026-07-23 | f132719 | [260723-tgi-in-graph-viewer-for-search-bar-add-dropd](./quick/260723-tgi-in-graph-viewer-for-search-bar-add-dropd/) |
 | 261027-sgc | Install the DG connectors (Revit, Grasshopper) from the DeGram Connectors tab: Installed column, native confirmation, bundled DG.gha | 2026-10-27 | ba10f004 (component) | [261027-sgc-install-connectors-from-the-degram-conne](./quick/261027-sgc-install-connectors-from-the-degram-conne/) |
+| 261028-jug | Remember DG login for 30 days (opt-in), shared WebUI and DeGram landing; offline verified, deployment open | 2026-10-28 | 07dd8a9 | [261028-jug-remember-dg-sign-in](./quick/261028-jug-remember-dg-sign-in/) |
 | Phase 814-reasoner-screen P814-01 | 9min | 3 tasks | 5 files |
 | Phase 815-dg-api-documentation 815-01 | 8min | 3 tasks | 9 files |
 | Phase 821 P01 | 40min | 2 tasks | 8 files |
