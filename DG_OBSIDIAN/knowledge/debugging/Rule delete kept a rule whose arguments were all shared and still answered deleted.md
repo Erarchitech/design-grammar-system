@@ -1,7 +1,7 @@
 ---
 tags: [debugging, rules, cypher, neo4j, stand]
 date: 2026-10-29
-status: fixed in 993b709 (stand deployment pending owner authorization)
+status: fixed in 993b709, deployed on the stand 2026-10-29
 ---
 
 # Rule delete kept a rule whose arguments were all shared and still answered deleted

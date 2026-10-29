@@ -12,12 +12,17 @@ date: 2026-07-18
     (D-73..D-78), deployed on localhost and the stand.
   - **F-07 ingest fix:** rules no longer share atoms. F27 + `b30d2ea` are deployed on the stand.
   - **Stand data:** all rules of `isolation-check-a` were deleted on the owner's request; a backup is kept.
+  - **Late 2026-10-29: the check from the demo PC works end to end and publishes normally (owner).**
+    - F-08 (`Name` under pyRevit CPython) and F-09 (parallel first publishes) are fixed.
+    - The stand runs data-service `f09-2c5f5bc`, which includes the delete fix `993b709`.
+    - Speckle is set up from the server: `inviteOnly`, tokens in `.env`, project `cb20909c46` bound to
+      `isolation-check-a`; the web UI stays closed.
+    - See [[sessions/2026-10-29 Demo PC Revit check fixed end to end, stand Speckle set up (F-08, F-09)|session]].
   - **Next:**
-    1. Owner: authorize deploying the rule delete fix `993b709` to the stand.
-    2. Tester on PC-2: re-enter the five rules, click Revit «Вход» to the stand, then «Проверь модель Revit на
-       соответствие всем правилам.».
-    3. Rebuild localhost data-service from the current commit.
-    4. Stage 2: the mapping view in the Model Viewer (F-06).
+    1. Rebuild localhost data-service from the current commit (F27/F-07, delete fix, F-08, F-09).
+    2. Stage 2: the mapping view in the Model Viewer (F-06).
+    3. A new DG project on the stand needs its own Speckle project and binding (no server-wide default).
+    4. Later decision: open the Speckle web UI on the stand or keep it server-managed.
   - Nothing new was pushed besides the DeGram commits `aac8353c`/`38e0e1ee`; the framework commits are local.
   - Links: [[sessions/2026-10-29 Revit rule checks without Grasshopper, stand update and F-07 ingest fix|session]],
     [[knowledge/decisions/Revit rule checks run as connector jobs and are judged by dg-evaluator, no Grasshopper (D-73 to D-78)|decision]].

@@ -9,6 +9,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-29 Demo PC Revit check fixed end to end, stand Speckle set up (F-08, F-09)|Session — demo PC check works end to end: F-08 pyRevit Name, F-09 publish race, stand Speckle set up]] (2026-10-29)
+- [[knowledge/decisions/Stand Speckle is set up from the server and its web UI stays closed at the edge|Decision — stand Speckle set up from the server, web UI stays closed]] (2026-10-29)
+- [[knowledge/debugging/Revit check failed with Name on pyRevit CPython because a FamilySymbol hides Element.Name (F-08)|Debugging — REVIT_CHECK_FAILED: Name, FamilySymbol hides Element.Name under pythonnet (F-08)]] (2026-10-29)
+- [[knowledge/debugging/Parallel first publishes raced to create the dg-validation model (F-09)|Debugging — parallel first publishes raced to create dg-validation (F-09)]] (2026-10-29)
 - [[sessions/2026-10-29 Revit rule checks without Grasshopper, stand update and F-07 ingest fix|Session — demo test fixes: Revit checks as connector jobs + dg-evaluator, stand updated, F-07 shared atoms, rule cleanup]] (2026-10-29)
 - [[knowledge/decisions/Revit rule checks run as connector jobs and are judged by dg-evaluator, no Grasshopper (D-73 to D-78)|Decision — Revit checks as connector jobs judged by dg-evaluator, no Grasshopper (D-73..D-78)]] (2026-10-29)
 - [[knowledge/debugging/Ingest output reused other rules' Atom_Ids, so rules shared atoms and gave no verdict (F-07)|Debugging — ingest reused other rules' Atom_Ids → shared atoms, no_population (F-07)]] (2026-10-29)
