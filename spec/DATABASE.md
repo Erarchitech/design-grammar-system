@@ -36,6 +36,8 @@ All data lives in a **single Neo4j 5 database**. Logical separation uses the `gr
 `domain` and `range` are class IRIs stored as plain strings. They are annotations on the node and are not
 exported as `rdfs:domain`/`rdfs:range` axioms (`spec/LPG-OWL-MAPPING.md`).
 
+**Derived subject links (F-02, 2026-10-29).** A rule without participants names its other class only through its property ("no openings in beams" → `hasBeamIntersectionCount` → Beam). After ingest, and again when a check generates its calculators, `property_scripts.ensure_rule_classes` writes an `ObjectProperty` from the subject class to each class the calculator reads (`READS_CLASS`), so the Graph Viewer can draw the class edge: IRI `<prefix><relation><Class>` (`ex:intersectsBeam`), `label` = the relation, `domain`/`range` = the two class IRIs, `source: 'property_scripts'`. The relation comes from the catalogue calculator (`relation`, `relationByClass`; `relatesTo` for a generated calculator). It is skipped when the project already relates the two classes in either direction and for rules with participants. Rule atoms are not changed, so evaluation is unaffected. Written only by `property_calculator_store.save_subject_links`.
+
 **Participants and context-only variables (D-61, Phase 1303).** A rule constrains one subject through one
 numeric `DataPropertyAtom` and one `swrlb` comparison. Every other object class the rule names is a
 *participant*: it contributes a `ClassAtom` on its own variable and an `ObjectPropertyAtom` relating it to the

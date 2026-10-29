@@ -5,6 +5,7 @@
     "revit_category_intersection_count": {
       "template": "category_intersection_count.py.tmpl",
       "function": "calc_category_intersection_count",
+      "relation": "intersects",
       "unit": "count",
       "summary": "Number of elements of the given Revit categories whose solid intersects the box solid (bounding-box overlap when the box has no solid).",
       "params": {
@@ -23,6 +24,8 @@
     "revit_openings_below_count": {
       "template": "openings_below_count.py.tmpl",
       "function": "calc_openings_below_count",
+      "relation": "isAbove",
+      "relationByClass": {"Wall": "hostedBy"},
       "unit": "count",
       "summary": "Number of door/window openings in the wall the box intersects whose extent along the wall overlaps the box and whose head is at or below the box bottom.",
       "params": {
@@ -47,6 +50,8 @@
     "revit_min_opening_clearance_mm": {
       "template": "min_opening_clearance_mm.py.tmpl",
       "function": "calc_min_opening_clearance_mm",
+      "relation": "isNearTo",
+      "relationByClass": {"Wall": "hostedBy"},
       "unit": "mm",
       "summary": "Minimal clear distance, in the plane of the wall the box intersects, between the box outline and the outline of any door/window opening in that wall; the sentinel when the wall has no opening.",
       "params": {
@@ -162,33 +167,49 @@
     {
       "property": "hasBeamIntersectionCount",
       "meaning": "number of beams (structural framing) the element intersects",
+      "meaningRu": "число балок, которые пересекает элемент (отверстие в балке)",
       "unit": "count"
     },
     {
       "property": "hasColumnIntersectionCount",
       "meaning": "number of columns the element intersects",
+      "meaningRu": "число колонн и пилонов, которые пересекает элемент (отверстие в колонне)",
       "unit": "count"
     },
     {
       "property": "hasWallIntersectionCount",
       "meaning": "number of walls the element intersects",
+      "meaningRu": "число стен, которые пересекает элемент",
       "unit": "count"
     },
     {
       "property": "hasFloorIntersectionCount",
       "meaning": "number of floors/slabs the element intersects",
+      "meaningRu": "число перекрытий и плит, которые пересекает элемент",
       "unit": "count"
     },
     {
       "property": "hasOpeningsBelowCount",
       "meaning": "number of door/window openings directly below the element in its host wall",
+      "meaningRu": "число дверных и оконных проёмов прямо под элементом в его стене (отверстие над проёмом)",
       "unit": "count"
     },
     {
       "property": "hasMinOpeningClearanceMm",
       "meaning": "smallest clear distance from the element to a door/window opening in its host wall",
+      "meaningRu": "наименьшее расстояние от элемента до дверного или оконного проёма в его стене, мм",
       "unit": "mm"
     }
   ],
+  "classVocabulary": [
+    {"class": "OpeningBox", "ru": ["отверстие", "бокс отверстия", "задание на отверстие", "отверстие в перекрытии", "отверстие в стене"], "meaning": "a box placed for an MEP opening in a wall or slab (Revit Generic Model mapped by DG)"},
+    {"class": "Beam", "ru": ["балка", "ригель", "прогон"], "meaning": "structural framing"},
+    {"class": "Column", "ru": ["колонна", "пилон"], "meaning": "structural column; a pylon modelled as a wall is mapped to Column"},
+    {"class": "Wall", "ru": ["стена", "стенка"], "meaning": "wall"},
+    {"class": "Floor", "ru": ["перекрытие", "плита", "плита перекрытия"], "meaning": "floor or slab"},
+    {"class": "Door", "ru": ["дверь", "дверной проём"], "meaning": "door opening"},
+    {"class": "Window", "ru": ["окно", "оконный проём"], "meaning": "window opening"}
+  ],
+  "classVocabularyDescription": "Preferred class names for words a rule uses in plain language. A rule never has to name a class or property: the ingest maps these words to the classes and the computable properties above.",
   "openingCategoriesNote": "Door and window openings only. OST_SWallRectOpening is the opening the structural engineer cuts from a box; counting it would make a box measure itself (owner 2026-10-20)."
 }

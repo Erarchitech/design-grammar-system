@@ -1059,7 +1059,7 @@ def test_every_query_constant_is_known_to_the_fake_and_the_marker_contract_holds
     fake = _RowStore()
     for name in queries:
         if name in ("CONTEXT_CLASS_QUERY", "PARTICIPANT_CLASS_QUERY", "CLASS_CATEGORIES_QUERY", "UNLINK_QUERY",
-                    "PRUNE_QUERY"):
+                    "PRUNE_QUERY", "SUBJECT_LINK_QUERY"):
             continue  # class linking is covered by test_property_scripts
         assert hasattr(fake, "_do_" + name.lower()), name
 

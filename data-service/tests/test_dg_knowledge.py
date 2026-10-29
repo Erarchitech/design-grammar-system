@@ -289,9 +289,16 @@ def test_computable_form_convention_lists_participants_and_relations():
     for notion in ("outline", "projection", "clearance", "edge", "distance"):
         assert notion in statement
     assert "NEVER a class" in statement
-    # the one-class example stays, and rules naming no other object add no participant
+    # F-02: the beam example names Beam as a participant, like the statement asks; rules naming no other object
+    # still add no participant
     assert "hasBeamIntersectionCount(?b, ?n)" in conv["example"]["swrl"]
+    assert "Beam(?m) ^ intersects(?b, ?m)" in conv["example"]["swrl"]
     assert "add no participant the rule does not name" in statement
+    # F-03: rules come in plain language; the class words map through the class vocabulary
+    assert "plain language" in statement and "class_vocabulary" in statement
+    by_class = {v["class"]: v["ru"] for v in conv["class_vocabulary"]}
+    assert "балка" in by_class["Beam"] and "пилон" in by_class["Column"] and "отверстие" in by_class["OpeningBox"]
+    assert all(v.get("meaningRu") for v in conv["computable_properties"])
     # the numeric catalogue vocabulary is untouched
     names = [v["property"] for v in conv["computable_properties"]]
     assert {"hasBeamIntersectionCount", "hasColumnIntersectionCount", "hasOpeningsBelowCount",

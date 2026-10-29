@@ -229,6 +229,9 @@ class _Session:
             return _Result(self.blocked)
         if "CatalogueCalculator" in query:
             return _Result(self.catalogue)
+        if "MERGE (op:ObjectProperty" in query:  # F-02 subject links: every requested link is written here
+            self.links = getattr(self, "links", []) + [params]
+            return _Result([{"iri": params["iri"]}])
         if "READS_CLASS" in query:
             if "MERGE (k:Class" in query:
                 self.classes = getattr(self, "classes", []) + [params]
@@ -1394,3 +1397,40 @@ def test_the_highlighter_writes_no_parameter_into_a_grouped_box(catalogue):
     loose = types.SimpleNamespace(GroupId=types.SimpleNamespace(IntegerValue=-1))
     assert ns["in_group"](grouped, invalid) is True and ns["in_group"](loose, invalid) is False
     assert src.count("in_group(e, DB.ElementId.InvalidElementId)") == 2  # paint and clear
+
+
+def _links(session):
+    return {(l["subjectLabel"], l["relation"], l["label"], l["iri"]) for l in getattr(session, "links", [])}
+
+
+def test_ensure_rule_classes_links_the_subject_to_the_classes_its_property_reads(catalogue):
+    """F-02: "no openings in beams" names Beam only through hasBeamIntersectionCount; DG writes the ObjectProperty
+    the Graph Viewer draws, for beams exactly as for columns."""
+    session = _Session(_rows())
+    ps.ensure_rule_classes(session, PROJECT, catalogue=catalogue)
+    links = _links(session)
+    assert ("OpeningBox", "intersects", "Beam", DG + "intersectsBeam") in links
+    assert ("OpeningBox", "intersects", "Column", DG + "intersectsColumn") in links
+    assert ("OpeningBox", "isAbove", "Door", DG + "isAboveDoor") in links
+    assert ("OpeningBox", "hostedBy", "Wall", DG + "hostedByWall") in links
+    assert all(label != "OpeningBox" for _, _, label, _ in links)
+
+
+def test_a_rule_with_participants_gets_no_derived_subject_link(catalogue):
+    session = _Session(_acceptance_rows())
+    ps.ensure_rule_classes(session, PROJECT, catalogue=catalogue,
+                           generator=lambda dp, rs, box: _reading("OST_Walls", "OST_StructuralColumns", "OST_Floors"))
+    assert _links(session) == set()
+
+
+def test_a_generated_calculator_relates_with_relates_to(catalogue):
+    entry = {"calculator": "generated:abc", "dataPropertyIri": DG + "hasX"}
+    links = ps.subject_links(entry, catalogue, {"iri": DG + "OpeningBox", "label": "OpeningBox"},
+                             [{"label": "Slab", "iri": DG + "Slab"}, {"label": "OpeningBox", "iri": DG + "OpeningBox"}])
+    assert links == [{"label": "Slab", "relation": "relatesTo", "iri": DG + "relatesToSlab"}]
+
+
+def test_the_check_heals_a_project_ingested_before_the_link_existed(catalogue):
+    session = _Session(_rows())
+    ps.generate(session, PROJECT, None, catalogue=catalogue, store=True)
+    assert ("OpeningBox", "intersects", "Beam", DG + "intersectsBeam") in _links(session)

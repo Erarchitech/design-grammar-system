@@ -313,6 +313,23 @@ def context_classes(entry: dict, catalogue: dict, iri_prefix: str) -> list[dict]
             for label, cats in sorted(by_label.items())]
 
 
+def subject_links(entry: dict, catalogue: dict, subject: dict, classes: list[dict]) -> list[dict]:
+    """The ObjectProperties that relate a participantless rule's subject to the classes its calculator reads (F-02):
+    the relation comes from the catalogue calculator (``relation``, per class in ``relationByClass``), a generated
+    calculator relates with ``relatesTo``. The IRI names the relation and the class (ex:intersectsBeam), so the
+    subject's links to Beam and to Column stay two ObjectProperties with their own range."""
+    spec = catalogue.get("calculators", {}).get(entry.get("calculator"), {})
+    by_class = spec.get("relationByClass") or {}
+    prefix = iri_prefix_of(subject["iri"])
+    links = []
+    for c in classes:
+        if _same_class(c["label"], subject["label"]):
+            continue
+        relation = by_class.get(c["label"]) or spec.get("relation") or "relatesTo"
+        links.append({"label": c["label"], "relation": relation, "iri": f"{prefix}{relation}{c['label']}"})
+    return links
+
+
 def _same_class(a: str, b: str) -> bool:
     """Two class labels name one concept (Slab ~ Floor): equal ignoring case, or class_duplicates calls them the same
     concept. The same fold save_context_classes applies, so a participant never gets a second class."""
@@ -814,7 +831,13 @@ def ensure_rule_classes(session: Any, project: str, catalogue: dict | None = Non
             if entry.get("new"):
                 if _saved(property_calculator_store.save(session, project, entry, actor), entry, warnings):
                     stored[entry["dataPropertyIri"]] = entry
-            property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"], classes)
+            written = property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
+                                                                     classes)
+            rule = next((r for r in group if r["ruleId"] == entry["ruleId"]), {})
+            if not rule.get("participants"):
+                subject = {"iri": class_iri, "label": _label}
+                property_calculator_store.save_subject_links(
+                    session, project, subject, subject_links(entry, catalogue, subject, written or classes))
             created.append({"ruleId": entry["ruleId"], "dataPropertyIri": entry["dataPropertyIri"],
                             "classes": [c["label"] for c in classes]})
         unsupported.extend(resolution["unsupported"])
@@ -854,8 +877,14 @@ def generate(session: Any, project: str, rule_ids: list[str] | None, chooser: Ch
                 continue
             if entry.get("new"):
                 _saved(property_calculator_store.save(session, project, entry, actor), entry, warnings)
-            property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
-                                                           classes_of[entry["dataPropertyIri"]])
+            written = property_calculator_store.save_context_classes(session, project, entry["dataPropertyIri"],
+                                                                     classes_of[entry["dataPropertyIri"]])
+            rule = next((r for r in rules if r["ruleId"] == entry["ruleId"]), {})
+            if not rule.get("participants"):  # F-02: a project ingested before the fix heals on its next check
+                property_calculator_store.save_subject_links(
+                    session, project, resolution["boxClass"],
+                    subject_links(entry, catalogue, resolution["boxClass"],
+                                  written or classes_of[entry["dataPropertyIri"]]))
             saved.add(entry["dataPropertyIri"])
         property_calculator_store.prune_context_classes(session, project)
     for entry in resolution["resolved"]:

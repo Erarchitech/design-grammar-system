@@ -148,10 +148,11 @@ def load_class_categories(session: Any, project: str) -> dict[str, list[str]]:
             for r in session.run(CLASS_CATEGORIES_QUERY, project=project).data() if r.get("label")}
 
 
-def save_context_classes(session: Any, project: str, data_property_iri: str, classes: list[dict]) -> None:
+def save_context_classes(session: Any, project: str, data_property_iri: str, classes: list[dict]) -> list[dict]:
     """Link the calculator to exactly ``classes``: stale READS_CLASS edges (a catalogue fix dropped a category)
     are removed first, then the current classes are matched or created and linked. A class that carries a
-    ``relation`` (a participant of a rule, D-62) is linked with ``relation`` and ``relatedTo`` on the edge."""
+    ``relation`` (a participant of a rule, D-62) is linked with ``relation`` and ``relatedTo`` on the edge.
+    Returns the classes as written, a folded concept under the label the project already had."""
     import class_duplicates
 
     # A class of the same concept that the project already has (Slab for Floor, Hole for Opening) is used instead
@@ -180,6 +181,36 @@ def save_context_classes(session: Any, project: str, data_property_iri: str, cla
         else:
             session.run(CONTEXT_CLASS_QUERY, project=project, label=c["label"], iri=c["iri"],
                         categories=list(c["revitCategories"]), dataPropertyIri=data_property_iri).consume()
+    return classes
+
+
+# F-02 (2026-10-29): a rule without participants ("no openings in beams") names its other class only through its
+# property, so the OntoGraph had no ObjectProperty between the two classes and the Graph Viewer, which draws class
+# edges from ObjectProperty domain/range (D-69), showed no link. DG writes that ObjectProperty itself, unless the
+# project already relates the two classes in either direction. Rule atoms are untouched, so evaluation is unchanged.
+SUBJECT_LINK_QUERY = (
+    "MATCH (s:Class {project:$project}) WHERE s.iri = $subjectIri OR s.label = $subjectLabel "
+    "MATCH (k:Class {project:$project, label:$label}) "
+    "WITH s, k LIMIT 1 WITH s, k "
+    "WHERE NOT EXISTS { MATCH (op:ObjectProperty {project:$project}) "
+    "WHERE (op.domain IN [s.iri, s.label] AND op.range IN [k.iri, k.label]) "
+    "OR (op.domain IN [k.iri, k.label] AND op.range IN [s.iri, s.label]) } "
+    "MERGE (op:ObjectProperty {iri:$iri, project:$project, graph:'OntoGraph'}) "
+    "ON CREATE SET op.source = 'property_scripts' "
+    "SET op.label = $relation, op.domain = s.iri, op.range = k.iri "
+    "RETURN op.iri AS iri"
+)
+
+
+def save_subject_links(session: Any, project: str, subject: dict, links: list[dict]) -> list[str]:
+    """Write the ObjectProperty from ``subject`` to each linked class; returns the IRIs written."""
+    written: list[str] = []
+    for link in links:
+        rows = session.run(SUBJECT_LINK_QUERY, project=project, subjectIri=subject["iri"],
+                           subjectLabel=subject["label"], label=link["label"], iri=link["iri"],
+                           relation=link["relation"]).data()
+        written.extend(r["iri"] for r in rows if isinstance(r, dict) and r.get("iri") == link["iri"])
+    return written
 
 
 def prune_context_classes(session: Any, project: str) -> list[str]:

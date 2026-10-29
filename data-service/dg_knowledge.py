@@ -121,13 +121,16 @@ SWRL_CONVENTIONS["computable_form"] = {
         "NEVER a class: it stays part of the subject's numeric property name -- a count of the related elements "
         "(has<Related>IntersectionCount, has<Related>BelowCount) or a distance with its unit "
         "(hasMin<Related>ClearanceMm). When the rule names no object besides the subject, write only the "
-        "one-class form of the first example: add no participant the rule does not name. "
-        "A prohibition is count > 0; a minimum distance D is value < D."
+        "subject's three atoms: add no participant the rule does not name. "
+        "A prohibition is count > 0; a minimum distance D is value < D. "
+        "The user writes rules in plain language, usually Russian, and never names a class or a property: map "
+        "the words to the class_vocabulary and to the computable_properties (meaning / meaningRu) and write "
+        "those exact names."
     ),
     "example": {
-        "rule": "Openings are not allowed in beams",
-        "swrl": "OpeningBox(?b) ^ hasBeamIntersectionCount(?b, ?n) ^ swrlb:greaterThan(?n, \"0\"^^xsd:integer) "
-                "-> hasOpeningBoxViolation(?b, true)",
+        "rule": "Openings are not allowed in beams (Отверстия не допускаются в балках)",
+        "swrl": "OpeningBox(?b) ^ Beam(?m) ^ intersects(?b, ?m) ^ hasBeamIntersectionCount(?b, ?n) ^ "
+                "swrlb:greaterThan(?n, \"0\"^^xsd:integer) -> hasOpeningBoxViolation(?b, true)",
     },
     "participants_example": {
         "rule": "An opening in a slab must not be closer than 500 mm to the outline of the projection of columns "
@@ -281,7 +284,20 @@ def _computable_vocabulary() -> list[dict[str, str]]:
     return [dict(v) for v in catalogue.get("vocabulary", [])]
 
 
+def _class_vocabulary() -> list[dict[str, Any]]:
+    import json
+
+    try:
+        catalogue = json.loads((Path(__file__).resolve().parent / "property_calculators" / "catalogue.json")
+                               .read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    return [dict(v) for v in catalogue.get("classVocabulary", [])]
+
+
 SWRL_CONVENTIONS["computable_form"]["computable_properties"] = _computable_vocabulary()
+# F-03 (2026-10-29): rules arrive in plain language without class or property names; the class words map here.
+SWRL_CONVENTIONS["computable_form"]["class_vocabulary"] = _class_vocabulary()
 
 
 def swrl_conventions() -> dict[str, Any]:
