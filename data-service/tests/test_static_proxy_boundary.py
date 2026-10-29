@@ -38,11 +38,14 @@ RELAY_LOCATION = "/data-service/degram/v1/"
 SPECKLE_PROXY_LOCATION = "/data-service/speckle-proxy/"
 # Phase 1303-15: a property check waits for the Rhino.Inside solution, so /data-service/scripts/ has a longer read timeout.
 SCRIPTS_PROXY_LOCATION = "/data-service/scripts/"
+# A mapping session posts up to 5000 element descriptors, above nginx's 1 MiB default body limit.
+MAPPING_PROXY_LOCATION = "/data-service/mapping/"
 ALLOWED_PROXY_LOCATIONS = {
     "/data-service/",
     RELAY_LOCATION,
     SPECKLE_PROXY_LOCATION,
     SCRIPTS_PROXY_LOCATION,
+    MAPPING_PROXY_LOCATION,
     "/llm/",
     "/reasoner/",
     RATE_LIMITED_AUTH_LOCATION,
@@ -375,3 +378,17 @@ def test_nginx_never_proxies_straight_to_speckle(nginx_text: str) -> None:
     """The browser reaches Speckle geometry only through data-service: no nginx
     location names a Speckle upstream, so no token-free direct path exists."""
     assert not re.search(r"speckle-(server|ingress|frontend)|:3000|:8090", strip_comments(nginx_text))
+
+
+# -- Mapping sessions: element descriptors exceed the 1 MiB default body limit --------
+
+
+def test_mapping_location_accepts_a_full_session_body(nginx_text: str) -> None:
+    matches = [loc for loc in parse_locations(nginx_text) if loc.path == MAPPING_PROXY_LOCATION]
+    assert len(matches) == 1, f"expected exactly one {MAPPING_PROXY_LOCATION} location"
+    statements = matches[0].statements
+    assert "set $ds_upstream http://data-service:8000" in statements
+    assert "proxy_pass $ds_upstream" in statements
+    assert "rewrite ^/data-service/(.*) /$1 break" in statements
+    assert not any(s.startswith("add_header") for s in statements)
+    assert [s.split(None, 1)[1] for s in statements if s.startswith("client_max_body_size ")] == ["64m"]
