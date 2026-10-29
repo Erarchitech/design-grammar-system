@@ -1247,7 +1247,8 @@ def test_apply_colours_uses_the_palette_in_one_transaction(runner, revit_io, mon
             settings.surface_colour.Blue) == palette.STATE_COLOURS["confirmed"]
     assert settings.surface_pattern is not None
     assert settings.cut_pattern is not None
-    assert settings.projection_colour is not None
+    # Lines keep the view's black so painted elements do not merge (F-04).
+    assert settings.projection_colour is None
 
 
 def test_apply_colours_counts_a_failing_element(runner, revit_io, monkeypatch):

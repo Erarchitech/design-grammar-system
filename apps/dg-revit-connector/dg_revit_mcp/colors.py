@@ -812,13 +812,11 @@ def color_elements_by_parameter(
                     "sort_index": i,  # Add sort index for debugging
                 }
 
-                # Apply color override to each element with improved settings
+                # Colour the fills only: element lines keep the view's black
+                # so adjacent elements do not merge into one patch (DG F-04).
                 override_settings = DB.OverrideGraphicSettings()
-                override_settings.SetProjectionLineColor(color)
                 override_settings.SetSurfaceForegroundPatternColor(color)
                 override_settings.SetCutForegroundPatternColor(color)
-                override_settings.SetCutLineColor(color)
-                override_settings.SetProjectionLineWeight(3)  # Make lines more visible
 
                 if solid_fill_id is not None:
                     override_settings.SetSurfaceForegroundPatternId(solid_fill_id)

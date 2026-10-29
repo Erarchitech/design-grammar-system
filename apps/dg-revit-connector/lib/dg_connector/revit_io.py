@@ -480,7 +480,11 @@ def _solid_fill_pattern_id(doc):
 
 
 def override_settings(colour, solid_fill_id):
-    """Solid-fill :class:`DB.OverrideGraphicSettings` for an RGB tuple."""
+    """Solid-fill :class:`DB.OverrideGraphicSettings` for an RGB tuple.
+
+    Only the surface and cut fills take the colour; element lines keep the
+    view's own (black) colour so neighbouring elements stay readable.
+    """
     settings = DB.OverrideGraphicSettings()
     revit_colour = DB.Color(int(colour[0]), int(colour[1]), int(colour[2]))
     if solid_fill_id is not None:
@@ -491,7 +495,6 @@ def override_settings(colour, solid_fill_id):
             pass
     settings.SetSurfaceForegroundPatternColor(revit_colour)
     settings.SetCutForegroundPatternColor(revit_colour)
-    settings.SetProjectionLineColor(revit_colour)
     return settings
 
 
