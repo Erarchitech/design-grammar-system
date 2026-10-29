@@ -164,6 +164,21 @@ class TestRuleDelete:
         assert "NOT EXISTS" in query
         assert "other <> r" in query
 
+    def test_a_rule_whose_args_are_all_shared_is_still_deleted(self, monkeypatch):
+        """Stand 2026-10-29: the orphan filter was a WHERE after UNWIND, so a rule whose every Var/Literal was also
+        used by another rule kept no row, the aggregation after it returned nothing and the rule survived its own
+        "deleted" answer. The filter has to pick orphans without dropping the rule's row."""
+        writes: list = []
+        _wire(monkeypatch, captured=writes)
+
+        client.delete(f"/rules/{PROJECT}/{RULE}")
+
+        query, _ = writes[0]
+        assert "WHERE arg IS NULL OR NOT EXISTS" not in query
+        orphan_pick = query[query.index("UNWIND"):query.index("FOREACH")]
+        assert " WHERE " not in orphan_pick.replace("WHERE other <> r", "")
+        assert "collect(orphan) AS orphans" in query
+
     def test_delete_removes_only_project_ontology_left_without_any_relationship(self, monkeypatch):
         """Owner decision 2026-10-20 (supersedes "never touches ontology labels"): the Class/DatatypeProperty/
         ObjectProperty/Builtin nodes the rule's atoms referred to go with the rule, but only inside the project and

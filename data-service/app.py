@@ -5162,11 +5162,13 @@ def delete_rule(project: str, rule_id: str):
         + "OPTIONAL MATCH (a)-[:REFERS_TO]->(t) WHERE t.project = $project "
         "AND (t:Class OR t:DatatypeProperty OR t:ObjectProperty OR t:Builtin) "
         "WITH r, collect(DISTINCT a) AS atoms, collect(DISTINCT x) AS args, collect(DISTINCT t) AS refs "
+        # The orphan pick keeps every row: a WHERE here dropped the rule's only row when all of its args were shared,
+        # and the rule then survived its own delete.
         "UNWIND (CASE WHEN args = [] THEN [null] ELSE args END) AS arg "
-        "WITH r, atoms, refs, arg WHERE arg IS NULL OR NOT EXISTS { "
+        "WITH r, atoms, refs, CASE WHEN arg IS NOT NULL AND NOT EXISTS { "
         "    MATCH (other:Rule)-[:HAS_BODY|HAS_HEAD]->(:Atom)-[:ARG]->(arg) "
-        "    WHERE other <> r } "
-        "WITH r, atoms, refs, collect(arg) AS orphans "
+        "    WHERE other <> r } THEN arg END AS orphan "
+        "WITH r, atoms, refs, collect(orphan) AS orphans "
         "FOREACH (n IN atoms | DETACH DELETE n) "
         "FOREACH (n IN orphans | DETACH DELETE n) "
         "DETACH DELETE r "
