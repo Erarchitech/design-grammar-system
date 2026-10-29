@@ -17,6 +17,8 @@ services:
     restart: unless-stopped
   dg-reasoner:
     restart: unless-stopped
+  dg-evaluator:
+    restart: unless-stopped
   data-service:
     restart: unless-stopped
   n8n:

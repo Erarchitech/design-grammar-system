@@ -41,6 +41,20 @@ services:
     depends_on:
       - neo4j
 
+  # F-01 (2026-10-29): the DG.Core rule evaluator as an internal service. Judges rule checks whose property values
+  # the DG Revit connector computed in Revit (no Grasshopper). No published port; data-service is its only caller.
+  dg-evaluator:
+    build:
+      context: ./DG
+      dockerfile: tools/DG.Evaluator/Dockerfile
+    container_name: dg-evaluator
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env (see .env.example)}
+    depends_on:
+      - neo4j
+
   data-service:
     build: ./data-service
     container_name: data-service
@@ -84,6 +98,7 @@ services:
       DG_TRUSTED_PROXIES: ${DG_TRUSTED_PROXIES:-}
       DG_THROTTLE_LIMIT_IP: ${DG_THROTTLE_LIMIT_IP:-}
       DG_REASONER_URL: http://dg-reasoner:8000
+      DG_EVALUATOR_URL: http://dg-evaluator:8080
       # Phase 33 (BRDG-02): DG CANVAS LISTENER bridge -- the Windows-host
       # Grasshopper process is reached via host.docker.internal, not a
       # compose service name (it isn't containerized).

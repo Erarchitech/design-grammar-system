@@ -35,6 +35,12 @@ TEMPLATE = ".env.example"          # the only dot-env name allowed in the archiv
 OPTIONAL_PATHS = [
     "data-service/property_calculators/catalogue.json",
     "data-service/property_calculators/*.py.tmpl",
+    # F-01 (2026-10-29): dg-evaluator is built from DG.Core and its own project (build context ./DG).
+    "DG/.dockerignore",
+    "DG/src/DG.Core/DG.Core.csproj",
+    "DG/src/DG.Core/*/*.cs",
+    "DG/src/DG.Core/*/*/*.cs",
+    "DG/tools/DG.Evaluator/*",
 ]
 
 

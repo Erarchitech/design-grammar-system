@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>DG.Evaluator</RootNamespace>
+    <AssemblyName>DG.Evaluator</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    F-01 (2026-10-29): the dg-evaluator service. Judges rule checks whose property values the DG Revit
+    connector computed in Revit, with the same DG.Core evaluator VALIDATOR runs in Grasshopper. Internal
+    to the compose network only (no published port); data-service is its only caller.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DG.Core\DG.Core.csproj" />
+  </ItemGroup>
+
+</Project>

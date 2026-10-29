@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DG.Core\DG.Core.csproj" />
+    <ProjectReference Include="..\..\tools\DG.Evaluator\DG.Evaluator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
