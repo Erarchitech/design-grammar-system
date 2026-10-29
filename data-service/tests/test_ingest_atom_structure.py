@@ -191,3 +191,26 @@ def test_predicate_alias_identity_mutation_is_rejected():
 def test_identity_mutation_then_restore_is_rejected():
     cypher = a1_cypher() + "\nSET up.iri='ex:other' SET up.iri='ex:hasUpperVertex'"
     assert not dg_context.validate_cypher(cypher, 'rule_ingest', project='p')['valid']
+
+
+def test_an_atom_of_another_rule_cannot_be_linked_into_this_rule():
+    """F-07 (stand, 2026-10-29): the output for one rule MERGEd another rule's Atom_Id; MERGE found that rule's atom,
+    so the new rule shared it and its ARG edges were added to the other rule's atom (no binding for either)."""
+    cypher = a1_cypher().replace("Atom_Id:'R_FAC_A1_CONTROL_V_A1'", "Atom_Id:'R_FAC_OTHER_RULE_V_A1'")
+    result = dg_context.validate_cypher(cypher, 'rule_ingest', project='p')
+    assert not result['valid']
+    assert any(v['code'] == 'invalid_atom_structure' and 'R_FAC_A1_CONTROL_V' in v['message']
+               for v in result['violations'])
+
+
+@pytest.mark.parametrize('atom_id', ['R_FAC_A1_CONTROL_V', 'R_FAC_A1_CONTROL_VX_A1', 'R_FAC_A1_CONTROL_V_B1'])
+def test_an_atom_id_must_be_the_rule_id_with_its_position(atom_id):
+    cypher = a1_cypher().replace("Atom_Id:'R_FAC_A1_CONTROL_V_A1'", f"Atom_Id:'{atom_id}'")
+    assert not dg_context.validate_cypher(cypher, 'rule_ingest', project='p')['valid']
+
+
+def test_one_atom_cannot_belong_to_two_rules():
+    cypher = a1_cypher()
+    cypher += "\nMERGE (r2:Rule {Rule_Id:'R_FAC_SECOND_V', project:$project, graph:'Metagraph'}) SET r2.SWRL='FacadeModule(?m) -> PatternNode(?m)'"
+    cypher += '\nMERGE (r2)-[:HAS_BODY {order:1}]->(a1)'
+    assert not dg_context.validate_cypher(cypher, 'rule_ingest', project='p')['valid']

@@ -54,6 +54,7 @@ used by every other check in `dg_context.py`.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -1444,6 +1445,19 @@ def check_ingest_atom_structure(cypher: str) -> list[Violation]:
             identities[declared_id.text] = var
         if any(left == var or right == var for left, _, right in parser.undirected_write_edges):
             errors.append("undirected Atom relationship cannot prove graph structure")
+        # F-07: an atom belongs to the one rule whose Rule_Id its Atom_Id carries ({Rule_Id}_A{n} / _H{n}). MERGE on
+        # another rule's Atom_Id finds that rule's atom, so the two rules would share it and gather each other's ARGs.
+        owners = sorted({edge[0] for edge in parser.write_edges
+                         if edge[2] == var and edge[1] in ("HAS_BODY", "HAS_HEAD")
+                         and parser.write_nodes.get(edge[0], ("",))[0] == "Rule"})
+        if len(owners) > 1:
+            errors.append("an atom belongs to exactly one rule; give each rule its own atoms")
+        for owner in owners:
+            rule_id = parser.write_nodes[owner][1].get("Rule_Id")
+            if (rule_id is not None and rule_id.kind == "STRING" and atom_id is not None
+                    and not re.fullmatch(re.escape(rule_id.text) + r"_[AH][1-9][0-9]*", atom_id.text)):
+                errors.append(f"Atom_Id '{atom_id.text}' is not an atom of rule '{rule_id.text}': "
+                              f"use '{rule_id.text}_A<n>' for body and '{rule_id.text}_H<n>' for head atoms")
         kind = props.get("type")
         iri = props.get("iri")
         kind_name = kind.text if kind is not None and kind.kind == "STRING" else ""
