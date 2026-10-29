@@ -123,7 +123,18 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
     `/root/dg-f08-93e3c11`, rollback tag `dg-data-service:rollback-f08`, no new snapshot (owner).
   - Verified in the running container: the files equal the commit (CR stripped), catalogue `1303-15.5`, no direct
     `Symbol.Name` left. Only data-service was recreated.
-  - Not yet verified: a check run from the demo PC.
+  - Demo PC after the rollout: the Revit job and the paint ran. The publish failed with `SPECKLE_CONFIG_MISSING`.
+- **Stand Speckle (owner decision: set up from the server, the Speckle web UI stays closed at the edge):**
+  - Before: publishing was never configured. Speckle had 0 users and open registration, the `SPECKLE_*` keys were
+    empty, and no project had an IntegrationConfig.
+  - Set up through the internal Speckle API from data-service:
+    - a service admin account and Speckle `inviteOnly: true`;
+    - a write token and a read-only token in `/opt/dg/.env`;
+    - project `cb20909c46` with model `base` (`61dac1cfe2`) and a placeholder version;
+    - the project bound to `isolation-check-a` only.
+  - The secrets are only on the server, in `/root/dg-speckle-setup/` (mode 600).
+  - Checked: the write token authenticates, the base version resolves, and the read token fetches the object (200).
+  - Not yet verified: a publish from a real check.
 
 ## Not done yet (needs the owner)
 
