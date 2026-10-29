@@ -50,12 +50,16 @@ from `apps/dg-revit-connector`. The DG Grasshopper plugin is in `resources\dg-gr
 3. Click **Установить**. DeGram asks for confirmation in its own dialog and names the target folder.
    - Revit: the pyRevit half of the connector is copied to
      `%APPDATA%\pyRevit\Extensions\dg-revit-connector.extension` (the same files as
-     `apps/dg-revit-connector/install.py`). Afterwards use **pyRevit tab → Reload**, or restart Revit.
-     A **DG** ribbon tab appears.
+     `apps/dg-revit-connector/install.py`). The same click sets pyRevit Routes in
+     `%APPDATA%\pyRevit\pyRevit_config.ini` (`enabled = true`, `host = "127.0.0.1"`; step 3), so nothing is
+     edited by hand. Afterwards **restart Revit** (a pyRevit Reload does not restart the Routes server).
+     A **DG** ribbon tab appears. From DeGram 0.1.16 the column shows **Установить** again when only the
+     Routes settings are wrong, and clicking it repairs just those, leaving the extension files alone.
    - Grasshopper: the plugin is copied to `%APPDATA%\Grasshopper\Libraries\DG`. Close Rhino first.
      If Rhino still holds the plugin, the column says **Закройте Rhino и повторите** and nothing is changed.
      Start Rhino again afterwards.
-4. An earlier installation is kept under `%LOCALAPPDATA%\DG\connector-backups\<revit|grasshopper>\<UTC time>`.
+4. An earlier installation is kept under `%LOCALAPPDATA%\DG\connector-backups\<revit|grasshopper>\<UTC time>`,
+   and the previous `pyRevit_config.ini` under `...\connector-backups\revit-settings\<UTC time>`.
    To roll back, delete the installed folder and move the backup copy back.
 
 Do **not** install "MCP Server for Revit Python" from the pyRevit extension manager. The upstream
@@ -69,7 +73,11 @@ staged folders with `DEGRAM_DG_GRASSHOPPER_SOURCE` and `DEGRAM_REVIT_MCP_SOURCE`
 
 ## 3. pyRevit Routes: `[routes]`, loopback only
 
-In `%APPDATA%\pyRevit\pyRevit_config.ini` (or in Settings, Routes) the `[routes]` section must read:
+**DeGram 0.1.16 and later write this for you when you click Установить for Revit (step 2)**: it sets
+`enabled` and `host` in the `[routes]` section, adding the section or the keys when they are missing, and
+keeps the rest of the file as it was (a file that is not UTF-8 is left unchanged and the install reports
+a failure). Before 0.1.16, or to check it by hand, in `%APPDATA%\pyRevit\pyRevit_config.ini` (or in
+Settings, Routes) the `[routes]` section must read:
 
 ```ini
 [routes]
@@ -178,7 +186,7 @@ other than `ready`/`pinned` is shown neutral.
 | Revit **setup-incomplete: Routes disabled** | `enabled = false` under `[routes]`, restart Revit | "pyRevit Routes are turned off. Enable Routes in pyRevit settings, restart Revit, then refresh." | Step 3 |
 | Revit **setup-incomplete: extension not loaded** | Remove the extension folder, restart Revit | "The DeGram extension isn't loaded in pyRevit. Follow the install step "pyRevit extension", then reload pyRevit." | Step 2 |
 | Revit **setup-incomplete: extension older than 0.1.6** | Revit runtime log shows "Startup script returned non-zero result for extension: revit-mcp" | The Revit segment «настройка» (setup) | The extension is older than 0.1.6; reinstall it from the 0.1.6 `resources\revit-mcp` (step 2) |
-| Revit **setup-incomplete: routes not loopback** | Set `host = "0.0.0.0"` under `[routes]`, restart Revit | The Revit group is setup-incomplete (reason `ROUTES_NOT_LOOPBACK`) and no read is made; the extension logs that it registered no routes | Set `host = "127.0.0.1"` (step 3) |
+| Revit **setup-incomplete: routes not loopback** | Set `host = "0.0.0.0"` under `[routes]`, restart Revit | The Revit group is setup-incomplete (reason `ROUTES_NOT_LOOPBACK`) and no read is made; the extension logs that it registered no routes | Click Установить for Revit in the Connectors tab (it sets `host = "127.0.0.1"`; step 3), restart Revit |
 | Revit **setup-incomplete: no document open** | Revit open on the start screen, no project | The group reports no document open; the picker lists none | Open a project |
 | Revit **busy** | Leave a Revit dialog or command open and refresh | "Revit is busy (a command or dialog is open). Finish it in Revit, then retry the request." after at most 30 s | Close the dialog |
 | Grasshopper **ready** | Rhino with the DG CANVAS LISTENER running | Grasshopper group lists the open definition | none |
