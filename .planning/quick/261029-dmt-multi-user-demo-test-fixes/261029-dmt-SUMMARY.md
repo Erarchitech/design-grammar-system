@@ -22,6 +22,7 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
 | F-04 | Colour overrides in Revit paint the lines too (one patch) | auto-fixable | fixed | 79938ee |
 | F-05 | Demo instruction: invitation sign-in, connector install, new model, short steps, no S1/M1 codes | auto-fixable | fixed | f3588cc |
 | F-06 | Mapping view in the Model Viewer (two colour modes, black edges, Validation Runs tile, Design State) | manual-only | stage 2 (D-78) | — |
+| F-07 | Stand retest: R2–R4 of `isolation-check-a` give no verdict (`no_population`) | auto-fixable (ingest) + data | fixed for new ingests; tester re-enters the rules | efa6621, b30d2ea |
 
 ## Root causes
 
@@ -68,6 +69,41 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
   (37c394f, 92b705a) and `workspace.py verify` passes. The connector payloads were staged from the clean `92b705a`.
   `DeGram-Setup-0.1.16.exe` was built in `D:/dgb/src/apps/desktop/release` and carries `check_jobs.py` and the new tool text.
 
+## Stand rollout (2026-10-29, after the owner's Contabo snapshot `degram-0.1.15-before-f01`)
+
+- The retest from the tester's second PC still failed with `GH_BRIDGE_UNREACHABLE`. Cause: the stand still ran the old
+  data-service. `/data-service/connector/jobs/next` answered 404 there.
+- Before the update, the stand's files were compared with the commit:
+  - data-service had no stand-only changes; it lacked `c9d917b` and F-01.
+  - The compose files and nginx differed only by the F-01 additions.
+  - The UI sources were the uncommitted Dev/Demo toggle and resizable Model Viewer panels. They were committed as
+    `f9f1feb`, so the UI was not rebuilt; its image got only the new nginx config.
+- Update from `f9f1feb` in `/root/dg-f01-f9f1feb`:
+  - data-service: the running image plus 17 changed files;
+  - design-grammars: the running image with the new `default.conf` (nginx -t ok);
+  - dg-evaluator: new, on `dg_default`, no published port.
+  - Rollback tags: `dg-data-service:rollback-f01` and `dg-design-grammars:rollback-f01`.
+  - Only these three containers changed; `.env`, volumes and n8n were not touched.
+- Checks after the update:
+  - The connector route answers 401.
+  - `DG_DEPLOYMENT=multi-user`.
+  - The evaluator health check passes from data-service.
+  - The container files equal the commit.
+  - Dry run on the five rules of `isolation-check-a`: the Revit program is generated, the evaluator answers 200,
+    and R1/R5 give verdicts.
+- **F-07:** R2–R4 gave `no_population` because their atoms were corrupted at ingest.
+  - The output for R3/R4 MERGEd the Atom_Ids `R1_A1`/`R2_A1`, so the rules share atoms. R2's OpeningBox atom has two
+    ARGs, and R3/R4 have three OpeningBox atoms with five to seven ARGs.
+  - The Grasshopper path gives the same result, because it uses the same DG.Core.
+  - The fix has two commits:
+    - `efa6621` commits F27, the atom admission check from the v12 facade test. Until then it was an uncommitted
+      container hotfix, lost on localhost when data-service was recreated.
+    - `b30d2ea` rejects an atom linked by more than one rule and an Atom_Id that is not `<Rule_Id>_A<n>`/`_H<n>`.
+  - Both were deployed to the stand in `/root/dg-f07-b30d2ea` (rollback tag `dg-data-service:rollback-f07`). Checked in
+    the running container: foreign atom rejected, F27 shape rejected, valid A1 accepted.
+- **Data:** deleting one of R2–R4 would also remove the R1/R2 atoms they share. Owner decision: the tester deletes all
+  five rules of the project in the interface and enters them again (step 8), then repeats the check.
+
 ## Not done yet (needs the owner)
 
 1. **Revit run on localhost** (owner at the PC):
@@ -77,6 +113,8 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
    - Send «Проверь модель Revit на соответствие всем правилам.».
    - Expected: runs in the Model Viewer, colours in Revit with black lines, no Rhino.
 2. (done) DeGram build 0.1.16 with the new connector payload.
-3. **Stand update** (owner authorization, Contabo snapshot first): pack from a clean commit, `deploy.sh`, then rerun
-   step 11 of the instruction as the engineer.
+3. (done) Stand update. Remaining: on the stand, the tester deletes all five rules of `isolation-check-a`, enters them
+   again and repeats the check. The Revit «Вход» must use the stand address.
+5. **Localhost:** the F27/F-07 checks reach the local data-service only after it is rebuilt from `b30d2ea` (Docker is
+   off on the dev PC now).
 4. **Stage 2:** the mapping view in the Model Viewer (F-06).
