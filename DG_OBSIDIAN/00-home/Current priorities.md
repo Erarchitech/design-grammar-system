@@ -7,6 +7,21 @@ date: 2026-07-18
 
 ## In Flight
 
+- **Multi-user demo test fixes (2026-10-29, quick 261029-dmt; supersedes older stand and check statements below):**
+  - **Check path:** Revit rule checks run as connector jobs (no Rhino or Grasshopper) and are judged by `dg-evaluator`
+    (D-73..D-78), deployed on localhost and the stand.
+  - **F-07 ingest fix:** rules no longer share atoms. F27 + `b30d2ea` are deployed on the stand.
+  - **Stand data:** all rules of `isolation-check-a` were deleted on the owner's request; a backup is kept.
+  - **Next:**
+    1. Owner: authorize deploying the rule delete fix `993b709` to the stand.
+    2. Tester on PC-2: re-enter the five rules, click Revit «Вход» to the stand, then «Проверь модель Revit на
+       соответствие всем правилам.».
+    3. Rebuild localhost data-service from the current commit.
+    4. Stage 2: the mapping view in the Model Viewer (F-06).
+  - Nothing new was pushed besides the DeGram commits `aac8353c`/`38e0e1ee`; the framework commits are local.
+  - Links: [[sessions/2026-10-29 Revit rule checks without Grasshopper, stand update and F-07 ingest fix|session]],
+    [[knowledge/decisions/Revit rule checks run as connector jobs and are judged by dg-evaluator, no Grasshopper (D-73 to D-78)|decision]].
+
 - **DG connectors install from the DeGram Connectors tab (2026-10-27, quick 261027-sgc):** the hosted «Коннекторы» table has an **Installed** column (Install / Ready / hints) for Revit (pyRevit extension only) and Grasshopper (net48 DG.gha); DeGram confirms natively before writing, backs up, refuses foreign targets and stops on held files. Component `ba10f004` (`degram/milestone13`, **not pushed**, gitlink not bumped), framework `c286c91`. Checks: Electron 329/1 skip, ui-v2 headless 11/11, tools 32, real-payload end-to-end needs-host→install→ready. **Next:** push `ba10f004` + gitlink bump (owner authorization); before the next build run `tools/degram/stage_connector_payloads.py` and add `DEGRAM_DG_GRASSHOPPER_SOURCE` / `DEGRAM_REVIT_MCP_SOURCE` to `D:\dgb\run-build.sh`; live check of column + dialog in an authorized DeGram build. [[sessions/2026-10-27 DG connectors install from the DeGram Connectors tab|Session]], [[knowledge/decisions/DG connectors install from the DeGram Connectors tab with a native confirmation|decision]].
 
 - **DeGram DGMODE latest (2026-10-27):** installer **0.1.12 built and independently inspected**, owner-run build exit0 `08:26:50Z`; canonical component `aee247efc6bf92349aeff4161079e62133755cfb` published on `degram/milestone13` (version-only change), framework gitlink aligned. `D:\dgb\src` clean/detached at that commit. Installer SHA-256 `A08F838B172B09E4FB1C2405E020E115804054FA4983CD26C7DA4013799535A4`; packaged identity DeGram/Erarchitech/0.1.12.0, no updater feed. Checks **40/40** packaging/isolation (explicit 30s timeout), **27/27** workspace; graph update exit0. **Installation not confirmed, no launch/live rehearsal observed. Next:** await owner installation result (last instruction: preserve profile/default path and uncheck launch), verify installed artifact, prepare Hermes control/isolation checks, then already authorised read-only Developer → Demo → Developer via `/gsd-execute-phase 1301 --wave 6 --no-transition`. DGMODE/DGCL/HOST/product/Phase gates stay open; no inference/CAD/graph writes/server changes/revocation/TLS bypass. Supersedes older build-next/checkpoint revision below. [[sessions/2026-10-27 DeGram 0.1.12 build verified awaiting isolated installation|Session]], [[knowledge/debugging/DeGram installer builds must bump the variant version before packaging|version-policy fix]].

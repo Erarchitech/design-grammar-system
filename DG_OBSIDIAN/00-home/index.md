@@ -9,6 +9,10 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-29 Revit rule checks without Grasshopper, stand update and F-07 ingest fix|Session — demo test fixes: Revit checks as connector jobs + dg-evaluator, stand updated, F-07 shared atoms, rule cleanup]] (2026-10-29)
+- [[knowledge/decisions/Revit rule checks run as connector jobs and are judged by dg-evaluator, no Grasshopper (D-73 to D-78)|Decision — Revit checks as connector jobs judged by dg-evaluator, no Grasshopper (D-73..D-78)]] (2026-10-29)
+- [[knowledge/debugging/Ingest output reused other rules' Atom_Ids, so rules shared atoms and gave no verdict (F-07)|Debugging — ingest reused other rules' Atom_Ids → shared atoms, no_population (F-07)]] (2026-10-29)
+- [[knowledge/debugging/Rule delete kept a rule whose arguments were all shared and still answered deleted|Debugging — rule delete silently kept rules whose args were all shared]] (2026-10-29)
 - [[sessions/2026-10-27 DG connectors install from the DeGram Connectors tab|Session — Revit/Grasshopper connectors install by button in the DeGram Connectors tab; payload staging script]] (2026-10-27)
 - [[knowledge/decisions/DG connectors install from the DeGram Connectors tab with a native confirmation|Decision — connectors install from DeGram with native confirmation; build stages current DG.gha + Revit connector]] (2026-10-27)
 - [[sessions/2026-10-27 DeGram 0.1.12 build verified awaiting isolated installation|Session — DeGram0.1.12 published/built/verified; installation unconfirmed, launch and live rehearsal next]] (2026-10-27)
