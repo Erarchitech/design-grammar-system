@@ -62,6 +62,16 @@ SHARED_PARAMETER_GROUP = "DG"
 COLOURS_TRANSACTION = "DG mapping colours"
 CLEAR_TRANSACTION = "DG mapping colours (clear)"
 PARAMETERS_TRANSACTION = "DG mapping parameters"
+CHECK_TRANSACTION = "DG: check rules"
+CHECK_CLEAR_TRANSACTION = "DG: clear rule check colours"
+
+#: Shared instance text parameter with the rules an element violates (F-01: the rule check written by the connector).
+DG_VIOLATION_PARAMETER = "DG_Violation"
+
+#: Rule-check colours: red = a rule violated, grey = no rule violated but one without a verdict, green = all pass.
+CHECK_RED = (220, 38, 38)
+CHECK_GREY = (148, 163, 184)
+CHECK_GREEN = (22, 163, 74)
 
 #: The connector reads at most this many elements per session (contract section 2).
 MAX_ELEMENTS = 5000
@@ -653,7 +663,7 @@ def _restore_shared_parameter_file(application, previous):
             pass
 
 
-def shared_definitions(app, shared_file):
+def shared_definitions(app, shared_file, names=(DG_CLASS_PARAMETER, DG_STATE_PARAMETER)):
     """``{name: ExternalDefinition}`` of the DG group, or raise.
 
     ``app.SharedParametersFilename`` is switched to ``shared_file`` only for the
@@ -674,7 +684,7 @@ def shared_definitions(app, shared_file):
             raise RuntimeError("the shared-parameter group {!r} is missing".format(
                 SHARED_PARAMETER_GROUP))
         definitions = {}
-        for name in (DG_CLASS_PARAMETER, DG_STATE_PARAMETER):
+        for name in names:
             definition = _shared_definition(group, name)
             if definition is None:
                 raise RuntimeError("the shared parameter {!r} is missing".format(name))
@@ -932,6 +942,109 @@ def write_parameters(doc, app, shared_file, roles_by_uid, states_by_uid, atomic=
         logger.warning("DG: neither %s nor %s could be bound", DG_CLASS_PARAMETER,
                        DG_STATE_PARAMETER)
     return result
+
+
+# --- rule-check colours (F-01, 2026-10-29) --------------------------------------
+
+def _in_group(element):
+    """An element of a Revit group: writing a parameter opens the modal "group changed outside group edit mode"
+    warning (live 2026-10-25), so it is only coloured."""
+    try:
+        group_id = element.GroupId
+    except Exception:
+        return False
+    try:
+        return group_id is not None and element_id_value(group_id) != element_id_value(DB.ElementId.InvalidElementId)
+    except Exception:
+        return False
+
+
+def apply_check_colours(doc, view, verdicts, app=None, shared_file=None):
+    """Paint a rule-check verdict in ``view`` and write ``DG_Violation`` -> report dict.
+
+    ``verdicts`` is ``{UniqueId: {"broken": [ruleId], "open": [ruleId]}}``. One transaction. Only the surface and
+    cut fills take the colour, element lines stay black (F-04). ``DG_Violation`` is bound to the boxes' categories
+    from the shipped shared-parameter file when ``app`` and ``shared_file`` are given; a failure there colours only.
+    """
+    report = {"painted": 0, "violations": 0, "noVerdict": 0, "missing": 0, "grouped": 0, "parameter": False}
+    if doc is None or view is None or not isinstance(verdicts, dict) or not verdicts:
+        return report
+    unique_ids = [_text(u) for u in verdicts.keys()]
+    definition = None
+    if app is not None and shared_file:
+        try:
+            definition = shared_definitions(app, shared_file, (DG_VIOLATION_PARAMETER,))[DG_VIOLATION_PARAMETER]
+        except Exception as error:
+            logger.warning("DG: %s is not available: %s", DG_VIOLATION_PARAMETER, _text(error))
+    fill = _solid_fill_pattern_id(doc)
+    red = override_settings(CHECK_RED, fill)
+    grey = override_settings(CHECK_GREY, fill)
+    green = override_settings(CHECK_GREEN, fill)
+    transaction = _start(doc, CHECK_TRANSACTION)
+    try:
+        if definition is not None:
+            try:
+                report["parameter"] = bind_definition(doc, app, definition, _writable_categories(doc, unique_ids))
+                doc.Regenerate()
+            except Exception as error:
+                logger.warning("DG: binding %s failed: %s", DG_VIOLATION_PARAMETER, _text(error))
+        for unique_id in unique_ids:
+            verdict = verdicts.get(unique_id) or {}
+            broken = [_text(r) for r in verdict.get("broken") or []]
+            open_rules = verdict.get("open") or []
+            try:
+                element = doc.GetElement(unique_id)
+            except Exception:
+                element = None
+            if element is None:
+                report["missing"] += 1
+                continue
+            try:
+                view.SetElementOverrides(element.Id, red if broken else (grey if open_rules else green))
+                report["painted"] += 1
+            except Exception as error:
+                logger.warning("DG: colouring %s failed: %s", unique_id, _text(error))
+            if broken:
+                report["violations"] += 1
+            elif open_rules:
+                report["noVerdict"] += 1
+            if _in_group(element):
+                report["grouped"] += 1
+                continue
+            _set_text_parameter(element, DG_VIOLATION_PARAMETER, ";".join(broken))
+        transaction.Commit()
+    except Exception:
+        _roll_back(transaction)
+        raise
+    return report
+
+
+def clear_check_colours(doc, view, unique_ids):
+    """Remove the rule-check colours of ``unique_ids`` in ``view`` and empty ``DG_Violation`` -> number cleared."""
+    if doc is None or view is None:
+        return 0
+    ids = [_text(u) for u in unique_ids or [] if _text(u)]
+    if not ids:
+        return 0
+    transaction = _start(doc, CHECK_CLEAR_TRANSACTION)
+    cleared = 0
+    try:
+        for unique_id in ids:
+            try:
+                element = doc.GetElement(unique_id)
+                if element is None:
+                    continue
+                view.SetElementOverrides(element.Id, DB.OverrideGraphicSettings())
+                if not _in_group(element):
+                    _set_text_parameter(element, DG_VIOLATION_PARAMETER, "")
+                cleared += 1
+            except Exception as error:
+                logger.warning("DG: clearing %s failed: %s", unique_id, _text(error))
+        transaction.Commit()
+    except Exception:
+        _roll_back(transaction)
+        raise
+    return cleared
 
 
 # --- showing elements ---------------------------------------------------------

@@ -7,3 +7,4 @@ GROUP	1	DG
 *PARAM	GUID	NAME	DATATYPE	DATACATEGORY	GROUP	VISIBLE	DESCRIPTION	USERMODIFIABLE	HIDEWHENNOVALUE
 PARAM	5f0c9b1e-3d2a-4c7e-9a61-1d2b3c4d5e01	DG_Class	TEXT		1	1	Design Grammars classes of the element (mapping)	1	0
 PARAM	5f0c9b1e-3d2a-4c7e-9a61-1d2b3c4d5e02	DG_MappingState	TEXT		1	1	Design Grammars mapping state of the element	1	0
+PARAM	5f0c9b1e-3d2a-4c7e-9a61-1d2b3c4d5e03	DG_Violation	TEXT		1	1	Design Grammars rules violated by the element	1	0

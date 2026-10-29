@@ -613,3 +613,52 @@ def apply_session(base_url, token, project, session_id, opener=None):
     target = "{}/mapping/sessions/{}/apply".format(url, _session_id(session_id))
     return _authorized("POST", target, session_token, {"project": _text(project)},
                        "applying the DG mapping session", opener)
+
+
+# --- rule-check jobs (F-01, 2026-10-29) ----------------------------------------
+# The server never calls the PC: the connector pulls the rule checks DG queues for this sign-in and answers them.
+
+#: A check answer carries a mesh per box and can take a while to upload on a slow link.
+JOB_TIMEOUT_SECONDS = 120.0
+
+
+def _job_id(job_id):
+    text = _text(job_id).strip()
+    if not text:
+        raise _error("UNREACHABLE", "a job id is required")
+    return _quote(text, safe="")
+
+
+def next_job(base_url, token, project, opener=None):
+    """``GET /connector/jobs/next?project=...`` -> ``{"job": {...} | None}``."""
+    url = _checked_base_url(base_url)
+    session_token = _session_token(token)
+    target = "{}/connector/jobs/next?project={}".format(url, _quote(_text(project), safe=""))
+    return _authorized("GET", target, session_token, None, "reading the DG check jobs", opener)
+
+
+def _job_call(target, token, body, what, opener):
+    response = _send("POST", target, payload=body, headers={"Authorization": "Bearer " + token},
+                     timeout=JOB_TIMEOUT_SECONDS, opener=opener)
+    if not _succeeded(response.status):
+        _raise_for_status(response.status, _parse_json(response.text), what, [token])
+    return _json_object(response, what, [token])
+
+
+def post_job_result(base_url, token, project, job_id, ok, result=None, error=None, opener=None):
+    """``POST /connector/jobs/{id}/result`` with the outcome of a job."""
+    url = _checked_base_url(base_url)
+    session_token = _session_token(token)
+    body = {"project": _text(project), "ok": bool(ok), "result": result,
+            "error": None if error is None else _text(error)}
+    return _job_call("{}/connector/jobs/{}/result".format(url, _job_id(job_id)), session_token, body,
+                     "answering the DG check job", opener)
+
+
+def post_job_context(base_url, token, project, job_id, elements, done, opener=None):
+    """``POST /connector/jobs/{id}/context`` with one chunk of context meshes."""
+    url = _checked_base_url(base_url)
+    session_token = _session_token(token)
+    body = {"project": _text(project), "elements": list(elements or []), "done": bool(done)}
+    return _job_call("{}/connector/jobs/{}/context".format(url, _job_id(job_id)), session_token, body,
+                     "sending the DG check context", opener)

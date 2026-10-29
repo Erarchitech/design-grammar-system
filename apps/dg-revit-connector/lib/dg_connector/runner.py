@@ -57,6 +57,7 @@ import uuid
 from pyrevit import UI
 
 from . import descriptors
+from . import check_jobs
 from . import dg_client
 from . import docs
 from . import loop
@@ -306,6 +307,12 @@ def poll_step(store=None, client=None, now=None):
     client = _client(client)
     session_id = _text(store.get("sessionId")).strip()
     token = _text(store.get("token")).strip()
+    if token and _token_key(token) not in _REJECTED_TOKENS and owns_polling():
+        # F-01: rule checks DG queued for this sign-in, whether or not a mapping session is open.
+        try:
+            check_jobs.poll(store, client, _queue_job, _raise_event)
+        except Exception as error:
+            _poll_failure(store, error, token)
     if not session_id or not token:
         return {"action": "idle", "queued": 0}
     if _token_key(token) in _REJECTED_TOKENS:
@@ -598,8 +605,22 @@ def _run_parameters_job(uiapp, job):
     return written
 
 
+def _run_check_job(uiapp, entry):
+    """A DG rule-check job (F-01): run it in Revit now, answer from a background thread."""
+    store = _store()
+    outcome = check_jobs.run(uiapp, entry, store, _shared_parameter_file())
+    check_jobs.send_later(_client(), entry, outcome, store)
+    return 1 if outcome and outcome[0] else 0
+
+
 def _run_job(uiapp, job):
     """Execute one queued job; a failure is reported, never raised."""
+    if job.get("kind") == check_jobs.JOB_KIND:
+        try:
+            return _run_check_job(uiapp, job)
+        except Exception as error:
+            logger.warning("DG: the check job failed: %s", _text(error))
+            return 0
     try:
         if job.get("authority"):
             store = _store()
@@ -634,6 +655,10 @@ def run_jobs(uiapp):
 
 class _Handler(UI.IExternalEventHandler):
     """Runs the queued DG jobs inside the Revit API context, on the main thread."""
+
+    # pyRevit's CPython engine (pythonnet) implements a .NET interface only in a class with a .NET namespace;
+    # IronPython ignores the attribute (F-01, 2026-10-29).
+    __namespace__ = "DG.RevitConnector"
 
     def Execute(self, uiapp):
         run_jobs(uiapp)
