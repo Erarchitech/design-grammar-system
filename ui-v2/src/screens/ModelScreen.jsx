@@ -23,6 +23,7 @@ import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
 import { useT } from "../i18n/LanguageProvider.jsx";
 import { describeError } from "../i18n/index.js";
+import useModelPanels from "./useModelPanels.js";
 
 // ---- deterministic synthetic massing: degraded-mode fallback only. When
 // Speckle is unavailable (no viewer resources or init error) the viewport renders
@@ -258,6 +259,7 @@ export default function ModelScreen({ active, onBack, project }) {
   const [speckleError, setSpeckleError] = React.useState(null);
   const [viewBox, setViewBox] = React.useState({ x: 0, y: 0, w: 880, h: 440 });
   const rootRef = React.useRef(null);
+  const panels = useModelPanels(rootRef);
   const svgRef = React.useRef(null);
   const mapRef = React.useRef(null);
   const panRef = React.useRef(null);
@@ -661,7 +663,9 @@ export default function ModelScreen({ active, onBack, project }) {
   return (
     <div ref={rootRef} style={{ position: "absolute", inset: 0, display: "flex", background: "var(--color-canvas)" }}>
       {/* ===== left: design states + runs ===== */}
-      <aside style={{ width: 320, flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderRight: "1px solid var(--color-hairline)", overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ position: "relative", display: "flex", minWidth: 0, flex: "none", width: panels.widths.left }}>
+      <div {...panels.handle("left")} aria-label={t("Resize design states panel")} data-testid="model-states-resize" />
+      <aside style={{ width: "100%", minWidth: 0, overflowWrap: "anywhere", flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderRight: "1px solid var(--color-hairline)", overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 12, borderBottom: "1px solid var(--color-hairline)" }}>
           <Button variant="outline" size="sm" onClick={onBack}>
             {t("← Back")}
@@ -828,6 +832,7 @@ export default function ModelScreen({ active, onBack, project }) {
           );
         })}
       </aside>
+      </div>
 
       {/* ===== centre: toolbar + map + runs strip ===== */}
       <main style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", position: "relative" }}>
@@ -836,11 +841,11 @@ export default function ModelScreen({ active, onBack, project }) {
           <Checkbox label={t("Passing")} checked={mvPass} onChange={setMvPass} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <ColorSwatch label={t("Fail")} color={failColor} onChange={setFailColor} />
-          <Slider label={t("Fail α")} value={aFail} onChange={setAFail} style={{ width: 150 }} />
+          <Slider label={t("Fail α")} value={aFail} onChange={setAFail} style={{ width: 210 }} />
           <ColorSwatch label={t("Pass")} color={passColor} onChange={setPassColor} />
-          <Slider label={t("Pass α")} value={aPass} onChange={setAPass} style={{ width: 150 }} />
+          <Slider label={t("Pass α")} value={aPass} onChange={setAPass} style={{ width: 210 }} />
           <ColorSwatch label={t("Context")} color={contextColor} onChange={setContextColor} />
-          <Slider label={t("Context α")} value={aContext} onChange={setAContext} style={{ width: 150 }} />
+          <Slider label={t("Context α")} value={aContext} onChange={setAContext} style={{ width: 210 }} />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <SearchField
             placeholder={t("Select by Id…")}
@@ -991,7 +996,9 @@ export default function ModelScreen({ active, onBack, project }) {
       </main>
 
       {/* ===== right: properties sidebar ===== */}
-      <aside style={{ width: 344, flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderLeft: "1px solid var(--color-hairline)", overflow: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ position: "relative", display: "flex", minWidth: 0, flex: "none", width: panels.widths.right }}>
+      <div {...panels.handle("right")} aria-label={t("Resize properties panel")} data-testid="model-properties-resize" />
+      <aside style={{ width: "100%", minWidth: 0, overflowWrap: "anywhere", flex: "none", boxSizing: "border-box", background: "var(--surface-sidebar)", borderLeft: "1px solid var(--color-hairline)", overflow: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 12, borderBottom: "1px solid var(--color-hairline)" }}>
           <span style={{ font: "600 15px/1.2 var(--font-sans)", letterSpacing: "-0.2px" }}>{t("Properties")}</span>
           <span style={{ marginLeft: "auto", font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
@@ -1006,7 +1013,7 @@ export default function ModelScreen({ active, onBack, project }) {
               <KVRow label={t("Date Created")} value={view.createdAt ? String(view.createdAt).slice(0, 19).replace("T", " ") : "—"} />
               <KVRow label={t("Base Model")} value={view.baseModelId || "—"} />
               <KVRow label={t("Validation Model")} value={view.validationModelId || "—"} />
-              <div style={{ display: "flex", gap: 28, marginTop: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${unknownItems.length > 0 ? 3 : 2}, minmax(0, 1fr))`, gap: 12, marginTop: 10 }}>
                 <StatBlock label={t("Failing")} value={String(failItems.length)} signal={failItems.length > 0} />
                 <StatBlock label={t("Passing")} value={String(passItems.length)} />
                 {unknownItems.length > 0 && <StatBlock label={t("No verdict")} value={String(unknownItems.length)} />}
@@ -1327,6 +1334,7 @@ export default function ModelScreen({ active, onBack, project }) {
           </>
         )}
       </aside>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@
     "src/i18n/enums.js",
     "src/lib/hostMode.js",
     "src/landing/LandingLayer.jsx",
+    "src/landing/EnvironmentToggle.jsx",
     "src/landing/HostCentre.jsx",
     "src/landing/AssembleText.jsx",
     "src/landing/alnstStrokes.js",

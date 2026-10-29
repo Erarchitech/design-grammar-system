@@ -4,6 +4,14 @@
 // Wording follows the 1301-D38 glossary; proper nouns (HermiT, Pellet, provider names) stay Latin (D-13).
 // "Back", "Cancel" and "Retry" live in the core and projects dictionaries; "Loading settings…" in projects.
 export const ru = {
+  "Operating mode": "Режим работы",
+  "Demo environment": "Демонстрационная среда",
+  "Local environment": "Локальная среда",
+  "Switching environment…": "Переключение среды…",
+  "Environment switch failed. Try again.": "Не удалось переключить среду. Повторите попытку.",
+  "Environment is locked by startup settings.": "Среда зафиксирована настройками запуска.",
+  "Resize design states panel": "Изменить ширину панели состояний дизайна",
+  "Resize properties panel": "Изменить ширину панели свойств",
   // ── LLM model screen (D-21: «AI Engine» is now «LLM model»)
   "Region · LLM model": "Раздел · Модель LLM",
   "Settings unavailable · {reason}": "Настройки недоступны · {reason}",

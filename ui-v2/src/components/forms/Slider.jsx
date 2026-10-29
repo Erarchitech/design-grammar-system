@@ -8,7 +8,7 @@ export default function Slider({ label, value = 50, onChange, showValue = true, 
     onChange(Math.round(((e.clientX - r.left) / r.width) * 100));
   };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, ...style }}>
+    <div style={{ display: "flex", flexShrink: 0, alignItems: "center", gap: 10, ...style }}>
       {label && (
         <span style={{ font: "400 12px/1 var(--font-sans)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
           {label}

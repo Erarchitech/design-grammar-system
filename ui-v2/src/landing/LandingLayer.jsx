@@ -5,6 +5,7 @@ import * as auth from "../lib/auth.js";
 import "./landing.css";
 import { isDegramHost } from "../lib/hostMode.js";
 import HostCentre from "./HostCentre.jsx";
+import EnvironmentToggle from "./EnvironmentToggle.jsx";
 import AssembleText from "./AssembleText.jsx";
 import { useT } from "../i18n/LanguageProvider.jsx";
 import { describeError, PRODUCT_NAME } from "../i18n/index.js";
@@ -441,6 +442,10 @@ export default function LandingLayer({ active, onFly, user, project, onUser, hos
       </>}
       <div ref={hintRef} className="dgl-hint">
         {t("Select a region")}
+      </div>
+      {/* The Dev/Demo switch sits in the bottom-right corner beside the theme toggle, in every landing state. */}
+      <div className="dg-environment-corner">
+        <EnvironmentToggle />
       </div>
     </>
   );

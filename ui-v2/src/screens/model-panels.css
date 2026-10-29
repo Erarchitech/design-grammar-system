@@ -1,0 +1,3 @@
+.dg-model-panel-resizer::after { content: ""; position: absolute; top: calc(50% - 18px); left: 4px; height: 36px; width: 1px; background: var(--border-strong); }
+.dg-model-panel-resizer:hover::after, .dg-model-panel-resizer:focus-visible::after { background: var(--text-primary); width: 2px; }
+.dg-model-panel-resizer:focus-visible { outline: 1px solid var(--border-selected); outline-offset: -2px; }

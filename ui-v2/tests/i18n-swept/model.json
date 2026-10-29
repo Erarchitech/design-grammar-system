@@ -2,6 +2,7 @@
   "area": "model",
   "files": [
     "src/screens/ModelScreen.jsx",
+    "src/screens/useModelPanels.js",
     "src/components/display/SessionHistory.jsx",
     "src/components/display/CandidateTable.jsx",
     "src/components/display/PropertiesTable.jsx",

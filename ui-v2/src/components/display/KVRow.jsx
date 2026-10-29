@@ -32,11 +32,12 @@ export function KVRow({ label, value, mono = true, style }) {
 
 export function StatBlock({ label, value, signal = false, style }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4, ...style }}>
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0, gap: 4, ...style }}>
       <span
         style={{
           font: "500 12px/1.33 var(--font-sans)",
           letterSpacing: "var(--tracking-caption)",
+          overflowWrap: "anywhere",
           textTransform: "uppercase",
           color: "var(--text-muted)"
         }}
