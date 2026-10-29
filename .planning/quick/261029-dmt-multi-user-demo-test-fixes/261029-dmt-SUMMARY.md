@@ -54,17 +54,29 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
 - The generated pyRevit program is executed against a fake Revit 2026 API (boxes from the mapping, values, meshes,
   both MeshTriangle accessor styles).
 
+## Live on localhost (2026-10-29, after the owner started Docker and authorized the push)
+
+- `dg-evaluator:4bcb756` and `dg-f01-data-service:4bcb756` (built from `git archive HEAD`) run next to the unchanged
+  rest of the stack (override `C:/Users/Admin/dgb-f01/compose.f01.yml`); only the data-service container was replaced.
+- dg-evaluator reads the live rules of `str-openings-01`: all five (including the LLM-generated R5 calculator) evaluate
+  with synthetic values as expected (failed / passed / unknown). The Revit program generated from the live rules is
+  IronPython-safe.
+- Dry run of `POST /scripts/property-check/run` (send=false) with a simulated connector: finished, summary ok,
+  violations, and a paint job with per-box verdicts. The F-02 Cypher ran live: `ex:intersectsBeam`, `intersectsColumn`,
+  `isAboveDoor/Window` and `hostedByWall` now relate Opening to the structure classes, so the Graph Viewer shows R1's link.
+- DeGram: child `aac8353c` and the tool-description fix `38e0e1ee` were pushed to the fork. The gitlink was bumped
+  (37c394f, 92b705a) and `workspace.py verify` passes. The connector payloads were staged from the clean `92b705a`.
+  `DeGram-Setup-0.1.16.exe` was built in `D:/dgb/src/apps/desktop/release` and carries `check_jobs.py` and the new tool text.
+
 ## Not done yet (needs the owner)
 
-1. **Live end-to-end on localhost** (Docker was not running in this session): `docker compose build dg-evaluator
-   data-service design-grammars` (`--no-cache` for the UI), Revit with `DG-DemoProject-2-openings`, sign in, map,
-   ingest the five plain-language rules, "Проверь модель Revit на соответствие всем правилам.". Check the
-   `SUBJECT_LINK_QUERY` Cypher against a live Neo4j as part of it.
-2. **DeGram build with the new connector payload:** `python tools/degram/workspace.py verify` fails today because the
-   child HEAD `aac8353c` (quick 261029-cxc) is ahead of the gitlink `500f1cad` and not yet on the fork. After the owner
-   authorizes the push and the gitlink bump: stage the payloads (`tools/degram/stage_connector_payloads.py`), update
-   the `degram_property_check` tool description (it still says the check is placed on the Grasshopper canvas) and
-   build 0.1.16.
+1. **Revit run on localhost** (owner at the PC):
+   - Install DeGram 0.1.16.
+   - In DeGram → Коннекторы, click «Установить» for Revit.
+   - Open `DG-DemoProject-2-openings` in Revit, click «Вход» and run the mapping.
+   - Send «Проверь модель Revit на соответствие всем правилам.».
+   - Expected: runs in the Model Viewer, colours in Revit with black lines, no Rhino.
+2. (done) DeGram build 0.1.16 with the new connector payload.
 3. **Stand update** (owner authorization, Contabo snapshot first): pack from a clean commit, `deploy.sh`, then rerun
    step 11 of the instruction as the engineer.
 4. **Stage 2:** the mapping view in the Model Viewer (F-06).
