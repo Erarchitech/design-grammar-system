@@ -23,6 +23,7 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
 | F-05 | Demo instruction: invitation sign-in, connector install, new model, short steps, no S1/M1 codes | auto-fixable | fixed | f3588cc |
 | F-06 | Mapping view in the Model Viewer (two colour modes, black edges, Validation Runs tile, Design State) | manual-only | stage 2 (D-78) | — |
 | F-07 | Stand retest: R2–R4 of `isolation-check-a` give no verdict (`no_population`) | auto-fixable (ingest) + data | fixed for new ingests; tester re-enters the rules | efa6621, b30d2ea |
+| F-10 | Demo PC: «Прочитать модель заново» maps only the one selected element; new elements get no proposals | manual-only (D-48 scope) → owner: warning only | fixed in code; reaches the demo PC with the next DeGram build | 21f03b8, 3bf67d55 (child), e3becb9 |
 
 ## Root causes
 
@@ -142,6 +143,29 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
   - Stand: data-service `dg-data-service:f09-2c5f5bc`, rollback tag `rollback-f09`, work dir `/root/dg-f09-2c5f5bc`.
     Only data-service was recreated; the Speckle env and the binding stay in place.
   - Verified live: the file equals the commit, and `dg-validation` (`50ec47c04b`) is found.
+- **F-10:** on the demo PC, after adding elements, «Прочитать модель заново» applied the mapping to one selected
+  element only; the other new elements got neither a mapping nor proposals.
+  - Cause: the scope rule D-48. The connector reads the Revit selection when one exists, and the whole active view
+    only when nothing is selected. A leftover selection narrowed the read to one element. A DeGram row click also
+    selects in Revit (`show_elements`). That element's group got its remembered mapping; the other elements were
+    never sent to DG. Nothing told the user. The stand's sessions were not inspected: the classifier denied the
+    read-only SSH query, so the diagnosis comes from the code.
+  - Owner decision: keep D-48 and warn explicitly.
+  - Fix:
+    - `21f03b8`: the connector's `start_mapping` returns `scope` (`selection` | `view`) and `read`, and its message
+      says "only the Revit selection".
+    - `3bf67d55` (child, pushed to the fork): `degram.mapping.start` passes both fields, and the mapping panel shows a
+      warning: «Прочитаны только выделенные в Revit элементы (N). Снимите выделение в Revit и нажмите «Прочитать
+      модель заново»…».
+    - `e3becb9`: gitlink bump; `workspace.py verify` passes.
+  - Tests:
+    - connector: 439 passed;
+    - DeGram UI `src/degram`: 349 passed, tsc and eslint clean;
+    - DeGram `tests/degram`: 517 passed, with 1 failure that also fails at the untouched `38e0e1ee`
+      (`test_revit_bridge::…overrides_the_placeholders`, profile ownership) and 1 lockdown socket test that fails only
+      under full-suite load and passes alone.
+  - The demo PC gets the fix only with a new DeGram build (connector payload staged) and «Установить» again.
+  - Workaround until then: press Esc in Revit to clear the selection before «Прочитать модель заново».
 
 ## Not done yet (needs the owner)
 
