@@ -264,7 +264,18 @@ Trigger: the rule "an opening in a slab may not be closer than 500 mm to the out
   - The check compares what was actually written: subject class (class of the head's position-1 variable), DatatypeProperty, comparator and the participant set (D-64). It is language-independent and LLM-free.
   - The dialog appears after the new rule is written. Its actions: Replace/Update (supersede, as today), Keep both (accept-overlap, as today), and Cancel, which removes the new rule through the existing delete with preview.
 - **D-63: D-61, D-62, D-64 and D-65 are tracked as new requirement DGOPN-06** (planner default, Claude's discretion). Plans 1303-19… run after 1303-16…18, which touch the same calculator files.
+### Multi-user demo test findings (plans 1303-26 and on, owner decisions 2026-10-29)
+
+Trigger: the multi-user test of the demo instruction `docs/demo/dg-demo-ru.html` on the stand stopped at the check (`GH_BRIDGE_UNREACHABLE` on `host.docker.internal:8720`). On the server that address is the server itself, and DG CANVAS LISTENER listens only on the PC's loopback, so no server-side call can reach a tester's Grasshopper.
+
+- **D-73: The server never calls a user's PC; connectors pull jobs.** A rule check is a job data-service queues for the connector session of the user who asked (`GET /connector/jobs/next`, answers on `/result` and `/context`). Owner choice "очередь заданий" over a DeGram relay.
+- **D-74: Rule checks of a Revit model run natively in Revit, without Rhino.Inside or Grasshopper.** The property calculators run as a pyRevit program generated from the same catalogue (`model_context.py.tmpl` shared with the Grasshopper shell, `revit_shell.py.tmpl`), executed by the DG Revit connector. The program and the connector code run under every pyRevit engine: IronPython 2.7/3.4 and CPython 3 (owner requirement 2026-10-29). Boxes are the elements the mapping classified as the box class, else the Generic Model family filter.
+- **D-75: The verdict comes from a server-side C# service on the same DG.Core evaluator (`dg-evaluator`).** "Only C# evaluates" holds; the Design State and the publish bodies are built as OBJECT STATE / PROPERTY STATE / DESIGN STATE / VALIDATOR build them (`DG.Core.Validation.CheckEvaluation`).
+- **D-76: The demo instruction installs only the Revit connector.** Grasshopper is not part of the Revit scenario.
+- **D-77: Rules are entered in plain language; class and property names are the system's job.** The ingest prompt gets a class vocabulary with Russian words and Russian meanings of the computable properties; a rule without participants gets its subject-to-class ObjectProperty from DG (F-02).
+- **D-78: The mapping view in the Model Viewer (two colour modes, black edges, a tile in the Validation Runs strip tied to a Design State) is a second stage**, planned after the test resumes (owner, 2026-10-29).
+
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
-*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion)*
+*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion); 2026-10-29 (D-73..D-78 multi-user test findings)*
