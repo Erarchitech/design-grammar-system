@@ -224,3 +224,64 @@ def test_the_connector_routes_refuse_a_foreign_job():
     assert answer["status"] == connector_jobs.DONE
     nxt = app_module.get_connector_job_next(_http_request("engineer"), project=PROJECT)
     assert nxt == {"job": None}
+
+
+def test_parallel_first_publishes_share_the_validation_model_one_of_them_created():
+    """Live 2026-10-29 (stand, fresh Speckle project): the six rules publish in parallel, each listed no dg-validation
+    model and created it; Speckle refused all but one ("A branch with this name already exists") and the check failed
+    with PUBLISH_INTERNAL_ERROR."""
+    import speckle_validation
+
+    created = []
+
+    class Models:
+        def get_models(self, project_id):
+            return types.SimpleNamespace(items=[types.SimpleNamespace(id=m, name="dg-validation") for m in created])
+
+        def create(self, model_input):
+            if created:
+                raise RuntimeError("A branch with this name already exists")
+            created.append("vm-1")
+            return types.SimpleNamespace(id="vm-1")
+
+    client = types.SimpleNamespace(model=Models())
+    barrier = threading.Barrier(4)
+    results, errors = [], []
+    original = Models.get_models
+    seen = threading.local()
+
+    def listed_by_all(self, project_id):  # every thread lists once before any creates, as on the stand
+        answer = original(self, project_id)
+        if not getattr(seen, "listed", False):
+            seen.listed = True
+            barrier.wait(timeout=5)
+        return answer
+
+    Models.get_models = listed_by_all
+
+    def publish():
+        try:
+            results.append(speckle_validation.get_or_create_validation_model_id(client, "sp", None))
+        except Exception as exc:  # noqa: BLE001 - collected for the assertion
+            errors.append(exc)
+
+    threads = [threading.Thread(target=publish) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=10)
+    assert errors == [] and results == ["vm-1"] * 4
+
+
+def test_a_failed_validation_model_create_still_raises_when_no_model_appeared():
+    import speckle_validation
+
+    class Models:
+        def get_models(self, project_id):
+            return types.SimpleNamespace(items=[])
+
+        def create(self, model_input):
+            raise RuntimeError("no permission")
+
+    with pytest.raises(RuntimeError, match="no permission"):
+        speckle_validation.get_or_create_validation_model_id(types.SimpleNamespace(model=Models()), "sp", None)

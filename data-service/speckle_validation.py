@@ -49,18 +49,30 @@ def get_or_create_validation_model_id(
     if configured_model_id:
         return configured_model_id
 
-    models = client.model.get_models(project_id)
-    for model in models.items:
-        if getattr(model, "name", None) == name:
-            return model.id
+    def existing() -> str | None:
+        for model in client.model.get_models(project_id).items:
+            if getattr(model, "name", None) == name:
+                return model.id
+        return None
 
-    created = client.model.create(
-        CreateModelInput(
-            name=name,
-            description="DG validation overlay generated from Grasshopper validation runs.",
-            projectId=project_id,
+    found = existing()
+    if found:
+        return found
+    try:
+        created = client.model.create(
+            CreateModelInput(
+                name=name,
+                description="DG validation overlay generated from Grasshopper validation runs.",
+                projectId=project_id,
+            )
         )
-    )
+    except Exception:
+        # A Revit check publishes its rules in parallel: on a fresh Speckle project another publish may have created
+        # the model between the listing and this create (live 2026-10-29, "A branch with this name already exists").
+        found = existing()
+        if found:
+            return found
+        raise
     return created.id
 
 
