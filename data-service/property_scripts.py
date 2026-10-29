@@ -669,18 +669,23 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
         "rule_ids": ", ".join(rule_ids),
         "catalogue_version": catalogue["version"],
     }
-    calculator_source = Template(_template_text(catalogue, catalogue["shell"]["template"])).substitute(
+    shell = catalogue["shell"]
+    shared = dict(
         common,
         calculator_ids=", ".join(used),
         box_class_iri=resolution["boxClass"]["iri"],
         box_class_label=resolution["boxClass"]["label"],
         property_table=_py_literal(table),
         category_classes=_py_literal(dict(sorted(catalogue.get("categoryClasses", {}).items()))),
+        model_context=_template_text(catalogue, shell["modelContext"]).rstrip() if shell.get("modelContext") else "",
         calculators=functions,
         calculator_functions="{" + ", ".join(f'"{c}": {function_of[c]}' for c in used) + "}",
-        output_defaults=defaults,
-        output_assignments=assignments,
     )
+    calculator_source = Template(_template_text(catalogue, shell["template"])).substitute(
+        shared, output_defaults=defaults, output_assignments=assignments)
+    # F-01 (2026-10-29): the same calculators as a plain pyRevit program the DG Revit connector runs inside Revit.
+    revit_source = (Template(_template_text(catalogue, shell["revitTemplate"])).substitute(shared)
+                    if shell.get("revitTemplate") else None)
     highlighter_source = Template(_template_text(catalogue, catalogue["highlighter"]["template"])).substitute(common)
     n = len(resolved)
     calculator = {
@@ -707,9 +712,12 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
                    {"name": "Status", "access": "tree", "hint": "str"}],
         "outputs": ["Report", "Violations"],
     }
-    for script in (calculator, highlighter):
+    revit = None
+    if revit_source is not None:
+        revit = {"key": "revit", "language": "python", "source": revit_source, "properties": table}
+    for script in (calculator, highlighter) + ((revit,) if revit else ()):
         script["sha256"] = hashlib.sha256(script["source"].encode("utf-8")).hexdigest()
-    return {"calculator": calculator, "highlighter": highlighter,
+    return {"calculator": calculator, "highlighter": highlighter, "revit": revit,
             "placement": placement_plan(project, n)}
 
 

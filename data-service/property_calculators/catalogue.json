@@ -146,7 +146,9 @@
     "template": "highlighter.py.tmpl"
   },
   "shell": {
-    "template": "calculator_shell.py.tmpl"
+    "template": "calculator_shell.py.tmpl",
+    "modelContext": "model_context.py.tmpl",
+    "revitTemplate": "revit_shell.py.tmpl"
   },
   "categoryClasses": {
     "OST_StructuralFraming": "Beam",

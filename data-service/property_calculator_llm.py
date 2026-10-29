@@ -40,7 +40,7 @@ if not any(getattr(h, "_dg_generation", False) for h in _GENERATION_LOG.handlers
 
 ALLOWED_GLOBALS = frozenset({
     # shell helpers and constants
-    "DB", "math", "TOL_FT", "FEET_TO_MM", "element_solids", "bbox_corners", "List",
+    "DB", "math", "TOL_FT", "FEET_TO_MM", "element_solids", "bbox_corners", "List", "eid",
     # safe builtins
     "len", "min", "max", "sum", "abs", "round", "float", "int", "bool", "str", "sorted", "range", "enumerate",
     "zip", "list", "tuple", "set", "dict", "isinstance", "any", "all", "None", "True", "False", "ValueError",
@@ -53,7 +53,12 @@ FORBIDDEN_ATTRIBUTES = frozenset({
     "SaveAs", "Save", "Close", "Export", "Import", "Insert", "ReInsert", "Remove", "Clear", "Add",
 })
 FORBIDDEN_NODES = (ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal, ast.ClassDef, ast.AsyncFunctionDef,
-                   ast.With, ast.AsyncWith, ast.Await, ast.Yield, ast.YieldFrom, ast.Delete)
+                   ast.With, ast.AsyncWith, ast.Await, ast.Yield, ast.YieldFrom, ast.Delete,
+                   # F-01 (2026-10-29): calculators also run in the DG Revit connector under pyRevit's IronPython
+                   # (2.7/3.4), which has no f-strings, annotations or walrus operator.
+                   ast.JoinedStr, ast.AnnAssign, ast.NamedExpr)
+# Revit 2026 removed ElementId.IntegerValue; eid(element_or_id) reads the id on every Revit version.
+REMOVED_ATTRIBUTES = {"IntegerValue": "use eid(element) or eid(element_id) instead of .IntegerValue"}
 
 SYSTEM = (
     "You write one Python 3 function for Design Grammars that computes a numeric property of a Revit element "
@@ -76,11 +81,13 @@ CONTEXT_API = """Available inside calc_gen (nothing else exists):
 - ctx.wall_openings(wall, ["OST_Doors", "OST_Windows", "OST_SWallRectOpening"]) -> openings hosted in the wall.
 - ctx.box_and_openings_in_walls(box, categories) -> [(box_rect, [opening_rect, ...])] per host wall.
 - element_solids(element), bbox_corners(element) -> solids / 8 bounding-box corners (XYZ).
+- eid(element_or_id) -> the integer id of an element or ElementId (never use .IntegerValue: Revit 2026 removed it).
 - DB: Autodesk.Revit.DB (read-only use: FilteredElementCollector, BuiltInCategory, XYZ, Outline, filters).
 - math, TOL_FT (1 mm in feet), FEET_TO_MM (304.8).
 - params: dict, empty unless you need none.
 Return lengths in the unit the property name states (Mm = millimetres, M = metres); counts as int.
-Write no import statements: math, DB, List, TOL_FT, FEET_TO_MM, element_solids and bbox_corners are already available.
+Write no import statements: math, DB, List, eid, TOL_FT, FEET_TO_MM, element_solids and bbox_corners are already available.
+Use only Python syntax IronPython 2.7 understands: no f-strings (use "%s" % x), no type annotations, no walrus operator.
 When the elements a distance, clearance or size is measured against do not exist, return None (no data), never 0:
 0 would read as a measured value and violate the rule. Counts return 0 when nothing is found."""
 
@@ -127,6 +134,8 @@ def validate_function(source: str, name: str = FUNCTION_NAME) -> str:
                 raise GeneratedCalculatorError(f"forbidden attribute: {node.attr}")
             if node.attr in FORBIDDEN_ATTRIBUTES:
                 raise GeneratedCalculatorError(f"forbidden model call: {node.attr}")
+            if node.attr in REMOVED_ATTRIBUTES:
+                raise GeneratedCalculatorError(REMOVED_ATTRIBUTES[node.attr])
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
             if node.id not in ALLOWED_GLOBALS and node.id not in local_names:
                 raise GeneratedCalculatorError(f"name not available to calculators: {node.id}")

@@ -595,7 +595,7 @@ def _shell_namespace(source):
                                StorageType=types.SimpleNamespace(String="String"),
                                Options=lambda: types.SimpleNamespace())
     tree = ast.parse(source)
-    wanted = ("_bic", "_text_parameter", "dg_classes", "ModelContext")
+    wanted = ("eid", "_bic", "_text_parameter", "dg_classes", "ModelContext")
     skipped = {n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name not in wanted}
     keep = [n for n in tree.body
             if (isinstance(n, ast.Assign)
@@ -1434,3 +1434,49 @@ def test_the_check_heals_a_project_ingested_before_the_link_existed(catalogue):
     session = _Session(_rows())
     ps.generate(session, PROJECT, None, catalogue=catalogue, store=True)
     assert ("OpeningBox", "intersects", "Beam", DG + "intersectsBeam") in _links(session)
+
+
+def _ironpython_problems(source):
+    import ast
+
+    tree = ast.parse(source)
+    bad = (ast.JoinedStr, ast.AnnAssign, ast.NamedExpr, ast.AsyncFunctionDef, ast.Await)
+    problems = [type(n).__name__ for n in ast.walk(tree) if isinstance(n, bad)]
+    problems += ["annotation" for n in ast.walk(tree)
+                 if isinstance(n, ast.FunctionDef) and (n.returns or any(a.annotation for a in n.args.args))]
+    return problems
+
+
+def test_the_revit_program_carries_the_same_property_table_as_the_grasshopper_calculator(catalogue):
+    """F-01: the pyRevit program the DG Revit connector runs computes the same properties as the canvas chain."""
+    out = ps.generate(_Session(_rows()), PROJECT, None, catalogue=catalogue)
+    revit = out["revit"]
+    assert revit["properties"] and len(revit["properties"]) == len(out["resolved"])
+    assert {p["ruleId"] for p in revit["properties"]} == set(RULE_PROPS)
+    source = revit["source"]
+    assert "def run(doc, family_filter, with_context):" in source
+    assert "class ModelContext" in source and "def calc_category_intersection_count" in source
+    assert revit["sha256"] and revit["sha256"] != out["calculator"]["sha256"]
+
+
+def test_the_revit_program_needs_neither_rhino_nor_grasshopper_and_parses_as_ironpython(catalogue):
+    import ast
+
+    source = ps.generate(_Session(_rows()), PROJECT, None, catalogue=catalogue)["revit"]["source"]
+    tree = ast.parse(source)
+    imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
+    imported |= {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)}
+    assert imported == {"math", "clr", "System.Collections.Generic", "Autodesk.Revit"}
+    references = {c.args[0].value for c in ast.walk(tree) if isinstance(c, ast.Call)
+                  and getattr(c.func, "attr", "") == "AddReference"}
+    assert references == {"RevitAPI"}
+    attributes = [n for n in ast.walk(tree) if isinstance(n, ast.Attribute) and n.attr == "IntegerValue"]
+    assert len(attributes) == 1  # only eid()'s fallback for Revit before 2024
+    assert _ironpython_problems(source) == []
+
+
+def test_the_grasshopper_calculator_still_has_the_shared_model_context(catalogue):
+    source = ps.generate(_Session(_rows()), PROJECT, None, catalogue=catalogue)["calculator"]["source"]
+    assert "class ModelContext" in source and "def run_calculator(doc, family_filter):" in source
+    assert "compute_properties(doc, family_filter)" in source
+    assert _ironpython_problems(source.split("# Rhino.Inside.Revit gives Python 3")[0]) == []

@@ -40,12 +40,15 @@ SPECKLE_PROXY_LOCATION = "/data-service/speckle-proxy/"
 SCRIPTS_PROXY_LOCATION = "/data-service/scripts/"
 # A mapping session posts up to 5000 element descriptors, above nginx's 1 MiB default body limit.
 MAPPING_PROXY_LOCATION = "/data-service/mapping/"
+# F-01 (2026-10-29): the DG Revit connector answers a rule-check job with values and meshes, above the 1 MiB default.
+CONNECTOR_JOBS_PROXY_LOCATION = "/data-service/connector/"
 ALLOWED_PROXY_LOCATIONS = {
     "/data-service/",
     RELAY_LOCATION,
     SPECKLE_PROXY_LOCATION,
     SCRIPTS_PROXY_LOCATION,
     MAPPING_PROXY_LOCATION,
+    CONNECTOR_JOBS_PROXY_LOCATION,
     "/llm/",
     "/reasoner/",
     RATE_LIMITED_AUTH_LOCATION,
@@ -386,6 +389,17 @@ def test_nginx_never_proxies_straight_to_speckle(nginx_text: str) -> None:
 def test_mapping_location_accepts_a_full_session_body(nginx_text: str) -> None:
     matches = [loc for loc in parse_locations(nginx_text) if loc.path == MAPPING_PROXY_LOCATION]
     assert len(matches) == 1, f"expected exactly one {MAPPING_PROXY_LOCATION} location"
+    statements = matches[0].statements
+    assert "set $ds_upstream http://data-service:8000" in statements
+    assert "proxy_pass $ds_upstream" in statements
+    assert "rewrite ^/data-service/(.*) /$1 break" in statements
+    assert not any(s.startswith("add_header") for s in statements)
+    assert [s.split(None, 1)[1] for s in statements if s.startswith("client_max_body_size ")] == ["64m"]
+
+
+def test_connector_jobs_location_accepts_a_check_answer(nginx_text: str) -> None:
+    matches = [loc for loc in parse_locations(nginx_text) if loc.path == CONNECTOR_JOBS_PROXY_LOCATION]
+    assert len(matches) == 1, f"expected exactly one {CONNECTOR_JOBS_PROXY_LOCATION} location"
     statements = matches[0].statements
     assert "set $ds_upstream http://data-service:8000" in statements
     assert "proxy_pass $ds_upstream" in statements

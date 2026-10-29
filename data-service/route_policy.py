@@ -252,6 +252,11 @@ ROUTE_POLICIES: dict[tuple[str, str], RoutePolicy] = {
     # run re-places the chain when the rules changed and writes Revit colours through the canvas: editor.
     ("POST", "/scripts/property-check/run"): _p(_MEM, _DEL, source="body", role="editor"),
     ("POST", "/scripts/property-check/status"): _p(_MEM, _DEL, source="body", role="viewer"),
+    # F-01 (2026-10-29): the DG Revit connector pulls rule-check jobs and posts their results (the server never
+    # calls a PC). A job belongs to exactly one connector session's user and project.
+    ("GET", "/connector/jobs/next"): _p(_CON, source="query", role="editor"),
+    ("POST", "/connector/jobs/{job_id}/result"): _p(_CON, source="body", role="editor"),
+    ("POST", "/connector/jobs/{job_id}/context"): _p(_CON, source="body", role="editor"),
     ("POST", "/computgraph/consult"): _p(_MEM, source="body", role="viewer"),
     ("POST", "/computgraph/generate-inputs"): _p(_MEM, source="body", role="editor"),
     ("POST", "/computgraph/candidates/accept"): _p(_MEM, source="body", role="editor"),

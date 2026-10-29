@@ -73,9 +73,10 @@ import logging  # noqa: E402
 # sha256 and length of build_prompt({'label': 'hasHeightMm', 'iri': 'dg:hasHeightMm'},
 # [{'ruleId': 'R1', 'text': 't', 'swrl': 's'}], 'Beam') taken BEFORE 1303-16 changed build_prompt; re-pinned by
 # 1303-24 (D-66), which added two sentences to CONTEXT_API (return None for "nothing found", counts return 0) and
-# changed nothing else (was length 1419, sha256 0c22e77a...).
-PROMPT_BEFORE_SHA256 = "60405fd9898912e1606cea1d237c779ad1f38160ee353c0ee880293d96077c1f"
-PROMPT_BEFORE_LENGTH = 2297
+# changed nothing else (was length 1419, sha256 0c22e77a...). Re-pinned by F-01 (2026-10-29), which added the eid
+# helper and the IronPython syntax sentence to CONTEXT_API and changed nothing else (was length 2297, sha256 60405fd9...).
+PROMPT_BEFORE_SHA256 = "7d61ab27a6dbd56d4b282534ddb1a7720165f142a380a2983745c91ebf083e22"
+PROMPT_BEFORE_LENGTH = 2539
 # (1303-24, second re-pin after two live generations answered with `from ... import`: one more CONTEXT_API line;
 # the first 1303-24 pin was length 1627, sha256 6dad6ef0...)
 # (1303-25, D-72: three CONTEXT_API lines for the bounding-box helpers ctx.near, ctx.host_floors, ctx.plan_gap_mm;
@@ -323,3 +324,20 @@ def test_the_contract_text_offers_bounding_box_helpers_for_clearances():
     assert "ctx.near(box, " in text and "max_mm" in text
     assert "ctx.host_floors(box)" in text and "hole" in text
     assert "ctx.plan_gap_mm(a, b)" in text
+
+
+@pytest.mark.parametrize("body, reason", [
+    ('    return float(f"{len(ctx.near(box, [], 1))}")\n', "JoinedStr"),
+    ("    n: int = 1\n    return n\n", "AnnAssign"),
+    ("    return (n := 1)\n", "NamedExpr"),
+    ("    return box.Id.IntegerValue\n", "eid"),
+])
+def test_validate_rejects_what_the_revit_connector_cannot_run(body, reason):
+    """F-01: calculators also run under pyRevit's IronPython, and Revit 2026 has no ElementId.IntegerValue."""
+    with pytest.raises(pcl.GeneratedCalculatorError) as err:
+        pcl.validate_function("def calc_gen(ctx, box, params):\n" + body)
+    assert reason in str(err.value)
+
+
+def test_validate_accepts_the_eid_helper():
+    assert pcl.validate_function("def calc_gen(ctx, box, params):\n    return len([eid(e) for e in ctx.host_walls(box)])\n")

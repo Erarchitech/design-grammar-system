@@ -85,6 +85,8 @@ import cg_recognition
 import dg_identity
 from dg_identity import MintRequest, BindRepresentationRequest, SharedPropertyWriteRequest
 import gh_bridge
+import connector_jobs
+import revit_check
 import computgraph_publish
 import cg_structure_checks
 import cg_input_bindings
@@ -217,6 +219,8 @@ NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
 # dg-reasoner sidecar (Plan 821-01 compose env; internal-only, D-12) --
 # reached exclusively through the thin proxy route below (D-06).
 DG_REASONER_URL = os.getenv("DG_REASONER_URL", "http://dg-reasoner:8000")
+# F-01 (2026-10-29): the DG.Core rule evaluator for Revit checks that run without Grasshopper.
+DG_EVALUATOR_URL = os.getenv("DG_EVALUATOR_URL", "http://dg-evaluator:8080")
 
 # SHACL sidecar proxy timeout (Phase 823 Plan 03, D-02) -- short by design so a
 # slow/hung sidecar degrades the publish hot path to a status dict instead of
@@ -2198,6 +2202,8 @@ def post_property_calculator_place(payload: PropertyScriptRequest, request: Requ
     DG CANVAS LISTENER place the checking chain on the live canvas, replacing the project's
     previous chain (one undo record)."""
     generated = _generate_property_scripts(payload, store=True, llm=True, actor=_mapping_actor(request))
+    if _revit_check_target(payload.project, request):
+        return _revit_generated_summary(payload.project, generated)
     return _place_property_scripts(payload.project, generated)
 
 
@@ -2220,7 +2226,13 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
     property was added, or none is placed yet) the chain is re-placed. Then the calculator
     re-reads the live Revit model, VALIDATOR re-evaluates the current rules (a changed
     threshold needs no new script) and the highlighter repaints. finished=false means the
-    solution outlived the listener's wait; read /scripts/property-check/status then."""
+    solution outlived the listener's wait; read /scripts/property-check/status then.
+
+    F-01 (2026-10-29): when the caller's DG Revit connector is signed in for the project, the check runs natively in
+    Revit instead (no Rhino.Inside, no Grasshopper): see _run_revit_check. On the multi-user server there is no
+    local canvas, so without a signed-in Revit connector the check is refused with REVIT_NOT_CONNECTED."""
+    if _revit_check_target(payload.project, request):
+        return _run_revit_check(payload, request)
     refreshed = None
     if payload.refresh and not payload.clear:
         generated = _generate_property_scripts(PropertyScriptRequest(project=payload.project), store=True, llm=True,
@@ -2286,6 +2298,222 @@ def post_property_check_run(payload: PropertyCheckRunRequest, request: Request):
     return result
 
 
+# ---------------------------------------------------------------------------
+# Revit-native property check (F-01, 2026-10-29)
+#
+# The multi-user test stopped at the check: on the server host.docker.internal:8720 is the server, not the engineer's
+# PC, and the canvas listener only listens on its own loopback. The server therefore never calls a PC: the check is a
+# job the caller's DG Revit connector pulls (connector_jobs), the property calculators run in Revit as a pyRevit
+# program generated from the same catalogue, dg-evaluator judges the values with DG.Core, every rule is published as
+# VALIDATOR would publish it, and the connector paints the verdict. DeGram's contract (finished/status/summary) holds.
+# ---------------------------------------------------------------------------
+
+REVIT_CHECK_WAIT_S = 100.0
+REVIT_CLEAR_WAIT_S = 30.0
+REVIT_CONTEXT_WAIT_S = 180.0
+REVIT_PUBLISH_WORKERS = 6
+
+
+def _principal_user(request: Request | None) -> str:
+    principal = getattr(getattr(request, "state", None), "principal", None)
+    return str(getattr(principal, "username", None) or "")
+
+
+def _revit_check_target(project: str, request: Request) -> bool:
+    """True when the check runs in the caller's Revit: their connector polls for this project, or the deployment has
+    no local Grasshopper canvas (multi-user), where the missing connector is reported instead of an unreachable
+    bridge."""
+    return connector_jobs.active(project, _principal_user(request)) or _DOCS_PROFILE == "multi-user"
+
+
+def _revit_not_connected() -> HTTPException:
+    return _structured_error_response(
+        "The DG connector in Revit is not signed in for this project, so the model cannot be checked.",
+        "Open the model in Revit, click Sign in (Вход) on the DG tab, sign in to this project with your own account "
+        "and ask again. Grasshopper is not needed.",
+        "REVIT_NOT_CONNECTED", 409)
+
+
+def _revit_generated_summary(project: str, generated: dict) -> dict:
+    revit = generated.get("revit") or {}
+    return {
+        "project": project,
+        "platform": "Revit",
+        "resolved": [{k: v for k, v in r.items() if k != "source"} for r in generated["resolved"]],
+        "unsupported": generated["unsupported"],
+        "calculatorSha256": revit.get("sha256"),
+        "placed": {"created": 0, "replaced": 0, "wires": 0,
+                   "warnings": ["Revit: no canvas is used; the DG connector in Revit computes the properties"]},
+    }
+
+
+def _evaluate_check(request_body: dict) -> dict:
+    try:
+        response = httpx.post(f"{DG_EVALUATOR_URL}/evaluate", json=request_body, timeout=60.0)
+    except httpx.HTTPError as exc:
+        raise _structured_error_response(
+            f"The rule evaluator is unreachable: {exc}", "Start the dg-evaluator service and run the check again.",
+            "EVALUATOR_UNREACHABLE", 503) from exc
+    if response.status_code != 200:
+        raise _structured_error_response(
+            f"The rule evaluator refused the check ({response.status_code}): {response.text[:300]}",
+            "Check the dg-evaluator logs and run the check again.", "EVALUATOR_FAILED", 502)
+    return response.json()
+
+
+def _publish_revit_runs(evaluated: dict, result: dict) -> tuple[list[str], list[str]]:
+    """Publish every evaluated rule in parallel (one ValidationRun each, as VALIDATOR does); (run ids, messages).
+    Sequential publishing took ~70 s for four rules on the Grasshopper path, too long for DeGram's 150 s wait."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    bodies = [revit_check.with_geometry(r["publish"], result) for r in evaluated.get("runs") or [] if r.get("publish")]
+    messages = ["error %s: %s" % (r.get("ruleId"), r.get("report")) for r in evaluated.get("runs") or []
+                if r.get("status") == "error"]
+
+    def publish(body: dict):
+        rule_id = (body.get("rules") or [{}])[0].get("ruleId")
+        try:
+            return publish_validation(ValidationPublishRequest(**body)), None
+        except HTTPException as exc:
+            return None, "error publish %s: %s" % (rule_id, str(exc.detail)[:200])
+        except Exception as exc:  # noqa: BLE001 - reported, never a silent clean result
+            return None, "error publish %s: %s" % (rule_id, str(exc)[:200])
+
+    run_ids = []
+    with ThreadPoolExecutor(max_workers=REVIT_PUBLISH_WORKERS) as pool:
+        for response, message in pool.map(publish, bodies):
+            run_id = response.get("runId") if isinstance(response, dict) else getattr(response, "runId", None)
+            if run_id:
+                run_ids.append(run_id)
+            if message:
+                messages.append(message)
+    return run_ids, messages
+
+
+def _publish_revit_context(project: str, run_ids: list[str], job: dict) -> None:
+    if connector_jobs.wait(job, REVIT_CONTEXT_WAIT_S, until="context"):
+        _publish_check_context(project, run_ids, list(job.get("context") or []))
+
+
+def _run_revit_check(payload: PropertyCheckRunRequest, request: Request) -> dict:
+    project, user = payload.project, _principal_user(request)
+    if not connector_jobs.active(project, user):
+        raise _revit_not_connected()
+    if payload.clear:
+        job = connector_jobs.submit(project, user, "clear", {})
+        finished = connector_jobs.wait(job, REVIT_CLEAR_WAIT_S)
+        done = job["status"] == connector_jobs.DONE
+        status = {"platform": "Revit", "boxes": 0, "violations": [],
+                  "highlighterReport": [str((job.get("result") or {}).get("report") or job.get("error") or "")],
+                  "messages": [] if done else ["error clear: %s" % (job.get("error") or "no answer from Revit")]}
+        result = {"finished": finished, "paint": False, "clear": True, "send": False, "status": status}
+        result["summary"] = property_check_summary(result)
+        return result
+
+    generated = _generate_property_scripts(PropertyScriptRequest(project=project), store=True, llm=True,
+                                           actor=_mapping_actor(request))
+    revit = generated.get("revit")
+    if not revit:
+        raise _structured_error_response("No Revit program was generated for the project's rules.",
+                                         "Check the property calculator catalogue.", "REVIT_PROGRAM_MISSING", 500)
+    job = connector_jobs.submit(project, user, "check", {
+        "script": revit["source"], "sha256": revit["sha256"],
+        "boxFamilyFilter": property_scripts.BOX_FAMILY_FILTER_DEFAULT,
+        "boxClass": generated["boxClass"], "withContext": bool(payload.send),
+    })
+    if not connector_jobs.wait(job, REVIT_CHECK_WAIT_S):
+        connector_jobs.expire(job, "no answer from Revit in time")
+        raise _structured_error_response(
+            "Revit did not answer the check in time.",
+            "Make sure Revit is open with the model and not busy with a dialog, then ask again.",
+            "REVIT_CHECK_TIMEOUT", 504)
+    if job["status"] != connector_jobs.DONE:
+        raise _structured_error_response(
+            "The check failed in Revit: %s" % job.get("error"),
+            "Read the message, fix the model or the rules and ask again.", "REVIT_CHECK_FAILED", 422)
+    result = job["result"] or {}
+    evaluated = _evaluate_check(revit_check.evaluator_request(project, generated["boxClass"], result,
+                                                              label=result.get("document")))
+    run_ids, messages = _publish_revit_runs(evaluated, result) if payload.send else ([], [])
+    if evaluated.get("stateWarning"):
+        messages.append("warning DesignState: %s" % evaluated["stateWarning"])
+    for rule_id in evaluated.get("missingRules") or []:
+        messages.append("error %s: the rule is not in the project any more" % rule_id)
+    by_ref = revit_check.verdicts(evaluated, result)
+    if payload.paint:
+        connector_jobs.submit(project, user, "paint", {"verdicts": by_ref})
+    status = revit_check.check_status(result, evaluated, run_ids, by_ref, messages)
+    if run_ids:
+        _record_check_source(project, run_ids, status["calculatorReport"])
+    connector_jobs.remember_status(project, status)
+    out = {"finished": True, "paint": payload.paint, "clear": False, "send": payload.send, "status": status,
+           "refreshed": _revit_generated_summary(project, generated)}
+    out["summary"] = property_check_summary(out)
+    if out["summary"]["ok"] and payload.send and run_ids:
+        threading.Thread(target=_publish_revit_context, args=(project, list(run_ids), job), daemon=True).start()
+        out["context"] = {"scheduled": True, "runs": list(run_ids)}
+    if not out["summary"]["ok"]:
+        problems = out["summary"]["problems"]
+        raise HTTPException(status_code=422, detail={
+            "code": "PROPERTY_CHECK_FAILED",
+            "error": "The check did not run correctly; no verdict: " + "; ".join(problems)[:260],
+            "hint": "Read the problems, fix the model or the rules and ask again.",
+            "problems": problems, "summary": out["summary"], "upstream": None,
+        })
+    return out
+
+
+class ConnectorJobResult(BaseModel):
+    project: str
+    ok: bool = True
+    result: dict | None = None
+    error: str | None = None
+
+
+class ConnectorJobContext(BaseModel):
+    project: str
+    elements: list[dict] = Field(default_factory=list)
+    done: bool = False
+
+
+def _connector_identity(request: Request) -> tuple[str, str]:
+    principal = getattr(getattr(request, "state", None), "principal", None)
+    return _principal_user(request), str(getattr(principal, "connector_id", None) or "revit")
+
+
+def _connector_job(job_id: str, project: str, request: Request) -> dict:
+    user, connector_id = _connector_identity(request)
+    job = connector_jobs.get(job_id, project, user, connector_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail={"code": "JOB_NOT_FOUND", "error": "No such job."})
+    return job
+
+
+@router.get("/connector/jobs/next")
+def get_connector_job_next(request: Request, project: str = Query(...)):
+    """F-01: the DG connector's poll. Returns the oldest job queued for this connector session (its user, project and
+    connector), or null. Polling is also what makes the connector count as present for checks."""
+    user, connector_id = _connector_identity(request)
+    job = connector_jobs.take(project, user, connector_id)
+    return {"job": connector_jobs.public(job) if job else None}
+
+
+@router.post("/connector/jobs/{job_id}/result")
+def post_connector_job_result(job_id: str, payload: ConnectorJobResult, request: Request):
+    job = _connector_job(job_id, payload.project, request)
+    connector_jobs.complete(job, payload.ok, payload.result, payload.error)
+    return {"id": job_id, "status": job["status"]}
+
+
+@router.post("/connector/jobs/{job_id}/context")
+def post_connector_job_context(job_id: str, payload: ConnectorJobContext, request: Request):
+    """The context geometry of a check (walls, columns, beams, ... the calculators read), sent in chunks after the
+    values so the verdict never waits for it."""
+    job = _connector_job(job_id, payload.project, request)
+    connector_jobs.add_context(job, payload.elements, payload.done)
+    return {"id": job_id, "received": len(job["context"]), "done": job["contextDone"]}
+
+
 RESET_ATTEMPTS = 12
 RESET_PAUSE_S = 5.0
 
@@ -2320,13 +2548,14 @@ def rule_context_categories(project: str) -> dict[str, set[str]]:
     return out
 
 
-def _publish_check_context(project: str, run_ids: list[str]) -> dict:
+def _publish_check_context(project: str, run_ids: list[str], elements: list[dict] | None = None) -> dict:
     """Owner 2026-10-21: walls, columns and beams are checked against but were missing from the Model Viewer, which
     loads only a run's validation version. The context the calculator read is added to the validation version of
     every run of this check (a new version, the run points at it). Never fails the check; the outcome is reported."""
     log = logging.getLogger(__name__)
     try:
-        context = gh_bridge.get_property_check_context(project)
+        # F-01: a Revit-native check hands over the context the DG Revit connector read; the canvas is asked otherwise
+        context = {"elements": elements} if elements is not None else gh_bridge.get_property_check_context(project)
         elements = list(context.get("elements") or [])
         if not elements or not run_ids:
             return {"published": False, "reason": "no context geometry or no runs", "skipped": context.get("skipped")}
@@ -2535,8 +2764,12 @@ def property_check_summary(result: dict) -> dict:
 
 
 @router.post("/scripts/property-check/status")
-def post_property_check_status(payload: PropertyScriptRequest):
-    """Reports, violations and runtime messages of the placed property check (read only)."""
+def post_property_check_status(payload: PropertyScriptRequest, request: Request):
+    """Reports, violations and runtime messages of the placed property check (read only). For a Revit-native check
+    (F-01) the status of the project's last check."""
+    if _revit_check_target(payload.project, request):
+        return connector_jobs.last_status(payload.project) or {"platform": "Revit", "boxes": 0, "violations": [],
+                                                               "messages": ["no check has run yet"]}
     return gh_bridge.get_property_check_status(payload.project)
 
 
