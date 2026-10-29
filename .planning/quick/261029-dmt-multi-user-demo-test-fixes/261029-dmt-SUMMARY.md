@@ -113,8 +113,17 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
     sessions.
   - Result: 0 rules, 0 atoms, 0 ingest sessions, 0 Vars/Literals. 7 Class nodes stay because they still have
     relationships.
-  - `993b709` is **not yet deployed** on the stand (needs authorization). Until then a delete in the interface can
-    still silently keep a rule whose arguments are all shared.
+  - `993b709` was deployed on the stand together with F-08 (below).
+- **F-08:** the Revit check on the demo PC failed with `REVIT_CHECK_FAILED: Name`.
+  - Cause: under pythonnet (pyRevit's CPython engine) a FamilySymbol's set-only `Name` hides `Element.Name`, so
+    `e.Symbol.Name` raised `AttributeError('Name')`. `inventory()` reads it on every check.
+  - Fixed in `93e3c11`: type names go through `element_name()`, which falls back to `DB.Element.Name.__get__`.
+    Catalogue `1303-15.5`.
+  - Stand: data-service `dg-data-service:f08-93e3c11` (adds `993b709` + `93e3c11` on `f07-b30d2ea`), work dir
+    `/root/dg-f08-93e3c11`, rollback tag `dg-data-service:rollback-f08`, no new snapshot (owner).
+  - Verified in the running container: the files equal the commit (CR stripped), catalogue `1303-15.5`, no direct
+    `Symbol.Name` left. Only data-service was recreated.
+  - Not yet verified: a check run from the demo PC.
 
 ## Not done yet (needs the owner)
 
