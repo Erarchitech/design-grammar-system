@@ -9,6 +9,9 @@ Welcome to the DG knowledge base. This vault documents architecture, decisions, 
 
 ## Map of Contents
 
+- [[sessions/2026-10-29 Revit re-read with a leftover selection read one element, DeGram now warns (F-10)|Session — F-10: Revit re-read with a leftover selection read one element; DeGram now warns]] (2026-10-29)
+- [[knowledge/decisions/A Revit mapping read keeps the selection scope and DeGram warns when only the selection was read (F-10)|Decision — Revit read keeps the selection scope (D-48), DeGram warns (F-10)]] (2026-10-29)
+- [[knowledge/debugging/Revit re-read with a leftover selection mapped only the selected element (F-10)|Debugging — leftover Revit selection narrowed the mapping read to one element (F-10)]] (2026-10-29)
 - [[sessions/2026-10-29 Demo PC Revit check fixed end to end, stand Speckle set up (F-08, F-09)|Session — demo PC check works end to end: F-08 pyRevit Name, F-09 publish race, stand Speckle set up]] (2026-10-29)
 - [[knowledge/decisions/Stand Speckle is set up from the server and its web UI stays closed at the edge|Decision — stand Speckle set up from the server, web UI stays closed]] (2026-10-29)
 - [[knowledge/debugging/Revit check failed with Name on pyRevit CPython because a FamilySymbol hides Element.Name (F-08)|Debugging — REVIT_CHECK_FAILED: Name, FamilySymbol hides Element.Name under pythonnet (F-08)]] (2026-10-29)

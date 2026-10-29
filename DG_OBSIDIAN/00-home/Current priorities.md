@@ -18,6 +18,12 @@ date: 2026-07-18
     - Speckle is set up from the server: `inviteOnly`, tokens in `.env`, project `cb20909c46` bound to
       `isolation-check-a`; the web UI stays closed.
     - See [[sessions/2026-10-29 Demo PC Revit check fixed end to end, stand Speckle set up (F-08, F-09)|session]].
+  - **F-10 (late 2026-10-29):** a DeGram «Прочитать модель заново» with one element left selected in Revit read only
+    that element (D-48 scope). Owner: keep D-48 and warn. The connector reports `scope`/`read` (`21f03b8`), and DeGram
+    warns (`3bf67d55`, pushed; gitlink `e3becb9`). **No DeGram build yet (owner):** more changes first, then one build
+    0.1.17 in another session (stage the connector payloads, then «Установить» on the demo PC). Workaround: Esc in Revit
+    before re-reading. See
+    [[sessions/2026-10-29 Revit re-read with a leftover selection read one element, DeGram now warns (F-10)|session]].
   - **Next:**
     1. Rebuild localhost data-service from the current commit (F27/F-07, delete fix, F-08, F-09).
     2. Stage 2: the mapping view in the Model Viewer (F-06).
