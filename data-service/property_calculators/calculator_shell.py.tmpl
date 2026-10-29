@@ -153,11 +153,11 @@ else:
                 Context.append(_geo)
                 _cat = _el.Category.Name if _el.Category is not None else "?"
                 # "OST_Walls|Стены : name [id]": the category lets data-service show per rule only what it reads
-                ContextLabels.append("%s|%s : %s [%d]" % (_ost, _cat, _el.Name, eid(_el)))
+                ContextLabels.append("%s|%s : %s [%d]" % (_ost, _cat, element_name(_el), eid(_el)))
         for _box in _boxes:
             Objects.append(object_reference(_box.UniqueId))
             Geometry.append(box_geometry(_box, _scale))
-            Labels.append("%s : %s [%d]" % (_box.Symbol.Family.Name, _box.Symbol.Name, eid(_box)))
+            Labels.append("%s : %s [%d]" % (_box.Symbol.Family.Name, element_name(_box.Symbol), eid(_box)))
             UniqueIds.append(_box.UniqueId)
 $output_assignments
         Report = ["document: %s" % _doc.Title, "boxes: %d" % len(_boxes)]

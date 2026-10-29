@@ -12,6 +12,16 @@ def eid(element_or_id):
     return int(value)
 
 
+def element_name(element):
+    """Element.Name, also of a FamilySymbol or another ElementType: under pythonnet (pyRevit's CPython engine) their
+    set-only Name hides the inherited getter and .Name raises AttributeError('Name') (live 2026-10-29: every Revit
+    check on the demo PC failed with REVIT_CHECK_FAILED: Name)."""
+    try:
+        return element.Name
+    except AttributeError:
+        return DB.Element.Name.__get__(element)
+
+
 def _bic(name):
     return getattr(DB.BuiltInCategory, name)
 
@@ -301,7 +311,7 @@ def collect_boxes(doc, family_filter):
     for e in collector:
         if not isinstance(e, DB.FamilyInstance):
             continue
-        name = (e.Symbol.Family.Name + " " + e.Symbol.Name).lower()
+        name = (e.Symbol.Family.Name + " " + element_name(e.Symbol)).lower()
         if parts and not any(p in name for p in parts):
             continue
         boxes.append(e)
@@ -323,7 +333,7 @@ def inventory(doc, ctx=None):
     for e in (DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_GenericModel)
               .WhereElementIsNotElementType()):
         if isinstance(e, DB.FamilyInstance):
-            key = "%s : %s" % (e.Symbol.Family.Name, e.Symbol.Name)
+            key = "%s : %s" % (e.Symbol.Family.Name, element_name(e.Symbol))
             families[key] = families.get(key, 0) + 1
     for key in sorted(families, key=lambda k: (-families[k], k))[:40]:
         lines.append("generic model family: %s x%d" % (key, families[key]))

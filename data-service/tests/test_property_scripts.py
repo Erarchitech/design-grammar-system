@@ -1475,6 +1475,35 @@ def test_the_revit_program_needs_neither_rhino_nor_grasshopper_and_parses_as_iro
     assert _ironpython_problems(source) == []
 
 
+def test_type_names_are_read_through_element_name_which_survives_pythonnet(catalogue):
+    """Live 2026-10-29: every Revit check on the demo PC failed with REVIT_CHECK_FAILED: Name. Under pythonnet
+    (pyRevit's CPython engine) a FamilySymbol's set-only Name hides Element.Name, so e.Symbol.Name raises
+    AttributeError('Name'); inventory() reads it for every Generic Model instance on every check."""
+    import ast
+    import types
+
+    out = ps.generate(_Session(_rows()), PROJECT, None, catalogue=catalogue)
+    for source in (out["revit"]["source"], out["calculator"]["source"]):
+        tree = ast.parse(source)
+        direct = [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Attribute) and n.attr == "Name"
+                  and isinstance(n.value, ast.Attribute) and n.value.attr == "Symbol"]
+        assert direct == []
+
+    tree = ast.parse(out["revit"]["source"])
+    keep = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "element_name"]
+    getter = types.SimpleNamespace(__get__=lambda element: "Hex 600")
+    ns = {"DB": types.SimpleNamespace(Element=types.SimpleNamespace(Name=getter))}
+    exec(compile(ast.Module(body=keep, type_ignores=[]), "<shell>", "exec"), ns)
+
+    class PythonnetSymbol:
+        @property
+        def Name(self):
+            raise AttributeError("Name")
+
+    assert ns["element_name"](PythonnetSymbol()) == "Hex 600"
+    assert ns["element_name"](types.SimpleNamespace(Name="Wall 200")) == "Wall 200"
+
+
 def test_the_grasshopper_calculator_still_has_the_shared_model_context(catalogue):
     source = ps.generate(_Session(_rows()), PROJECT, None, catalogue=catalogue)["calculator"]["source"]
     assert "class ModelContext" in source and "def run_calculator(doc, family_filter):" in source

@@ -1,5 +1,5 @@
 {
-  "version": "1303-15.4",
+  "version": "1303-15.5",
   "description": "Vetted property calculators for Revit models read through Rhino.Inside.Revit. Design Grammars assembles generated scripts from these templates first; only a property no template covers gets a calculator the LLM writes under the contract of property_calculator_llm (validated AST, read-only model helpers).",
   "calculators": {
     "revit_category_intersection_count": {
