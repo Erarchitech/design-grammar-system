@@ -101,8 +101,20 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
     - `b30d2ea` rejects an atom linked by more than one rule and an Atom_Id that is not `<Rule_Id>_A<n>`/`_H<n>`.
   - Both were deployed to the stand in `/root/dg-f07-b30d2ea` (rollback tag `dg-data-service:rollback-f07`). Checked in
     the running container: foreign atom rejected, F27 shape rejected, valid A1 accepted.
-- **Data:** deleting one of R2–R4 would also remove the R1/R2 atoms they share. Owner decision: the tester deletes all
-  five rules of the project in the interface and enters them again (step 8), then repeats the check.
+- **Data:** deleting one of R2–R4 would also remove the R1/R2 atoms they share. The owner decided that the tester
+  deletes all five rules in the interface and enters them again, but the interface could not delete them.
+  - Cause: in `delete_rule` the orphan filter was a WHERE after UNWIND. With every Var/Literal of a rule shared, the
+    rule kept no row, so nothing was deleted, and the route still answered "deleted".
+  - Fixed in `993b709`. The fixed statement was checked on the stand's Neo4j in a rolled-back transaction.
+  - On the owner's request, all rules of `isolation-check-a` were deleted on the stand. The backup with the 5 rules,
+    66 nodes, 126 relationships and 5 ingest sessions is at
+    `/root/dg-f07-b30d2ea/rules-backup-isolation-check-a.json`, with a copy in `C:/Users/Admin/dgb-f01/`.
+  - The bulk delete path removed R4/R5. R1–R3 were then removed with the fixed statement, plus their orphaned ingest
+    sessions.
+  - Result: 0 rules, 0 atoms, 0 ingest sessions, 0 Vars/Literals. 7 Class nodes stay because they still have
+    relationships.
+  - `993b709` is **not yet deployed** on the stand (needs authorization). Until then a delete in the interface can
+    still silently keep a rule whose arguments are all shared.
 
 ## Not done yet (needs the owner)
 
