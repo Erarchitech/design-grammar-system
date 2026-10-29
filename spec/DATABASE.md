@@ -75,6 +75,16 @@ distance) are never classes; they stay part of the subject's numeric property na
 
 ### SpecGraph
 
+**Ingest atom admission (F27 correction):** project-aware rule_ingest/rule_edit
+generation validates existing v4 Atom.type/iri, one matching typed REFERS_TO and
+ordered ARG targets before returning valid Cypher. Obsolete Atom.Builtin_iri is
+rejected, not normalized. Classes and ObjectProperties are never promoted to
+swrlb builtins. The parser retains signed values, directed edges, declaration
+identities and identity mutations so invalid graph structure cannot be hidden by
+strings, aliases or SET renames. This adds producer admission, not new schema or
+SWRL evaluation capability. Arbitrary positive contiguous builtin arity remains
+recognized; evaluator support remains governed by spec/SWRL-SUBSET.md.
+
 **SpecClass** — Parent hub nodes connecting all instances of a spec type
 ```
 (:SpecClass {name: "SpecNote", label: "SpecNote", graph: "SpecGraph"})

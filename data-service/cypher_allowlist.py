@@ -326,6 +326,13 @@ class _Parser:
         # Every node pattern the node-shape reader processed (read profile):
         # (index of its `(`, how it is shown, whether it is proven scoped).
         self.node_patterns: list[tuple[int, str, bool]] = []
+        # Parsed write metadata for schema admission; never regex-reparse literals.
+        self.write_nodes: dict[str, tuple[str, dict[str, Tok]]] = {}
+        self.write_declarations: dict[str, tuple[str, dict[str, Tok]]] = {}
+        self.identity_mutations: set[str] = set()
+        self.write_edges: list[tuple[str | None, str, str | None, dict[str, Tok]]] = []
+        self.undirected_write_edges: list[tuple[str | None, str, str | None]] = []
+        self.last_node_var: str | None = None
 
     # -- token helpers ----------------------------------------------------
     def peek(self, offset: int = 0) -> Tok | None:
@@ -402,7 +409,8 @@ class _Parser:
         if tok.kind == "NUMBER":
             return tok
         if tok.kind == "PUNCT" and tok.text == "-" and (self.peek() and self.peek().kind == "NUMBER"):
-            return self.next()
+            number = self.next()
+            return Tok("NUMBER", "-" + number.text, tok.pos)
         if tok.kind == "IDENT" and tok.text.lower() in _LITERAL_WORDS:
             return tok
         raise _Fatal(
@@ -575,16 +583,29 @@ class _Parser:
             )
         self.read_node(declare=declare)
         while self.at_rel_start():
+            left = self.last_node_var
+            rel_start = self.i
             var, types, props = self.read_rel()
+            rel_end = self.i
             if self.mode == "write":
                 self.check_write_rel(var, types, props)
             elif var is not None:
                 self.rel_vars.add(var)
             self.read_node(declare=declare)
+            if self.mode == "write" and len(types) == 1:
+                rel_tokens = self.toks[rel_start : rel_end]
+                incoming = rel_tokens[0].text == "<"
+                outgoing = any(t.kind == "PUNCT" and t.text == ">" for t in rel_tokens)
+                if incoming != outgoing:
+                    source, target = (self.last_node_var, left) if incoming else (left, self.last_node_var)
+                    self.write_edges.append((source, types[0], target, props or {}))
+                else:
+                    self.undirected_write_edges.append((left, types[0], self.last_node_var))
 
     def read_node(self, *, declare: bool) -> None:
         open_index = self.i
         var, labels, props = self.read_node_shape()
+        self.last_node_var = var
         shown = "(" + (var or "") + "".join(":" + label for label in labels) + ")"
         if self.mode == "write":
             self.check_write_node(var, labels, props, shown, declare)
@@ -693,6 +714,9 @@ class _Parser:
                     var,
                 )
             self.node_vars.add(var)
+
+            self.write_nodes[var] = (label, dict(props or {}))
+            self.write_declarations[var] = (label, dict(props or {}))
 
     def check_write_rel(
         self, var: str | None, types: list[str], props: dict[str, Tok] | None
@@ -1238,6 +1262,15 @@ class _Parser:
                 )
             self.expect_punct("=")
             value = self.read_literal(key=prop.text, code="unanalysable_value")
+            if var.text in self.write_nodes:
+                label, declared = self.write_declarations[var.text]
+                identity_keys = {WRITE_NODE_IDENTITY_KEY[label]}
+                if label == "Literal":
+                    identity_keys.add("datatype")
+                original = declared.get(prop.text)
+                if prop.text in identity_keys and (original is None or original.kind != value.kind or original.text != value.text):
+                    self.identity_mutations.add(var.text)
+                self.write_nodes[var.text][1][prop.text] = value
             if value.kind == "PARAM":
                 self.record(
                     "unanalysable_value",
@@ -1379,3 +1412,76 @@ def check_write_allowlist(cypher: str) -> list[Violation]:
             )
         )
     return violations
+
+
+def check_ingest_atom_structure(cypher: str) -> list[Violation]:
+    """Check generated atoms from admitted parser metadata, without repairing output."""
+    violations, parser = analyze(cypher, mode="write")
+    if violations or parser is None:
+        return []  # syntax/security admission reports these failures separately
+    out: list[Violation] = []
+    expected = {
+        "ClassAtom": ("Class", 1),
+        "DataPropertyAtom": ("DatatypeProperty", 2),
+        "ObjectPropertyAtom": ("ObjectProperty", 2),
+        "BuiltinAtom": ("Builtin", 2),
+    }
+    how = "emit Atom.type, Atom.iri and one REFERS_TO to the matching Class/DatatypeProperty/ObjectProperty/Builtin; connect every argument with ARG {pos:N}. Never use Atom.Builtin_iri or prefix non-builtins with swrlb:"
+    identities: dict[str, str] = {}
+    for var in sorted(parser.identity_mutations):
+        out.append(_violation("invalid_atom_structure", "a declared node identity cannot be changed by SET during structural proof", var, how))
+    for var, (label, props) in parser.write_nodes.items():
+        if label != "Atom":
+            continue
+        errors: list[str] = []
+        atom_id = props.get("Atom_Id")
+        declared_id = parser.write_declarations[var][1].get("Atom_Id")
+        if atom_id is None or atom_id.kind != "STRING" or not atom_id.text:
+            errors.append("final Atom_Id must be a nonempty string")
+        if declared_id is not None:
+            if declared_id.text in identities:
+                errors.append("multiple variables declare the same persisted Atom_Id")
+            identities[declared_id.text] = var
+        if any(left == var or right == var for left, _, right in parser.undirected_write_edges):
+            errors.append("undirected Atom relationship cannot prove graph structure")
+        kind = props.get("type")
+        iri = props.get("iri")
+        kind_name = kind.text if kind is not None and kind.kind == "STRING" else ""
+        schema = expected.get(kind_name)
+        if schema is None:
+            errors.append("missing or unsupported Atom.type")
+        if "Builtin_iri" in props:
+            errors.append("obsolete Atom.Builtin_iri")
+        if iri is None or iri.kind != "STRING" or not iri.text:
+            errors.append("missing Atom.iri")
+        elif (kind_name == "BuiltinAtom") != iri.text.startswith("swrlb:"):
+            errors.append("predicate prefix does not match Atom.type")
+        refs = [edge for edge in parser.write_edges if edge[0] == var and edge[1] == "REFERS_TO"]
+        if len(refs) != 1:
+            errors.append("expected exactly one REFERS_TO")
+        elif schema is not None:
+            target = parser.write_nodes.get(refs[0][2])
+            target_iri = target[1].get("iri") if target else None
+            if target is None or target[0] != schema[0] or target_iri is None or iri is None or target_iri.kind != "STRING" or target_iri.text != iri.text:
+                errors.append("REFERS_TO target label/iri does not match Atom")
+        args = [edge for edge in parser.write_edges if edge[0] == var and edge[1] == "ARG"]
+        if schema is not None:
+            positions = [edge[3].get("pos") for edge in args]
+            arity = len(args) if kind_name == "BuiltinAtom" else schema[1]
+            required_positions = {str(i) for i in range(1, arity + 1)}
+            invalid_positions = any(
+                p is None or p.kind != "NUMBER" or p.text not in required_positions
+                for p in positions
+            )
+            if arity == 0 or len(args) != arity or invalid_positions or len({p.text for p in positions if p is not None}) != arity:
+                errors.append("missing, duplicated or invalid ARG positions")
+            for edge in args:
+                target = parser.write_nodes.get(edge[2])
+                position = edge[3].get("pos")
+                subject = kind_name == "DataPropertyAtom" and position is not None and position.text == "1"
+                allowed = {"Var"} if kind_name in {"ClassAtom", "ObjectPropertyAtom"} or subject else {"Var", "Literal"}
+                if target is None or target[0] not in allowed:
+                    errors.append("ARG target label does not match Atom.type")
+        if errors:
+            out.append(_violation("invalid_atom_structure", "; ".join(dict.fromkeys(errors)), var, how))
+    return out

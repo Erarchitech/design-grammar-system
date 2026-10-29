@@ -1264,6 +1264,9 @@ def validate_cypher(
         elif request_type in ("rule_ingest", "rule_edit"):
             violations.extend(check_write_allowlist(cypher))
 
+    if request_type in ("rule_ingest", "rule_edit") and project is not None:
+        violations.extend(cypher_allowlist.check_ingest_atom_structure(cypher))
+
     # De-duplicate identical violations (same code+path) while preserving order.
     seen: set[tuple[str, str | None]] = set()
     unique_violations: list[dict[str, Any]] = []
