@@ -83,6 +83,10 @@ MESSAGE_NO_SESSION = "No DG mapping session is open; nothing to clear"
 MESSAGE_EMPTY_SCOPE = ("DG: nothing to map: select elements, or open a view that shows "
                        "model elements")
 
+# What start_mapping read: the selection, else the model instances visible in the active view (D-48).
+SCOPE_SELECTION = "selection"
+SCOPE_VIEW = "view"
+
 # --- process-wide wiring (per engine, see the module docstring) ----------------
 
 #: The handler, the ExternalEvent, the poll thread and its owner token of this
@@ -730,7 +734,8 @@ def _refused(store, message):
 
 
 def start_mapping(uiapp, client=None, now=None):
-    """Start a DG mapping session for the active model -> ``{started, sessionId, message}``.
+    """Start a DG mapping session for the active model -> ``{started, sessionId, message}``,
+    plus ``scope`` (``"selection"`` or ``"view"``) and ``read`` (elements sent) once started.
 
     Runs in the Revit API context (a Routes handler or a ribbon button). Needs a
     signed-in connector. Reads the scope (selection, else the visible model
@@ -753,6 +758,8 @@ def start_mapping(uiapp, client=None, now=None):
         view = None
 
     try:
+        # a selection left in Revit (also by a DeGram row click) narrows the read to it (D-48, F-10)
+        scope = SCOPE_SELECTION if revit_io.selection_count(uidoc) else SCOPE_VIEW
         elements, total = revit_io.collect_scope(document, uidoc, descriptors.MAX_ELEMENTS)
         rows, skipped = revit_io.read_rows(document, elements)
     except Exception as error:
@@ -798,9 +805,10 @@ def start_mapping(uiapp, client=None, now=None):
         logger.warning("DG: colouring the new session failed: %s", _text(error))
 
     message = _started_message(key, len(element_descriptors), coloured, truncated, skipped,
-                               _open_questions(session))
+                               _open_questions(session), scope)
     store.set("message", message)
-    return {"started": True, "sessionId": session_id, "message": message}
+    return {"started": True, "sessionId": session_id, "message": message,
+            "scope": scope, "read": len(element_descriptors)}
 
 
 def _open_questions(session):
@@ -811,10 +819,12 @@ def _open_questions(session):
     return count
 
 
-def _started_message(key, read, coloured, truncated, skipped, open_questions):
-    """One status line: elements, truncation, skips and open questions."""
-    message = "DG mapping session for {}: {} read, {} coloured".format(
-        key, _plural(read, "element"), coloured)
+def _started_message(key, read, coloured, truncated, skipped, open_questions, scope=None):
+    """One status line: elements, scope, truncation, skips and open questions."""
+    message = "DG mapping session for {}: {} read".format(key, _plural(read, "element"))
+    if scope == SCOPE_SELECTION:
+        message += " (only the Revit selection; clear the selection to read the whole view)"
+    message += ", {} coloured".format(coloured)
     if skipped:
         message += ", {} skipped".format(skipped)
     if truncated:

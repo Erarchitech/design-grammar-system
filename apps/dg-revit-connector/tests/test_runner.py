@@ -864,6 +864,8 @@ def test_start_mapping_builds_the_body_and_label(runner, store, revit_io, monkey
     assert "2 skipped" in message
     assert "2 beyond the 5000-element cap" in message
     assert "1 open question" in message
+    assert "only the Revit selection" not in message
+    assert outcome["scope"] == "view" and outcome["read"] == 1
     assert store.get("message") == message
     # painted at once, so the poll loop does not paint the same states again
     assert store.get("lastDigest") == runner.loop.session_digest(session)
@@ -873,6 +875,24 @@ def one_row_scope(revit_io, monkeypatch):
     monkeypatch.setattr(revit_io, "collect_scope",
                         lambda doc, uidoc, max_elements=5000: (["e1"], 1))
     monkeypatch.setattr(revit_io, "read_rows", lambda doc, elements: (ROWS, 0))
+
+
+def test_start_mapping_says_when_only_the_selection_was_read(runner, store, revit_io, monkeypatch):
+    """F-10: one element left selected in Revit narrows a re-read to it; the answer must say so."""
+    signed_in(store)
+    one_row_scope(revit_io, monkeypatch)
+    monkeypatch.setattr(revit_io, "apply_colours", lambda doc, view, states: len(states))
+    document = FakeDocument()
+    uidoc = SimpleNamespace(Document=document,
+                            Selection=SimpleNamespace(GetElementIds=lambda: ["id-101"]),
+                            ShowElements=lambda ids: None)
+    session = mapping_session([element("uid-a", "auto")], open_questions=0)
+    outcome = runner.start_mapping(fake_uiapp(document, uidoc),
+                                   client=FakeClient(create_result=session), now=NOW)
+    assert outcome["started"] is True
+    assert outcome["scope"] == "selection" and outcome["read"] == 1
+    assert "1 element read (only the Revit selection; clear the selection to read the whole view)" \
+        in outcome["message"]
 
 
 def test_start_mapping_refuses_an_empty_scope_without_calling_dg(runner, store, revit_io,

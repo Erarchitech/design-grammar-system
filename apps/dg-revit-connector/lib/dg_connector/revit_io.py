@@ -14,7 +14,8 @@ Contents (D-47, D-48, D-50, D-51, contract sections 8.1-8.4):
     The mapping scope: the selection when it is not empty, else the model
     element instances visible in the active view (no annotations, views, types
     or view-specific elements), capped at 5000. Returns ``(elements, total)``,
-    so the caller can report how many were left unread.
+    so the caller can report how many were left unread. ``selection_count``
+    tells the caller which of the two scopes it read.
 ``element_row``
     One Revit element -> one plain dict, the row contract of
     :mod:`dg_connector.descriptors` (UniqueId, element id, category, family,
@@ -399,6 +400,11 @@ def _selection_element_ids(uidoc):
         return list(uidoc.Selection.GetElementIds())
     except Exception:
         return []
+
+
+def selection_count(uidoc):
+    """How many elements are selected: more than 0 means ``collect_scope`` reads only them."""
+    return len(_selection_element_ids(uidoc))
 
 
 def _is_model_element(element):

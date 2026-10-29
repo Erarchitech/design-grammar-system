@@ -72,6 +72,10 @@ def register_dg_connector_tools(mcp, revit_get, revit_post):
         /auth/connector-session with connector_id "revit"); without one the
         outcome is BAD_REQUEST / SETUP_INCOMPLETE. There is at most one open
         session at a time: starting a new one replaces it.
+
+        A started result also carries ``scope`` ("selection" when only the
+        selected elements were read, else "view") and ``read`` (elements sent),
+        so the caller can say when a leftover selection narrowed the read.
         """
         return _as_text(await revit_post("/start_mapping/", {}, ctx))
 
