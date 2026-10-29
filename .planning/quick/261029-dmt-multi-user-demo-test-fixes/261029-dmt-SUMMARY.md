@@ -135,6 +135,13 @@ Owner decisions D-73..D-78 are in `.planning/phases/1303-pravilo-gh-obekt/1303-C
   - The secrets are only on the server, in `/root/dg-speckle-setup/` (mode 600).
   - Checked: the write token authenticates, the base version resolves, and the read token fetches the object (200).
   - Not yet verified: a publish from a real check.
+- **F-09:** the next check from the demo PC failed with `PUBLISH_INTERNAL_ERROR` (5 of 6 rules).
+  - Cause: the rules publish in parallel. On the fresh Speckle project each publish found no `dg-validation` model
+    and created one; Speckle answered "A branch with this name already exists" to all but the first.
+  - Fixed in `2c5f5bc`: after a failed create, the publish looks the model up again.
+  - Stand: data-service `dg-data-service:f09-2c5f5bc`, rollback tag `rollback-f09`, work dir `/root/dg-f09-2c5f5bc`.
+    Only data-service was recreated; the Speckle env and the binding stay in place.
+  - Verified live: the file equals the commit, and `dg-validation` (`50ec47c04b`) is found.
 
 ## Not done yet (needs the owner)
 
