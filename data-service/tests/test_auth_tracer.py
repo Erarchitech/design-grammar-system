@@ -292,7 +292,7 @@ def test_member_access_cross_project_403_and_no_cookie_401(client, deployment_pr
 
     own_project = client.get("/validation/runs/P1")
     assert own_project.status_code == 200
-    assert own_project.json() == {"project": "P1", "runs": []}
+    assert own_project.json() == {"project": "P1", "runs": [], "snapshots": []}
 
     other_project = client.get("/validation/runs/P2")
     assert other_project.status_code == 403
@@ -311,7 +311,7 @@ def test_admin_user_can_access_any_project(client, deployment_profile):
     resp = client.get("/validation/runs/P2")
 
     assert resp.status_code == 200
-    assert resp.json() == {"project": "P2", "runs": []}
+    assert resp.json() == {"project": "P2", "runs": [], "snapshots": []}
 
 
 def test_connector_token_bound_to_p1_on_p1_route_is_principal_not_permitted(client, deployment_profile):
