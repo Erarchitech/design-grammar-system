@@ -378,6 +378,7 @@ Executed: 16/23 plans (checklist maintained by the GSD tooling)
 - [x] 1303-21-PLAN.md
 - [x] 1303-22-PLAN.md
 - [ ] 1303-23-PLAN.md
+- [ ] 1303-26-PLAN.md — внеочередной (2026-10-30): снимок модели по подтверждению меппинга и вид меппинга в Model Viewer (F-06, D-79…D-84, DGOPN-07)
 
 **UI hint**: yes
 

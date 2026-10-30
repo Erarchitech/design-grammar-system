@@ -275,7 +275,27 @@ Trigger: the multi-user test of the demo instruction `docs/demo/dg-demo-ru.html`
 - **D-77: Rules are entered in plain language; class and property names are the system's job.** The ingest prompt gets a class vocabulary with Russian words and Russian meanings of the computable properties; a rule without participants gets its subject-to-class ObjectProperty from DG (F-02).
 - **D-78: The mapping view in the Model Viewer (two colour modes, black edges, a tile in the Validation Runs strip tied to a Design State) is a second stage**, planned after the test resumes (owner, 2026-10-29).
 
+### Model snapshot from a mapping confirmation (plan 1303-26, owner decisions 2026-10-30)
+
+Stage 2 of the multi-user test findings (F-06, D-78), taken as an out-of-order plan of this phase. Purpose (owner): the view is for checking by eye that the mapping is correct.
+
+- **D-79: A confirmed mapping publishes a mapping view.** When a confirmed batch has been written into Revit (`DG_Class`), DG publishes the view to Speckle. It is a separate version and not part of a run's validation model, which holds only the checked boxes and some context. The view holds the meshes of every element of the batch's session, each with its UniqueId, class(es) and mapping state. The meshes come from the DG Revit connector through a new connector job (D-73 pull queue), not from the check. Only the Revit platform is covered; the Grasshopper mapping is out of scope.
+- **D-80: Each confirmation creates a new Design State, the model snapshot.** The snapshot is a standalone `:DesignState` (kind `ObjState`, `source: "mapping-snapshot"`). Its ObjStates are the mapped elements: UniqueId, class and a position fingerprint. The snapshot is bound to its Speckle view version. A later confirmation creates the next snapshot; earlier ones stay in the history.
+- **D-81: A later check joins the snapshot while the model is unchanged.**
+  - The check program reports the same fingerprint as the snapshot job. When it equals the fingerprint of the project's latest snapshot, the runs of the check are attached to that snapshot and grouped under it in the Model Viewer.
+  - When the fingerprints differ, the runs keep their own state, as today.
+  - Composition is the set of model elements of the categories the mapping read: a new or deleted element of those categories is a change. Position is the element's bounding box rounded to 1 mm (Claude's discretion): moving, rotating or resizing is a change, a parameter edit without movement is not.
+  - The evaluator's own computed StateId stays in the run's evidence (reproducibility contract). The attachment is a separate run property and relationship, so it is a schema change that runs through the whole Schema Change Propagation list (Claude's discretion).
+- **D-82: The mapping view in the Model Viewer.**
+  - It appears as a «Mapping» tile in the Validation Runs strip of its snapshot, and as the snapshot's card in the left panel even before any check.
+  - Every class has its own colour from a stable palette (one class, one colour, in every view). Element lines are black (D-77).
+  - The mode button «Classes / Status» and the legend lie over the view in its top-right corner. The legend switches with the mode: class → colour → count, or the five mapping states in the shared D-50 palette (`MAPPING_STATES`).
+  - The status mode is an extra filter of the same view: clicking a legend row hides or shows its elements (Claude's discretion).
+  - A picked element shows its UniqueId, Revit id, class(es) and mapping state in the properties panel (Claude's discretion).
+- **D-83: The Russian name of Design State becomes «Снимок модели»** (owner, 2026-10-30): «Снимки модели», «Без снимка модели» and so on in the Russian UI and in the Russian demo instructions. The English term stays Design State.
+- **D-84: D-79…D-83 are tracked as new requirement DGOPN-07** (Claude's discretion). Class colouring in Revit itself, from the 2026-10-29 audit sketch, is not part of this plan: the owner confirmed the Model Viewer view only.
+
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
-*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion); 2026-10-29 (D-73..D-78 multi-user test findings)*
+*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion); 2026-10-29 (D-73..D-78 multi-user test findings); 2026-10-30 (D-79..D-84 model snapshot and mapping view)*
