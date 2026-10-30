@@ -678,6 +678,7 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
         property_table=_py_literal(table),
         category_classes=_py_literal(dict(sorted(catalogue.get("categoryClasses", {}).items()))),
         model_context=_template_text(catalogue, shell["modelContext"]).rstrip() if shell.get("modelContext") else "",
+        revit_geometry=_template_text(catalogue, shell["revitGeometry"]).rstrip() if shell.get("revitGeometry") else "",
         calculators=functions,
         calculator_functions="{" + ", ".join(f'"{c}": {function_of[c]}' for c in used) + "}",
     )
@@ -719,6 +720,18 @@ def assemble(project: str, resolution: dict, catalogue: dict) -> dict:
         script["sha256"] = hashlib.sha256(script["source"].encode("utf-8")).hexdigest()
     return {"calculator": calculator, "highlighter": highlighter, "revit": revit,
             "placement": placement_plan(project, n)}
+
+
+def snapshot_program(catalogue: dict) -> dict:
+    """Phase 1303-26 (D-79): the read-only pyRevit program of a model snapshot (meshes of a mapping session's elements
+    and the model fingerprint), from the same model context and geometry templates as the property check."""
+    shell = catalogue["shell"]
+    source = Template(_template_text(catalogue, shell["snapshotTemplate"])).substitute(
+        catalogue_version=catalogue["version"],
+        model_context=_template_text(catalogue, shell["modelContext"]).rstrip(),
+        revit_geometry=_template_text(catalogue, shell["revitGeometry"]).rstrip())
+    return {"key": "snapshot", "language": "python", "source": source,
+            "sha256": hashlib.sha256(source.encode("utf-8")).hexdigest()}
 
 
 BOX_FAMILY_FILTER_DEFAULT = "Box"

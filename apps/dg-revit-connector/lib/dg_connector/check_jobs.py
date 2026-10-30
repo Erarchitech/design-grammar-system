@@ -14,6 +14,8 @@ Jobs:
 * ``paint`` -- colour the verdict in the active view (red / grey / green, element lines stay black) and write
   ``DG_Violation``.
 * ``clear`` -- remove the colours of the last check and empty ``DG_Violation``.
+* ``snapshot`` -- after a confirmed mapping was written (Phase 1303-26): execute the read-only snapshot program DG
+  generated and answer the model fingerprint; one mesh per mapping-session element follows in chunks.
 
 Runs under every pyRevit engine: IronPython 2.7, IronPython 3.4 and CPython 3 (pythonnet). Standard library and the
 Revit API only; Python 2.7 syntax (no f-strings, annotations or walrus).
@@ -84,17 +86,34 @@ def poll(store, client, queue, raise_event):
 
 # --- Revit main thread -----------------------------------------------------------
 
-def execute_program(source, doc, family_filter, with_context):
-    """Run the generated property-check program against ``doc`` -> its answer dict.
-
-    The program defines ``run(doc, family_filter, with_context)``; it is compiled and executed in a fresh namespace
-    of its own (it imports only math, clr, System and the Revit API)."""
+def _program(source, entry):
     namespace = {"__name__": "dg_property_check"}
     exec(compile(_text(source), PROGRAM_NAME, "exec"), namespace)
-    runner = namespace.get("run")
-    if not callable(runner):
-        raise ValueError("the DG check program defines no run()")
-    return runner(doc, family_filter, with_context)
+    function = namespace.get(entry)
+    if not callable(function):
+        raise ValueError("the DG program defines no {}()".format(entry))
+    return function
+
+
+def execute_program(source, doc, family_filter, with_context, categories=None):
+    """Run the generated property-check program against ``doc`` -> its answer dict.
+
+    The program defines ``run(doc, family_filter, with_context[, categories])``; it is compiled and executed in a
+    fresh namespace of its own (it imports only math, hashlib, clr, System and the Revit API). The categories of the
+    latest model snapshot (Phase 1303-26) are passed only when DG sent them, so an older program keeps working."""
+    runner = _program(source, "run")
+    if categories is None:
+        return runner(doc, family_filter, with_context)
+    return runner(doc, family_filter, with_context, list(categories))
+
+
+def execute_snapshot(source, doc, unique_ids, categories):
+    """Run the read-only snapshot program DG generated -> (answer without elements, elements)."""
+    answer = _program(source, "snapshot")(doc, list(unique_ids or []), list(categories or []))
+    if not isinstance(answer, dict):
+        raise ValueError("the DG snapshot program answered no result")
+    elements = list(answer.pop("elements", None) or [])
+    return answer, elements
 
 
 def _active_document(uiapp):
@@ -119,7 +138,7 @@ def _active_document(uiapp):
 
 def _check(doc, payload):
     answer = execute_program(payload.get("script"), doc, payload.get("boxFamilyFilter") or "",
-                             bool(payload.get("withContext")))
+                             bool(payload.get("withContext")), payload.get("snapshotCategories"))
     if not isinstance(answer, dict):
         raise ValueError("the DG check program answered no result")
     context = list(answer.pop("context", None) or [])
@@ -144,6 +163,12 @@ def run(uiapp, entry, store, shared_file=None):
             store.set("message", "DG checked {} boxes in {}".format(len(result.get("boxes") or []),
                                                                     _text(result.get("document"))))
             return True, result, None, context
+        if kind == "snapshot":
+            result, elements = execute_snapshot(payload.get("script"), doc, payload.get("uniqueIds"),
+                                                payload.get("categories"))
+            store.set("message", "DG: model snapshot of {} elements read from {}".format(
+                len(elements), _text(result.get("document"))))
+            return True, result, None, elements
         if kind == "paint":
             verdicts = payload.get("verdicts") or {}
             report = revit_io.apply_check_colours(doc, view, verdicts, uiapp.Application, shared_file)
@@ -182,7 +207,7 @@ def send(client, entry, outcome, store):
         if not ok:
             return
         chunks = [context[i:i + CONTEXT_CHUNK] for i in range(0, len(context), CONTEXT_CHUNK)] or [[]]
-        if job.get("kind") == "check":
+        if job.get("kind") in ("check", "snapshot"):
             for index, chunk in enumerate(chunks):
                 client.post_job_context(url, token, project, job_id, chunk, index == len(chunks) - 1)
     except Exception as error:

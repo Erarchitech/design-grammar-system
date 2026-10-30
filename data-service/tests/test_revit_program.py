@@ -104,6 +104,8 @@ def _fake_revit(monkeypatch, elements):
             return self
 
         def _items(self):
+            if self.cat is None:  # FilteredElementCollector(doc) without a category filter: every element
+                return list(self.doc.elements)
             return [e for e in self.doc.elements if e.Category.Id.Value == self.cat]
 
         def __iter__(self):
@@ -147,7 +149,9 @@ def _fake_revit(monkeypatch, elements):
                         return False
             return It()
 
-    return types.SimpleNamespace(elements=elements, ParameterBindings=Bindings(), Title="DG-DemoProject-2-openings_R26")
+    doc = types.SimpleNamespace(elements=elements, ParameterBindings=Bindings(), Title="DG-DemoProject-2-openings_R26")
+    doc.GetElement = lambda unique_id: next((e for e in doc.elements if e.UniqueId == unique_id), None)
+    return doc
 
 
 @pytest.fixture
@@ -228,3 +232,76 @@ def test_solid_faces_are_triangulated_under_both_engines(monkeypatch, program, e
     mesh = _execute(program, doc, with_context=False)["boxes"][0]["mesh"]["items"][0]
     assert mesh["faces"] == [[0, 1, 2], [3, 4, 5]]
     assert mesh["vertices"][3] == pytest.approx(304.8)
+
+
+# --- Phase 1303-26 (D-79..D-81): the model snapshot of a confirmed mapping -------------------------------------------
+
+def _snapshot_program():
+    return ps.snapshot_program(ps.load_catalogue())["source"]
+
+
+def _namespace(source):
+    namespace = {"__name__": "dg_property_check"}
+    exec(compile(u"%s" % source, "<dg-property-check>", "exec"), namespace)  # as the connector does
+    return namespace
+
+
+def _model():
+    return [Element(20, "OST_StructuralFraming", (0, 0, 0), (1, 2, 3), dg_class="Beam"),
+            Element(21, "OST_StructuralFraming", (5, 0, 0), (6, 2, 3), dg_class="Beam"),
+            Element(30, "OST_Walls", (0, 0, 0), (10, 0.5, 3), dg_class="Wall"),
+            Element(40, "OST_Floors", (0, 0, -1), (10, 10, 0))]
+
+
+def test_the_fingerprint_covers_composition_and_position_of_the_mapped_categories(monkeypatch):
+    cats = ["OST_StructuralFraming", "OST_Walls"]
+    doc = _fake_revit(monkeypatch, _model())
+    fingerprint = _namespace(_snapshot_program())["model_fingerprint"]
+    digest, count = fingerprint(doc, cats)
+    assert count == 3 and len(digest) == 64
+
+    doc.elements.reverse()
+    assert fingerprint(doc, cats) == (digest, 3)  # order of the collector does not matter
+
+    doc.elements[0]._params["DG_Class"] = "Slab"  # a parameter edit without movement is no change
+    assert fingerprint(doc, cats)[0] == digest
+
+    doc.elements[0]._box = Box((0, 0, -1), (10, 10, 0.00001))  # a floor moved: not a mapped category
+    assert fingerprint(doc, cats)[0] == digest
+
+    beam = next(e for e in doc.elements if e.UniqueId == "uid-20")
+    beam._box = Box((0, 0, 0), (1, 2, 3.0001))  # 0.03 mm: below the 1 mm rounding
+    assert fingerprint(doc, cats)[0] == digest
+    beam._box = Box((0.01, 0, 0), (1.01, 2, 3))  # 3 mm: a move
+    assert fingerprint(doc, cats)[0] != digest
+
+    doc = _fake_revit(monkeypatch, _model() + [Element(31, "OST_Walls", (0, 9, 0), (10, 9.5, 3))])
+    assert fingerprint(doc, cats) != (digest, 3)  # a new element of a mapped category
+    doc = _fake_revit(monkeypatch, _model()[1:])
+    assert fingerprint(doc, cats)[1] == 2  # a deleted one
+
+
+def test_the_snapshot_answers_meshes_of_the_session_elements_and_writes_nothing(monkeypatch):
+    doc = _fake_revit(monkeypatch, _model())
+    answer = _namespace(_snapshot_program())["snapshot"](doc, ["uid-20", "uid-30", "uid-99"],
+                                                         ["OST_StructuralFraming", "OST_Walls"])
+    json.dumps(answer)
+    assert answer["document"] == "DG-DemoProject-2-openings_R26"
+    assert answer["count"] == 3 and len(answer["fingerprint"]) == 64
+    assert [e["uniqueId"] for e in answer["elements"]] == ["uid-20", "uid-30"]
+    assert answer["elements"][0]["mesh"]["items"][0]["kind"] == "mesh"
+    assert answer["missing"] == ["uid-99"]
+    assert "Transaction(" not in _snapshot_program() and ".Set(" not in _snapshot_program()  # read-only
+
+
+def test_the_check_program_reports_the_same_fingerprint_only_when_asked(monkeypatch, program):
+    cats = ["OST_StructuralFraming", "OST_Walls"]
+    doc = _fake_revit(monkeypatch, _model() + [FamilyInstance(10, "OST_GenericModel", (0, 0, 0), (1, 1, 1),
+                                                              dg_class="OpeningBox")])
+    ns = _namespace(program)
+    without = ns["run"](doc, "", False)
+    assert "fingerprint" not in without
+    with_categories = ns["run"](doc, "", False, cats)
+    snap = _namespace(_snapshot_program())["snapshot"](doc, [], cats)
+    assert with_categories["fingerprint"] == snap["fingerprint"]
+    assert with_categories["fingerprintCount"] == 3

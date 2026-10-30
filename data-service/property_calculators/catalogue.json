@@ -148,7 +148,9 @@
   "shell": {
     "template": "calculator_shell.py.tmpl",
     "modelContext": "model_context.py.tmpl",
-    "revitTemplate": "revit_shell.py.tmpl"
+    "revitTemplate": "revit_shell.py.tmpl",
+    "revitGeometry": "revit_geometry.py.tmpl",
+    "snapshotTemplate": "snapshot_shell.py.tmpl"
   },
   "categoryClasses": {
     "OST_StructuralFraming": "Beam",

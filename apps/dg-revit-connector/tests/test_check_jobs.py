@@ -169,3 +169,46 @@ def test_check_colours_fill_red_grey_green_keep_lines_black_and_write_dg_violati
     assert elements[0].written == ("DG_Violation", "R1;R2") and elements[2].written == ("DG_Violation", "")
     assert report["violations"] == 1 and report["noVerdict"] == 1 and report["missing"] == 1
     assert [t.name for t in FakeTransaction.instances] == [revit_io.CHECK_TRANSACTION]
+
+
+# --- Phase 1303-26 (D-79..D-81): the model snapshot of a confirmed mapping ---------------------------------------
+
+SNAPSHOT_PROGRAM = '''
+def snapshot(doc, unique_ids, categories):
+    return {"document": doc.Title, "fingerprint": "f" * 64, "count": len(categories),
+            "elements": [{"uniqueId": u, "revitId": i, "mesh": None} for i, u in enumerate(unique_ids)],
+            "missing": []}
+'''
+
+
+def test_a_snapshot_job_answers_the_fingerprint_then_the_meshes_in_chunks(store, check_jobs,  # noqa: F811
+                                                                           monkeypatch):
+    signed_in(store, project="str-openings-01", session_id=None)
+    monkeypatch.setattr(check_jobs, "CONTEXT_CHUNK", 2)
+    entry = _entry(check_jobs, store, kind="snapshot",
+                   payload={"script": SNAPSHOT_PROGRAM, "uniqueIds": ["a", "b", "c"], "categories": ["Walls"]})
+    outcome = check_jobs.run(fake_uiapp(FakeDocument(title="Model")), entry, store)
+    ok, result, error, elements = outcome
+    assert ok and error is None
+    assert result == {"document": "Model", "fingerprint": "f" * 64, "count": 1, "missing": []}
+    assert [e["uniqueId"] for e in elements] == ["a", "b", "c"]
+    client = JobClient()
+    check_jobs.send_later(client, entry, outcome, store, start_thread=False)
+    assert client.results[0][2:4] == ("job-1", True)
+    assert client.contexts == [(2, False), (1, True)]
+
+
+def test_a_check_passes_the_snapshot_categories_only_when_dg_sent_them(store, check_jobs):  # noqa: F811
+    signed_in(store, project="str-openings-01", session_id=None)
+    program = PROGRAM + '''
+def run(doc, family_filter, with_context, categories=None):
+    return {"document": doc.Title, "boxes": [], "categories": categories}
+'''
+    plain = _entry(check_jobs, store, payload={"script": program, "boxFamilyFilter": "", "withContext": False})
+    asked = _entry(check_jobs, store, payload={"script": program, "boxFamilyFilter": "", "withContext": False,
+                                               "snapshotCategories": ["Walls"]})
+    assert check_jobs.run(fake_uiapp(FakeDocument()), plain, store)[1]["categories"] is None
+    assert check_jobs.run(fake_uiapp(FakeDocument()), asked, store)[1]["categories"] == ["Walls"]
+    # an older program with the three-argument run() still works when DG sends no categories
+    old = _entry(check_jobs, store)
+    assert check_jobs.run(fake_uiapp(FakeDocument()), old, store)[0] is True

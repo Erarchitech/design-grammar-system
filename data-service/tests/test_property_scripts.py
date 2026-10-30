@@ -1454,7 +1454,7 @@ def test_the_revit_program_carries_the_same_property_table_as_the_grasshopper_ca
     assert revit["properties"] and len(revit["properties"]) == len(out["resolved"])
     assert {p["ruleId"] for p in revit["properties"]} == set(RULE_PROPS)
     source = revit["source"]
-    assert "def run(doc, family_filter, with_context):" in source
+    assert "def run(doc, family_filter, with_context, categories=None):" in source  # 1303-26: fingerprint
     assert "class ModelContext" in source and "def calc_category_intersection_count" in source
     assert revit["sha256"] and revit["sha256"] != out["calculator"]["sha256"]
 
@@ -1466,7 +1466,7 @@ def test_the_revit_program_needs_neither_rhino_nor_grasshopper_and_parses_as_iro
     tree = ast.parse(source)
     imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
     imported |= {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)}
-    assert imported == {"math", "clr", "System.Collections.Generic", "Autodesk.Revit"}
+    assert imported == {"math", "hashlib", "clr", "System.Collections.Generic", "Autodesk.Revit"}
     references = {c.args[0].value for c in ast.walk(tree) if isinstance(c, ast.Call)
                   and getattr(c.func, "attr", "") == "AddReference"}
     assert references == {"RevitAPI"}
@@ -1474,6 +1474,23 @@ def test_the_revit_program_needs_neither_rhino_nor_grasshopper_and_parses_as_iro
     assert len(attributes) == 1  # only eid()'s fallback for Revit before 2024
     assert _ironpython_problems(source) == []
 
+
+
+def test_the_snapshot_program_is_read_only_and_parses_as_ironpython(catalogue):
+    """Phase 1303-26 (D-79): the model snapshot program shares the model context and geometry with the check."""
+    import ast
+
+    snapshot = ps.snapshot_program(catalogue)
+    source = snapshot["source"]
+    tree = ast.parse(source)
+    imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
+    imported |= {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)}
+    assert imported == {"math", "hashlib", "clr", "Autodesk.Revit"}
+    names = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
+    assert {"snapshot", "model_fingerprint", "element_mesh", "eid"} <= names
+    assert "Transaction" not in {getattr(n, "attr", "") for n in ast.walk(tree)}
+    assert _ironpython_problems(source) == []
+    assert snapshot["sha256"] == ps.snapshot_program(catalogue)["sha256"]
 
 def test_type_names_are_read_through_element_name_which_survives_pythonnet(catalogue):
     """Live 2026-10-29: every Revit check on the demo PC failed with REVIT_CHECK_FAILED: Name. Under pythonnet

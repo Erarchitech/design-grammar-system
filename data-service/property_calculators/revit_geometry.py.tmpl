@@ -1,0 +1,120 @@
+# DG REVIT GEOMETRY: meshes and the model fingerprint, shared by the pyRevit property check (revit_shell.py.tmpl) and
+# the model snapshot of a confirmed mapping (snapshot_shell.py.tmpl, Phase 1303-26). Read-only Revit API; IronPython
+# 2.7/3.4 and CPython syntax (no f-strings, annotations). Needs eid, element_solids and bbox_corners (model_context).
+import hashlib
+
+
+def _corner(triangle, k):
+    """Vertex index k of a MeshTriangle. IronPython calls the indexed property's accessor get_Index(k); pythonnet
+    (pyRevit's CPython engine) may expose only the indexer Index[k]."""
+    getter = getattr(triangle, "get_Index", None)
+    if getter is not None:
+        return int(getter(k))
+    return int(triangle.Index[k])
+
+
+def solid_mesh(solids):
+    """{units: mm, items: [mesh]} of the solids' triangulated faces, or None."""
+    vertices = []
+    faces = []
+    for solid in solids:
+        for face in solid.Faces:
+            try:
+                mesh = face.Triangulate()
+            except Exception:
+                mesh = None
+            if mesh is None:
+                continue
+            base = len(vertices) // 3
+            points = mesh.Vertices
+            for point in points:
+                vertices.extend([point.X * FEET_TO_MM, point.Y * FEET_TO_MM, point.Z * FEET_TO_MM])
+            for t in range(mesh.NumTriangles):
+                triangle = mesh.get_Triangle(t)
+                faces.append([base + _corner(triangle, 0), base + _corner(triangle, 1), base + _corner(triangle, 2)])
+    if not faces:
+        return None
+    return {"units": "mm", "items": [{"kind": "mesh", "vertices": vertices, "faces": faces}]}
+
+
+_BOX_FACES = [[0, 1, 3], [0, 3, 2], [4, 6, 7], [4, 7, 5], [0, 4, 5], [0, 5, 1],
+              [2, 3, 7], [2, 7, 6], [0, 2, 6], [0, 6, 4], [1, 5, 7], [1, 7, 3]]
+
+
+def box_mesh(element):
+    """The element's bounding box as a mesh (when it has no solid)."""
+    corners = bbox_corners(element)
+    if len(corners) != 8:
+        return None
+    vertices = []
+    for point in corners:
+        vertices.extend([point.X * FEET_TO_MM, point.Y * FEET_TO_MM, point.Z * FEET_TO_MM])
+    return {"units": "mm", "items": [{"kind": "mesh", "vertices": vertices, "faces": [list(f) for f in _BOX_FACES]}]}
+
+
+def element_mesh(element):
+    return solid_mesh(element_solids(element)) or box_mesh(element)
+
+
+def _position_line(element):
+    """'UniqueId|minX|minY|minZ|maxX|maxY|maxZ' of the element's bounding box in mm, rounded to 1 mm (D-81)."""
+    corners = bbox_corners(element)
+    if not corners:
+        return "%s|-" % element.UniqueId
+    values = []
+    for axis in ("X", "Y", "Z"):
+        values.append(min(getattr(p, axis) for p in corners))
+    for axis in ("X", "Y", "Z"):
+        values.append(max(getattr(p, axis) for p in corners))
+    return "%s|%s" % (element.UniqueId, "|".join("%d" % int(round(v * FEET_TO_MM)) for v in values))
+
+
+def _category_elements(doc, categories):
+    wanted = set(c for c in (categories or []) if c)
+    found = []
+    for element in DB.FilteredElementCollector(doc).WhereElementIsNotElementType():
+        category = getattr(element, "Category", None)
+        if category is None or not getattr(element, "UniqueId", None):
+            continue
+        try:
+            name = category.Name
+        except Exception:
+            continue
+        if name in wanted:
+            found.append(element)
+    return found
+
+
+def model_fingerprint(doc, categories):
+    """(sha256 hex, element count) of the composition and positions of every element of these categories (D-81):
+    a new, deleted, moved, rotated or resized element changes it; a parameter edit does not."""
+    lines = sorted(_position_line(e) for e in _category_elements(doc, categories))
+    digest = hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+    return digest, len(lines)
+
+
+def snapshot(doc, unique_ids, categories):
+    """The model snapshot of a confirmed mapping (D-79): one mesh per session element still in the model, plus the
+    fingerprint the later checks compare against. Writes nothing."""
+    fingerprint, count = model_fingerprint(doc, categories)
+    elements = []
+    missing = []
+    for unique_id in unique_ids or []:
+        try:
+            element = doc.GetElement(unique_id)
+        except Exception:
+            element = None
+        if element is None:
+            missing.append(unique_id)
+            continue
+        try:
+            mesh = element_mesh(element)
+        except Exception:
+            mesh = None
+        if mesh is None:
+            missing.append(unique_id)
+            continue
+        elements.append({"uniqueId": unique_id, "revitId": eid(element), "mesh": mesh})
+    return {"document": doc.Title, "fingerprint": fingerprint, "count": count, "elements": elements,
+            "missing": missing}
+

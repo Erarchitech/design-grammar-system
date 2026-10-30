@@ -30,6 +30,7 @@ DG_STATE_PARAMETER = "DG_MappingState"
 
 
 $model_context
+$revit_geometry
 $calculators
 
 
@@ -53,60 +54,12 @@ def plain(value):
     return number
 
 
-def _corner(triangle, k):
-    """Vertex index k of a MeshTriangle. IronPython calls the indexed property's accessor get_Index(k); pythonnet
-    (pyRevit's CPython engine) may expose only the indexer Index[k]."""
-    getter = getattr(triangle, "get_Index", None)
-    if getter is not None:
-        return int(getter(k))
-    return int(triangle.Index[k])
-
-
 def mapped_boxes(doc):
     """The elements the DG mapping classified as the box class (DG_Class), UniqueId order; [] without a mapping."""
     probe = ModelContext(doc, [])
     found = [e for e in probe.mapped().get(BOX_CLASS_LABEL.lower(), []) if getattr(e, "UniqueId", None)]
     found.sort(key=lambda e: e.UniqueId)
     return found
-
-
-def solid_mesh(solids):
-    """{units: mm, items: [mesh]} of the solids' triangulated faces, or None."""
-    vertices = []
-    faces = []
-    for solid in solids:
-        for face in solid.Faces:
-            try:
-                mesh = face.Triangulate()
-            except Exception:
-                mesh = None
-            if mesh is None:
-                continue
-            base = len(vertices) // 3
-            points = mesh.Vertices
-            for point in points:
-                vertices.extend([point.X * FEET_TO_MM, point.Y * FEET_TO_MM, point.Z * FEET_TO_MM])
-            for t in range(mesh.NumTriangles):
-                triangle = mesh.get_Triangle(t)
-                faces.append([base + _corner(triangle, 0), base + _corner(triangle, 1), base + _corner(triangle, 2)])
-    if not faces:
-        return None
-    return {"units": "mm", "items": [{"kind": "mesh", "vertices": vertices, "faces": faces}]}
-
-
-_BOX_FACES = [[0, 1, 3], [0, 3, 2], [4, 6, 7], [4, 7, 5], [0, 4, 5], [0, 5, 1],
-              [2, 3, 7], [2, 7, 6], [0, 2, 6], [0, 6, 4], [1, 5, 7], [1, 7, 3]]
-
-
-def box_mesh(element):
-    """The element's bounding box as a mesh (when it has no solid)."""
-    corners = bbox_corners(element)
-    if len(corners) != 8:
-        return None
-    vertices = []
-    for point in corners:
-        vertices.extend([point.X * FEET_TO_MM, point.Y * FEET_TO_MM, point.Z * FEET_TO_MM])
-    return {"units": "mm", "items": [{"kind": "mesh", "vertices": vertices, "faces": [list(f) for f in _BOX_FACES]}]}
 
 
 def box_label(box):
@@ -116,11 +69,9 @@ def box_label(box):
     return "%s [%d]" % (element_name(box), eid(box))
 
 
-def element_mesh(element):
-    return solid_mesh(element_solids(element)) or box_mesh(element)
-
-
-def run(doc, family_filter, with_context):
+def run(doc, family_filter, with_context, categories=None):
+    # Phase 1303-26 (D-81): with the categories of the latest model snapshot the answer carries the model fingerprint,
+    # so DG can tell whether this check saw the model the mapping was confirmed on.
     # The DG mapping names the boxes (any family); without one the Generic Model family filter applies, as on the canvas.
     mapped = mapped_boxes(doc)
     boxes, values, errors, ctx = compute_properties(doc, family_filter, mapped or None)
@@ -158,7 +109,7 @@ def run(doc, family_filter, with_context):
             category = element.Category.Name if element.Category is not None else "?"
             # "OST_Walls|Стены : name [id]": the category lets data-service show per rule only what it reads
             context.append({"label": "%s|%s : %s [%d]" % (ost, category, element_name(element), eid(element)), "geometry": mesh})
-    return {
+    answer = {
         "document": doc.Title,
         "boxClass": {"iri": BOX_CLASS_IRI, "label": BOX_CLASS_LABEL},
         "properties": [{"key": p["key"], "ruleId": p["ruleId"], "dataPropertyIri": p["dataPropertyIri"]}
@@ -168,3 +119,6 @@ def run(doc, family_filter, with_context):
         "report": report,
         "errors": len(errors),
     }
+    if categories is not None:
+        answer["fingerprint"], answer["fingerprintCount"] = model_fingerprint(doc, categories)
+    return answer
