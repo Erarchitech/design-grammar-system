@@ -197,6 +197,53 @@ def add_context_to_validation_version(
     return created.id
 
 
+def snapshot_node(element: dict[str, Any]) -> Base:
+    """One element of a model snapshot (Phase 1303-26): its UniqueId, classes and mapping state ride on the node, so
+    the Model Viewer colours it by class or by state without another request."""
+    node = Base()
+    node["name"] = element.get("name") or element.get("dgNativeId") or "element"
+    for key in ("dgSnapshotId", "dgProject", "dgNativeId", "dgRevitId", "dgMappingState"):
+        node[key] = element.get(key)
+    node["dgClassIris"] = list(element.get("dgClassIris") or [])
+    node["dgClassLabels"] = list(element.get("dgClassLabels") or [])
+    node["displayValue"] = build_display_value(element.get("geometry"))
+    return node
+
+
+def publish_snapshot_version(
+    settings: SpeckleConnectionSettings,
+    *,
+    dg_project: str,
+    speckle_project_id: str,
+    model_id: str,
+    snapshot_id: str,
+    document: str,
+    elements: list[dict[str, Any]],
+) -> str:
+    """Phase 1303-26 (D-79): the mapping view of a confirmed mapping as one version of the snapshot model. Returns
+    the version id."""
+    client = build_client(settings.internal_url, settings.write_token)
+    transport = ServerTransport(speckle_project_id, client=client)
+    root = Base()
+    root["name"] = f"DG model snapshot {snapshot_id}"
+    root["dgProject"] = dg_project
+    root["dgSnapshotId"] = snapshot_id
+    root["document"] = document
+    root["elements"] = [snapshot_node(e) for e in elements]
+    object_id = operations.send(root, [transport])
+    version = client.version.create(
+        CreateVersionInput(
+            objectId=object_id,
+            modelId=model_id,
+            projectId=speckle_project_id,
+            message=f"DG model snapshot {snapshot_id} ({document})",
+            sourceApplication="design-grammars",
+            totalChildrenCount=len(elements),
+        )
+    )
+    return version.id
+
+
 def delete_validation_version(
     settings: SpeckleConnectionSettings,
     *,

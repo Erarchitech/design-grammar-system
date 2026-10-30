@@ -931,8 +931,9 @@ def undo_answer(session, project: str, session_id: str, answer_id: str, actor: s
 
 
 def session_revision(meta: dict, result: dict, answers: list) -> str:
-    return engine._sha(engine.canonical_json({"result": result, "answers": answers,
-                                            "batches": meta.get("batches") or []}), 24)
+    # The model snapshot status (Phase 1303-26) arrives after the apply; it must not make the next commit stale.
+    batches = [{k: v for k, v in b.items() if k != "snapshot"} for b in meta.get("batches") or []]
+    return engine._sha(engine.canonical_json({"result": result, "answers": answers, "batches": batches}), 24)
 
 
 def lock_session(session, project: str, session_id: str) -> None:
@@ -1072,6 +1073,19 @@ def acknowledge_batch(session, project, session_id, batch_id, delivery):
     batch["delivery"] = dict(delivery)
     save_batches(session, project, session_id, batches)
     return batch
+
+
+def set_batch_snapshot(session, project: str, session_id: str, batch_id: str, snapshot: dict) -> None:
+    """Phase 1303-26 (D-79): the model snapshot status of a written batch, shown with the session's batches."""
+    s = load_session(session, project, session_id)
+    if s is None:
+        return
+    batches = list(s.get("batches") or [])
+    for batch in batches:
+        if batch.get("batchId") == batch_id:
+            batch["snapshot"] = dict(snapshot)
+            save_batches(session, project, session_id, batches)
+            return
 
 
 def list_profiles(session, project: str) -> dict:

@@ -94,6 +94,7 @@ import cg_input_generation
 import cg_paramstate_store
 import mapping_engine
 import mapping_store
+import model_snapshots
 import class_duplicates
 import property_calculator_llm
 import property_calculator_review
@@ -6992,14 +6993,91 @@ def post_mapping_apply(session_id: str, payload: MappingApplyRequest, request: R
             x is not None for x in (payload.requestId, payload.revision, payload.answerIds)
         ):
             raise _mapping_error(mapping_engine.MappingInputError("MAPPING_INPUT_INVALID", "send only batchId and delivery"))
-        return _mapping_call(mapping_store.acknowledge_batch, payload.project, session_id,
-                             payload.batchId, payload.delivery.model_dump())
+        batch = _mapping_call(mapping_store.acknowledge_batch, payload.project, session_id,
+                              payload.batchId, payload.delivery.model_dump())
+        if ((batch or {}).get("delivery") or {}).get("state") == "written":
+            user, connector_id = _connector_identity(request)
+            _schedule_model_snapshot(payload.project, session_id, payload.batchId, user, connector_id)
+        return batch
     if getattr(principal, "kind", None) == "connector":
         raise _structured_error_response("Confirm the mapping in the mapping panel.", "", "PRINCIPAL_NOT_PERMITTED", 403)
     return _mapping_call(
         mapping_store.apply_session, payload.project, session_id, _mapping_actor(request), mapping_store.utc_now(),
         payload.requestId, payload.revision, payload.answerIds,
     )
+
+
+_snapshots_in_flight: set[tuple[str, str, str]] = set()
+_snapshots_lock = threading.Lock()
+
+
+def _publish_snapshot_version(project: str, snapshot_id: str, document: str, nodes: list[dict]) -> dict:
+    config = get_integration_config(project) or _auto_configure_integration(project)
+    if config is None:
+        raise RuntimeError("no Speckle project is bound to the DG project")
+    config = normalize_speckle_project_config_payload(config)
+    settings = get_speckle_settings()
+    if not settings.write_token:
+        raise RuntimeError("the Speckle write token is not configured")
+    client = build_client(settings.internal_url, settings.write_token)
+    model_id = get_or_create_validation_model_id(client, config.speckleProjectId, None,
+                                                 name=model_snapshots.SPECKLE_MODEL)
+    version_id = speckle_validation.publish_snapshot_version(
+        settings, dg_project=project, speckle_project_id=config.speckleProjectId, model_id=model_id,
+        snapshot_id=snapshot_id, document=document, elements=nodes)
+    return {"speckleProjectId": config.speckleProjectId, "speckleModelId": model_id, "speckleVersionId": version_id}
+
+
+def _take_model_snapshot(project: str, session_id: str, batch_id: str, user: str, connector_id: str) -> dict:
+    """Phase 1303-26 (D-79, D-80): snapshot a written Revit batch through the connector that wrote it."""
+
+    def load():
+        with driver.session() as session:
+            return mapping_store.load_session(session, project, session_id)
+
+    def mark(status):
+        def write(tx):
+            mapping_store.lock_session(tx, project, session_id)
+            mapping_store.set_batch_snapshot(tx, project, session_id, batch_id, status)
+        with driver.session() as session:
+            session.execute_write(write)
+
+    def wait(job, seconds, until):
+        done = connector_jobs.wait(job, seconds, until=until)
+        if not done and until == "finished":
+            connector_jobs.expire(job, "no answer from Revit in time")
+        return done
+
+    def store(props):
+        with driver.session() as session:
+            return session.execute_write(lambda tx: model_snapshots.save(tx, project, props))
+
+    status = model_snapshots.take(
+        project, session_id, batch_id, load_session=load, mark=mark,
+        submit=lambda job: connector_jobs.submit(project, user, model_snapshots.JOB_KIND, job, connector_id),
+        wait=wait, program=lambda: property_scripts.snapshot_program(property_scripts.load_catalogue()),
+        publish=lambda sid, document, nodes: _publish_snapshot_version(project, sid, document, nodes),
+        store=store)
+    level = logging.WARNING if status.get("status") == model_snapshots.FAILED else logging.INFO
+    logging.getLogger(__name__).log(level, "model snapshot %s/%s/%s: %s", project, session_id, batch_id, status)
+    return status
+
+
+def _schedule_model_snapshot(project: str, session_id: str, batch_id: str, user: str, connector_id: str) -> None:
+    key = (project, session_id, batch_id)
+    with _snapshots_lock:
+        if key in _snapshots_in_flight:
+            return
+        _snapshots_in_flight.add(key)
+
+    def work():
+        try:
+            _take_model_snapshot(project, session_id, batch_id, user, connector_id)
+        finally:
+            with _snapshots_lock:
+                _snapshots_in_flight.discard(key)
+
+    threading.Thread(target=work, name="dg-model-snapshot", daemon=True).start()
 
 
 @router.get("/mapping/profiles")
