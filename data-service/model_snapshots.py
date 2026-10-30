@@ -97,6 +97,8 @@ def payload(snapshot_state_id: str, document: str, captured_at: str, items: list
         "ref": e["nativeId"],
         "label": e["label"],
         "classIris": e["classIris"],
+        "classLabels": e["classLabels"],
+        "revitId": e["revitId"],
         "mappingState": e["state"],
         "bboxMm": bbox_mm(meshes.get(e["nativeId"])),
     } for e in items]
@@ -131,6 +133,47 @@ def summary(node: dict) -> dict:
         "batchId": node.get("batchId"),
         "document": node.get("document"),
     }
+
+
+MAPPING_STATES = ("confirmed", "auto", "suggested", "ambiguous", "unmapped")
+
+
+def view(node: dict, viewer_resources: list[str], resources_error: Optional[str] = None) -> dict:
+    """GET /validation/snapshot/{project}/{stateId}: what the Model Viewer needs to draw the mapping view (D-82)."""
+    try:
+        envelope = json.loads(node.get("statePayloadJson") or "{}")
+    except (TypeError, ValueError):
+        envelope = {}
+    items, classes, states = [], {}, {s: 0 for s in MAPPING_STATES}
+    for obj in envelope.get("objStates") or []:
+        iris = list(obj.get("classIris") or [])
+        labels = list(obj.get("classLabels") or [])
+        state = obj.get("mappingState") or "unmapped"
+        items.append({"nativeId": obj.get("ref"), "label": obj.get("label"), "revitId": obj.get("revitId"),
+                      "classIris": iris, "classLabels": labels, "state": state})
+        states[state] = states.get(state, 0) + 1
+        for k, iri in enumerate(iris):
+            entry = classes.setdefault(iri, {"iri": iri, "label": labels[k] if k < len(labels) else _local(iri),
+                                             "count": 0})
+            entry["count"] += 1
+    body = {
+        **summary(node),
+        "fingerprintCount": node.get("fingerprintCount"),
+        "categories": list(node.get("categories") or []),
+        "viewerResources": list(viewer_resources or []),
+        "elements": items,
+        "classes": sorted(classes.values(), key=lambda c: (-c["count"], c["label"])),
+        "states": states,
+    }
+    if resources_error:
+        body["viewerResourcesError"] = resources_error
+    return body
+
+
+def speckle_ref(node: dict) -> dict:
+    """The snapshot's Speckle version in the shape speckle_proxy.resolve_view_resources reads (no base model)."""
+    return {"speckleProjectId": node.get("speckleProjectId"), "validationModelId": node.get("speckleModelId"),
+            "validationVersionId": node.get("speckleVersionId")}
 
 
 # --- Neo4j -----------------------------------------------------------------------------------------------------------

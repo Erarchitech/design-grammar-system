@@ -156,6 +156,7 @@ def stubs(monkeypatch):
                         lambda payload: published.append(payload) or {"runId": "run-" + payload.rules[0].ruleId})
     monkeypatch.setattr(app_module, "_record_check_source", lambda *a: None)
     monkeypatch.setattr(app_module, "_publish_revit_context", lambda *a: None)
+    monkeypatch.setattr(app_module, "_latest_model_snapshot", lambda project: None)
     return published
 
 
@@ -285,3 +286,67 @@ def test_a_failed_validation_model_create_still_raises_when_no_model_appeared():
 
     with pytest.raises(RuntimeError, match="no permission"):
         speckle_validation.get_or_create_validation_model_id(types.SimpleNamespace(model=Models()), "sp", None)
+
+
+# --- Phase 1303-26 (D-81): a check joins the latest model snapshot while the model is unchanged ---------------------
+
+def _check_with_snapshot(monkeypatch, fingerprint):
+    snapshot = {"StateId": "OS_snap", "fingerprint": "f" * 64, "categories": ["Стены", "Перекрытия"]}
+    attached = []
+    monkeypatch.setattr(app_module, "_latest_model_snapshot", lambda project: snapshot)
+    monkeypatch.setattr(app_module, "_attach_runs_to_snapshot",
+                        lambda project, state_id, run_ids: attached.append((state_id, sorted(run_ids))) or len(run_ids))
+    connector_jobs.touch(PROJECT, "engineer")
+    payloads = []
+
+    def work():
+        for _ in range(200):
+            job = connector_jobs.take(PROJECT, "engineer")
+            if job is not None and job["kind"] == "check":
+                payloads.append(job["payload"])
+                connector_jobs.complete(job, True, dict(RESULT, fingerprint=fingerprint))
+                return
+            threading.Event().wait(0.01)
+
+    thread = threading.Thread(target=work, daemon=True)
+    thread.start()
+    out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project=PROJECT),
+                                             _http_request("engineer"))
+    thread.join(2)
+    return out, payloads, attached
+
+
+def test_an_unchanged_model_attaches_the_runs_to_the_latest_snapshot(stubs, monkeypatch):
+    out, payloads, attached = _check_with_snapshot(monkeypatch, "f" * 64)
+    assert payloads[0]["snapshotCategories"] == ["Стены", "Перекрытия"]
+    assert attached == [("OS_snap", ["run-R_BEAM", "run-R_CLEAR"])]
+    assert out["snapshot"] == {"attached": True, "stateId": "OS_snap", "runs": 2}
+
+
+def test_a_changed_model_keeps_its_own_state(stubs, monkeypatch):
+    out, _payloads, attached = _check_with_snapshot(monkeypatch, "e" * 64)
+    assert attached == [] and out["snapshot"]["attached"] is False
+    assert "changed" in out["snapshot"]["reason"]
+
+
+def test_without_a_snapshot_the_check_sends_no_categories(stubs):
+    connector_jobs.touch(PROJECT, "engineer")
+    seen = []
+    payloads = []
+
+    def work():
+        for _ in range(200):
+            job = connector_jobs.take(PROJECT, "engineer")
+            if job is not None and job["kind"] == "check":
+                payloads.append(job["payload"])
+                connector_jobs.complete(job, True, RESULT)
+                return
+            threading.Event().wait(0.01)
+
+    thread = threading.Thread(target=work, daemon=True)
+    thread.start()
+    out = app_module.post_property_check_run(app_module.PropertyCheckRunRequest(project=PROJECT),
+                                             _http_request("engineer"))
+    thread.join(2)
+    assert "snapshotCategories" not in payloads[0]
+    assert out["snapshot"] == {"attached": False, "reason": "no model snapshot in the project"}

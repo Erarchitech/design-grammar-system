@@ -1073,6 +1073,7 @@ def list_validation_runs(project: str) -> list[dict[str, Any]]:
             run.createdAt AS createdAt,
             run.rulesJson AS rulesJson,
             run.statePayloadJson AS statePayloadJson,
+            run.modelSnapshotId AS modelSnapshotId,
             count(DISTINCT ve) AS entityCount
         ORDER BY run.createdAt DESC
         """,
@@ -1097,8 +1098,30 @@ def list_validation_runs(project: str) -> list[dict[str, Any]]:
                 "failedRuleCount": sum(1 for rule in rules if not rule.get("passed")),
                 "entityCount": int(row.get("entityCount") or 0),
                 "state": _project_state_summary(row.get("statePayloadJson")),
+                "modelSnapshotId": row.get("modelSnapshotId"),
             }
         )
+    return runs
+
+
+def _list_model_snapshots(project: str) -> list[dict[str, Any]]:
+    try:
+        with driver.session() as session:
+            return model_snapshots.list_snapshots(session, project)
+    except Exception:  # noqa: BLE001 - the run list never fails because of the snapshots
+        logging.getLogger(__name__).warning("listing the model snapshots of %s failed", project, exc_info=True)
+        return []
+
+
+def group_runs_by_snapshot(runs: list[dict[str, Any]], snapshots: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Phase 1303-26 (D-81): an attached run is shown under its model snapshot; its own computed state stays as
+    ``computedState`` (the evidence keeps it)."""
+    by_id = {s["stateId"]: s for s in snapshots}
+    for run in runs:
+        snapshot = by_id.get(run.get("modelSnapshotId") or "")
+        if snapshot:
+            run["computedState"] = run.get("state")
+            run["state"] = dict(snapshot)
     return runs
 
 
@@ -2396,6 +2419,25 @@ def _publish_revit_context(project: str, run_ids: list[str], job: dict) -> None:
         _publish_check_context(project, run_ids, list(job.get("context") or []))
 
 
+def _latest_model_snapshot(project: str) -> dict | None:
+    """The project's latest model snapshot (Phase 1303-26), or None; a Neo4j failure never stops a check."""
+    try:
+        with driver.session() as session:
+            return model_snapshots.latest(session, project)
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).warning("reading the model snapshot of %s failed", project, exc_info=True)
+        return None
+
+
+def _attach_runs_to_snapshot(project: str, state_id: str, run_ids: list[str]) -> int:
+    try:
+        with driver.session() as session:
+            return session.execute_write(lambda tx: model_snapshots.attach_runs(tx, project, state_id, run_ids))
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).warning("attaching runs to the snapshot %s failed", state_id, exc_info=True)
+        return 0
+
+
 def _run_revit_check(payload: PropertyCheckRunRequest, request: Request) -> dict:
     project, user = payload.project, _principal_user(request)
     if not connector_jobs.active(project, user):
@@ -2417,11 +2459,16 @@ def _run_revit_check(payload: PropertyCheckRunRequest, request: Request) -> dict
     if not revit:
         raise _structured_error_response("No Revit program was generated for the project's rules.",
                                          "Check the property calculator catalogue.", "REVIT_PROGRAM_MISSING", 500)
-    job = connector_jobs.submit(project, user, "check", {
+    # Phase 1303-26 (D-81): the categories of the latest model snapshot make the check report the model fingerprint.
+    snapshot = _latest_model_snapshot(project)
+    job_payload = {
         "script": revit["source"], "sha256": revit["sha256"],
         "boxFamilyFilter": property_scripts.BOX_FAMILY_FILTER_DEFAULT,
         "boxClass": generated["boxClass"], "withContext": bool(payload.send),
-    })
+    }
+    if snapshot:
+        job_payload["snapshotCategories"] = list(snapshot.get("categories") or [])
+    job = connector_jobs.submit(project, user, "check", job_payload)
     if not connector_jobs.wait(job, REVIT_CHECK_WAIT_S):
         connector_jobs.expire(job, "no answer from Revit in time")
         raise _structured_error_response(
@@ -2436,6 +2483,9 @@ def _run_revit_check(payload: PropertyCheckRunRequest, request: Request) -> dict
     evaluated = _evaluate_check(revit_check.evaluator_request(project, generated["boxClass"], result,
                                                               label=result.get("document")))
     run_ids, messages = _publish_revit_runs(evaluated, result) if payload.send else ([], [])
+    joined = model_snapshots.attach_decision(snapshot, result)
+    if joined["attached"]:
+        joined["runs"] = _attach_runs_to_snapshot(project, joined["stateId"], run_ids) if run_ids else 0
     if evaluated.get("stateWarning"):
         messages.append("warning DesignState: %s" % evaluated["stateWarning"])
     for rule_id in evaluated.get("missingRules") or []:
@@ -2448,7 +2498,7 @@ def _run_revit_check(payload: PropertyCheckRunRequest, request: Request) -> dict
         _record_check_source(project, run_ids, status["calculatorReport"])
     connector_jobs.remember_status(project, status)
     out = {"finished": True, "paint": payload.paint, "clear": False, "send": payload.send, "status": status,
-           "refreshed": _revit_generated_summary(project, generated)}
+           "refreshed": _revit_generated_summary(project, generated), "snapshot": joined}
     out["summary"] = property_check_summary(out)
     if out["summary"]["ok"] and payload.send and run_ids:
         threading.Thread(target=_publish_revit_context, args=(project, list(run_ids), job), daemon=True).start()
@@ -4292,7 +4342,29 @@ def publish_validation(payload: ValidationPublishRequest):
 
 @router.get("/validation/runs/{project}")
 def get_validation_runs(project: str):
-    return {"project": project, "runs": list_validation_runs(project)}
+    runs = list_validation_runs(project)
+    snapshots = _list_model_snapshots(project)
+    return {"project": project, "runs": group_runs_by_snapshot(runs, snapshots), "snapshots": snapshots}
+
+
+@router.get("/validation/snapshot/{project}/{state_id}")
+def get_model_snapshot_view(project: str, state_id: str, request: Request):
+    """Phase 1303-26 (D-82): the mapping view of a model snapshot: its Speckle version through the DG proxy and the
+    elements with their classes and mapping states."""
+    _check_project_name(project)
+    with driver.session() as session:
+        node = model_snapshots.get(session, project, state_id)
+    if node is None:
+        raise HTTPException(status_code=404, detail="Model snapshot not found.")
+    resources: list[str] = []
+    error: str | None = None
+    principal = getattr(request.state, "principal", None)
+    if getattr(principal, "kind", None) in ("user", "delegated"):
+        settings = get_speckle_settings()
+        bound = _bound_speckle_project_id(project) if settings.read_token else None
+        resources, error = speckle_proxy.resolve_view_resources(project, model_snapshots.speckle_ref(node),
+                                                                settings, bound)
+    return model_snapshots.view(node, resources, error)
 
 
 @router.get("/connector-graph/{project}/{query_id}")

@@ -233,3 +233,63 @@ def test_a_snapshot_node_carries_identity_classes_state_and_the_mesh():
     assert node["dgNativeId"] == "u-box" and node["dgSnapshotId"] == "OS_1" and node["dgRevitId"] == 12
     assert node["dgClassIris"] == ["ex:OpeningBox"] and node["dgMappingState"] == "auto"
     assert len(node["displayValue"]) == 1 and getattr(node, "dgEntityId", None) is None  # never a run entity
+
+
+def test_the_view_lists_elements_classes_and_states_from_the_snapshot_payload():
+    h = Harness(_meta())
+    h.take()
+    node = dict(h.stored[0], StateId=h.stored[0]["StateId"])
+    body = ms.view(node, ["/speckle-proxy/x"], None)
+    assert body["stateId"] == node["StateId"] and body["kind"] == "snapshot"
+    assert body["viewerResources"] == ["/speckle-proxy/x"] and "viewerResourcesError" not in body
+    assert [e["nativeId"] for e in body["elements"]] == ["u-wall", "u-box", "u-door"]
+    box = body["elements"][1]
+    assert box["classLabels"] == ["OpeningBox", "Penetration"] and box["revitId"] == 12 and box["state"] == "auto"
+    assert body["classes"] == [{"iri": "ex:OpeningBox", "label": "OpeningBox", "count": 1},
+                               {"iri": "ex:Penetration", "label": "Penetration", "count": 1},
+                               {"iri": "ex:Wall", "label": "Wall", "count": 1}]
+    assert body["states"] == {"confirmed": 1, "auto": 1, "suggested": 0, "ambiguous": 0, "unmapped": 1}
+    assert ms.view(node, [], "SPECKLE_UNBOUND")["viewerResourcesError"] == "SPECKLE_UNBOUND"
+    assert ms.speckle_ref(node) == {"speckleProjectId": "sp", "validationModelId": "sm", "validationVersionId": "sv"}
+
+
+def test_attached_runs_are_listed_under_their_snapshot_and_keep_their_computed_state():
+    import app as app_module
+
+    computed = {"stateId": "DS_own", "label": None}
+    runs = [{"runId": "r1", "modelSnapshotId": "OS_1", "state": computed},
+            {"runId": "r2", "modelSnapshotId": None, "state": {"stateId": "DS_other"}},
+            {"runId": "r3", "modelSnapshotId": "OS_gone", "state": {"stateId": "DS_3"}}]
+    snapshots = [{"stateId": "OS_1", "kind": "snapshot", "label": "Mapping · M"}]
+    out = app_module.group_runs_by_snapshot(runs, snapshots)
+    assert out[0]["state"]["stateId"] == "OS_1" and out[0]["computedState"] == computed
+    assert out[1]["state"] == {"stateId": "DS_other"} and "computedState" not in out[1]
+    assert out[2]["state"] == {"stateId": "DS_3"}
+
+
+def test_the_snapshot_route_answers_404_for_an_unknown_snapshot_and_the_view_otherwise(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+
+    import app as app_module
+    from fastapi import HTTPException
+
+    h = Harness(_meta())
+    h.take()
+    node = h.stored[0]
+
+    class Driver:
+        @contextmanager
+        def session(self):
+            yield None
+
+    monkeypatch.setattr(app_module, "driver", Driver())
+    monkeypatch.setattr(ms, "get", lambda session, project, sid: node if sid == node["StateId"] else None)
+    connector = SimpleNamespace(state=SimpleNamespace(principal=SimpleNamespace(kind="connector")))
+    body = app_module.get_model_snapshot_view(PROJECT, node["StateId"], connector)
+    assert body["stateId"] == node["StateId"] and body["viewerResources"] == []  # a connector never gets geometry
+    try:
+        app_module.get_model_snapshot_view(PROJECT, "OS_unknown", connector)
+        raise AssertionError("expected 404")
+    except HTTPException as exc:
+        assert exc.status_code == 404
