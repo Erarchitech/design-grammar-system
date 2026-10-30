@@ -538,6 +538,22 @@ dgsh:InterfaceShape_project
     dgsh:howToFix "Set project on the Interface node to the owning project." .
 
 #############################################
+# 17b. RunInSnapshot — a run joins at most one model snapshot (Phase 1303-26)
+#############################################
+dgsh:RunInSnapshotShape
+    a sh:NodeShape ;
+    sh:targetClass dgv:Run ;
+    sh:property dgsh:RunInSnapshotShape_inSnapshot .
+
+dgsh:RunInSnapshotShape_inSnapshot
+    sh:path dgv:inSnapshot ;
+    sh:maxCount 1 ;
+    sh:class dgv:ObjState ;
+    sh:severity sh:Warning ;
+    sh:message "A validation run is attached to more than one model snapshot, or to something that is not a model snapshot." ;
+    dgsh:howToFix "A run joins only the model snapshot whose fingerprint its check reported; re-run the check to attach it again." .
+
+#############################################
 # 18. AtomAttributeOf — cross-layer rule-parameter bridge (Phase 1203)
 #############################################
 dgsh:AtomAttributeOfShape

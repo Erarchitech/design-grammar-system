@@ -46,6 +46,7 @@ Use these relationship types in generated Cypher and UI assumptions:
 - `REFERS_TO`
 - `ARG`
 - `HAS_STATE`: DesignState -> state nodes (read-side composition)
+- `IN_SNAPSHOT`: ValidationRun -> DesignState (`source: "mapping-snapshot"`, the model snapshot of a confirmed mapping; server-authored only by `model_snapshots.attach_runs`, NEVER emit this in LLM-generated Cypher)
 - `HAS_REPRESENTATION`: Computgraph entity -> Representation (native-id binding)
 - `HAS_SHARED_PROPERTY`: Computgraph entity -> SharedProperty (cross-platform property)
 - `HAS_BEHAVIOR`: Object -> Behavior (decomposition)

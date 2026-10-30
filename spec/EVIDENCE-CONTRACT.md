@@ -385,6 +385,15 @@ A display surface never shows a non-verdict as a violation. The legacy boolean `
   of the producer's pass/fail lists (which put every non-failing object, also one without data, under
   passed) and are used only for a pair the envelope lacks.
 
+### 5.0.1 Model snapshots are navigation, not evidence (Phase 1303-26, D-81)
+
+A Revit check whose model fingerprint equals the project's latest model snapshot (the «Снимок модели» a
+confirmed mapping created, `spec/DATABASE.md`) attaches its runs to that snapshot (`modelSnapshotId`,
+`IN_SNAPSHOT`), and the Model Viewer lists them under it. The attachment is never part of the evidence
+envelope: the run keeps its own `statePayloadJson`, computed StateId, envelope rows and canonical statuses,
+and the snapshot's mapping states (`confirmed`, `auto`, `suggested`, `ambiguous`, `unmapped`) are not
+validation outcomes of §1.
+
 ### 5.1 Canonical per-object verdict source (Phase 1202 plan 05, D-10, ALGN12-10)
 
 The envelope's per-`(rule, object)` **`rows`** (§3/§4 above) are the **canonical per-object verdict

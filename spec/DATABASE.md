@@ -150,6 +150,7 @@ recognized; evaluator support remains governed by spec/SWRL-SUBSET.md.
   content-addressed ids exactly as `MERGE`d at the time, and are documented here as pre-contract —
   D-03's additive-no-rewrite rule applies, so there is no migration and no backfill of the new
   keying onto old rows.
+- **Model snapshots of a confirmed mapping (Phase 1303-26, D-79..D-81).** A standalone `(:DesignState {kind: "ObjState", source: "mapping-snapshot"})`, the «Снимок модели», is written by `model_snapshots.save` when a confirmed Revit mapping batch has been written into the model. Key `StateId` (`OS_` + 16 hex, deterministic per project + mapping session + batch; MERGE keyed by `graph`+`project`+`StateId`, so a repeated acknowledgement is idempotent). Properties: `mappingSessionId`, `batchId`, `document`, `label`, `fingerprint` (sha256 of the composition and 1 mm bounding boxes of every element of the mapped categories), `fingerprintCount`, `categories` (Revit category names), `elementCount`, `meshCount`, `capturedAtUtc`, `speckleProjectId`, `speckleModelId` (model `dg-model-snapshots`), `speckleVersionId`, `statePayloadJson` (v2 envelope, `objStates` only: `ref` = UniqueId, `label`, `classIris`, `classLabels`, `revitId`, `mappingState`, `bboxMm`). It is Run-less until a Revit check with the same fingerprint attaches its runs through `IN_SNAPSHOT`; a missing Run link means "no check on this snapshot yet", never an error.
 - **Standalone accepted candidates are not orphan defects.** A standalone `ParamState` written by `candidates/accept` has **no linked Run until the architect composes it into a validated DesignState and runs the VALIDATOR** — that is the intended lifecycle, not a data-integrity gap. Any consumer that previously assumed every `DesignState` has >=1 linked `Run` must now treat a missing `Run` link as "not yet validated," not as an error.
 - **Declared exclusion: geometry (Phase 1202 plan 05, D-06, ALGN12-09).** `ObjState.Geometry` is
   formally excluded from both the normative v2 payload and the `canonicalStateHash` computation. A
@@ -669,6 +670,7 @@ Written **only** by the `/mapping/*` routes (`data-service/mapping_store.py`); a
 | `REFERS_TO` | Object | Class | — | Cross-layer bridge to OntoGraph (when classIri present) |
 | `ARG` | Atom | Var/Literal | `pos` (int, 1-indexed) | Atom arguments |
 | `HAS_STATE` | DesignState | DesignState | — | Read-side composition: parent DesignState to ObjState/ParamState/PropState |
+| `IN_SNAPSHOT` | ValidationRun | DesignState (`source: "mapping-snapshot"`) | — | Phase 1303-26 (D-81): the run's check saw the model of this model snapshot unchanged (equal fingerprint). Navigation only: the run keeps its own `statePayloadJson`, computed StateId and evidence envelope; the run also carries `modelSnapshotId` = the snapshot's `StateId`. Project-scoped on both ends; written only by `model_snapshots.attach_runs` |
 | `TAGGED_WITH` | SpecNote | SpecTag | — | Note-to-tag association |
 | `INSTANCE_OF` | SpecNote/SpecSession | SpecClass | — | Instance-to-parent-class link |
 | `HAS_REPRESENTATION` | Computgraph entity | Representation | — | Entity → platform-native id binding |

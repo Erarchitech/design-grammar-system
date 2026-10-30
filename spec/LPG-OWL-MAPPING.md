@@ -354,6 +354,10 @@ A `Run` node records one validation execution:
 
 The relationship to `DesignState` (represented in Cypher as `(:Run)-[:VALIDATES]->(:DesignState)`) maps to `dgv:validates` object property.
 
+| LPG | RDF/OWL | Notes |
+|-----|---------|-------|
+| `IN_SNAPSHOT` relationship (`ValidationRun` → `DesignState {source:'mapping-snapshot'}`, Phase 1303-26) | `dgv:inSnapshot` (object property, domain `dgv:Run`, range `dgv:ObjState`) | The run's check saw the model of this model snapshot (a confirmed mapping) unchanged. Navigation, not evidence: the run's own state and verdicts are unaffected. The snapshot node exports like any `ObjState` individual, with `dgv:source "mapping-snapshot"`. |
+
 ### Cross-Layer Bridge: `ATTRIBUTE_OF` / `dgc:attributeOf`
 
 **Status:** Implemented in Phase 1203 (`data-service/computgraph_publish.py`'s `_publish_attribute_of`). The TBox already declares this correspondence (`ontology/DesignGrammar-V7.md` §"Layer dgc — Computgraph", `dgc:attributeOf`, domain `dgm:Atom` / range `dgc:Parameter`); this section records that the LPG relationship type realizing that TBox commitment is now live.
