@@ -6,7 +6,9 @@ import {
   SelectionExtension,
   SpeckleLoader,
   UpdateFlags,
-  Viewer
+  Viewer,
+  ViewMode,
+  ViewModes
 } from "@speckle/viewer";
 import { createProxyObjectLoader, parseViewerResource } from "../../lib/speckleProxy.js";
 import { describeError, t } from "../../i18n/index.js";
@@ -118,6 +120,74 @@ function collectValidationObjects(worldTree, runId, project) {
   };
 }
 
+// Phase 1303-26 (D-82): the elements of a model snapshot carry dgSnapshotId + dgNativeId (the Revit UniqueId).
+function collectSnapshotObjects(worldTree, snapshotId) {
+  const nativeMap = new Map();
+  if (!snapshotId) return nativeMap;
+  for (const node of worldTree.findAll((n) => n.model?.raw?.dgSnapshotId === snapshotId && n.model?.raw?.dgNativeId)) {
+    const ids = collectAllDescendantIds(node);
+    const nativeId = node.model.raw.dgNativeId;
+    nativeMap.set(nativeId, (nativeMap.get(nativeId) || []).concat(ids.length > 0 ? ids : [node.model.id]));
+  }
+  return nativeMap;
+}
+
+// Black element edges in every scene (D-77: colour fills only, lines stay black).
+const EDGE_OPTIONS = { edges: true, outlineColor: 0x000000, outlineOpacity: 1, outlineThickness: 1 };
+
+// Resolve objectIds to render views and give them an opaque material of the group colour (setUserObjectColors alone
+// has no alpha and is overridden by the renderer's own material on some batches).
+function applyMaterial(viewer, objectIds, hexColor, opacityPercent) {
+  if (objectIds.length === 0) return;
+  const renderer = viewer.getRenderer();
+  const worldTree = viewer.getWorldTree();
+  const renderTree = worldTree.getRenderTree();
+  const rvs = [];
+  for (const id of objectIds) {
+    for (const node of worldTree.findId(id) || []) {
+      const views = renderTree.getRenderViewsForNode(node);
+      if (views) rvs.push(...views);
+    }
+  }
+  if (rvs.length === 0) return;
+  renderer.setMaterial(rvs, {
+    id: `dg-${hexColor}-${opacityPercent}`,
+    color: parseInt(hexColor.slice(1), 16),
+    emissive: 0,
+    opacity: opacityPercent / 100,
+    roughness: 0.6,
+    metalness: 0,
+    vertexColors: false,
+    lineWeight: 1
+  });
+}
+
+// Phase 1303-26 (D-82): the mapping view — one colour group per class (or mapping state), legend-hidden elements
+// hidden, a picked element optionally isolated.
+function applySnapshotOverlay(viewer, filtering, nativeMap, colorGroups, hiddenNativeIds, isolateNativeId) {
+  const flatten = (ids) => Array.from(new Set((ids || []).flatMap((id) => nativeMap.get(id) || [])));
+  filtering.resetFilters();
+  const isoIds = isolateNativeId ? flatten([isolateNativeId]) : [];
+  if (isoIds.length > 0) {
+    filtering.isolateObjects(isoIds, "dg-vis", true, true);
+  } else {
+    const hidden = flatten(hiddenNativeIds);
+    if (hidden.length > 0) filtering.hideObjects(hidden, "dg-vis", true, false);
+  }
+  const hiddenSet = new Set(isoIds.length > 0 ? [] : flatten(hiddenNativeIds));
+  const isoSet = isoIds.length > 0 ? new Set(isoIds) : null;
+  const groups = (colorGroups || [])
+    .map((g) => ({ color: g.color, objectIds: flatten(g.nativeIds).filter((id) => !hiddenSet.has(id) && (!isoSet || isoSet.has(id))) }))
+    .filter((g) => g.objectIds.length > 0);
+  if (groups.length > 0) filtering.setUserObjectColors(groups.map((g) => ({ objectIds: g.objectIds, color: g.color })));
+  try {
+    for (const g of groups) applyMaterial(viewer, g.objectIds, g.color, 100);
+  } catch {
+    // renderer material override unavailable — colour groups still applied
+  }
+  viewer.requestRender(UpdateFlags.RENDER | UpdateFlags.SHADOWS);
+}
+
 /**
  * SpeckleViewport — wraps @speckle/viewer Viewer into a controlled React component.
  *
@@ -138,7 +208,11 @@ function collectValidationObjects(worldTree, runId, project) {
  *   hiddenIds       — dgEntityIds hidden via the Hide button
  *   isolateEntityId — when set, isolates that single entity
  *   viewMode        — "3d" (perspective orbit) or "map" (top-down orthographic)
- *   onEntityClick   — Called with (dgEntityId) when a Speckle geometry object is clicked
+ *   snapshotId      — Phase 1303-26: when set, the scene is a model snapshot (mapping view); nodes are matched
+ *                     by dgSnapshotId + dgNativeId and coloured by snapshotColorGroups instead of fail/pass
+ *   snapshotColorGroups — [{ color, nativeIds }] of the visible snapshot elements
+ *   snapshotHiddenIds   — dgNativeIds hidden through the legend
+ *   onEntityClick   — Called with (dgEntityId, or dgNativeId in a snapshot) when a geometry object is clicked
  *   onReady         — Called after each resource sync completes (first load, run switch)
  *   onViewChanged   — Called when the camera settles after a move (thumbnail refresh)
  *   initialCamera   — { position: {x,y,z}, target: {x,y,z} } to open the first load at,
@@ -166,6 +240,9 @@ export default function SpeckleViewport({
   contextOpacity = 35,
   hiddenIds,
   isolateEntityId = null,
+  snapshotId = null,
+  snapshotColorGroups,
+  snapshotHiddenIds,
   viewMode = "3d",
   onEntityClick,
   onReady,
@@ -182,6 +259,7 @@ export default function SpeckleViewport({
   const entityMapRef = React.useRef(new Map());
   const allValidationObjectIdsRef = React.useRef([]);
   const contextObjectIdsRef = React.useRef([]);
+  const nativeMapRef = React.useRef(new Map()); // snapshot scene: dgNativeId -> objectIds
   const loadedUrlsRef = React.useRef([]); // resource URLs currently in the scene
   const hasLoadedRef = React.useRef(false); // this viewer has loaded geometry before
   const syncQueueRef = React.useRef(Promise.resolve()); // serialises load/unload jobs
@@ -232,6 +310,11 @@ export default function SpeckleViewport({
       const camera = viewer.createExtension(CameraController);
       viewer.createExtension(SelectionExtension);
       filteringRef.current = viewer.createExtension(FilteringExtension);
+      try {
+        viewer.createExtension(ViewModes).setViewMode(ViewMode.DEFAULT, EDGE_OPTIONS);
+      } catch {
+        // edges unavailable in this viewer build — the scene still renders without outlines
+      }
 
       // Report the camera after the architect moves it. CameraEvent.Stationary
       // is not emitted by this @speckle/viewer build (only Dynamic is), and
@@ -280,9 +363,9 @@ export default function SpeckleViewport({
       viewer.on("object-clicked", (payload) => {
         const hit = payload?.hits?.[0];
         const raw = hit?.node?.model?.raw || {};
-        const dgEntityId = raw.dgEntityId || "";
-        if (dgEntityId && onEntityClickRef.current) {
-          onEntityClickRef.current(dgEntityId);
+        const pickedId = raw.dgEntityId || raw.dgNativeId || "";
+        if (pickedId && onEntityClickRef.current) {
+          onEntityClickRef.current(pickedId);
         }
       });
 
@@ -321,6 +404,7 @@ export default function SpeckleViewport({
       entityMapRef.current = new Map();
       allValidationObjectIdsRef.current = [];
       contextObjectIdsRef.current = [];
+      nativeMapRef.current = new Map();
       loadedUrlsRef.current = [];
       hasLoadedRef.current = false;
       sceneRunIdRef.current = null;
@@ -383,6 +467,7 @@ export default function SpeckleViewport({
       entityMapRef.current = collected.entityMap;
       allValidationObjectIdsRef.current = collected.allValidationObjectIds;
       contextObjectIdsRef.current = collected.contextObjectIds;
+      nativeMapRef.current = collectSnapshotObjects(worldTree, snapshotId);
 
       // Debug handle for live world-tree inspection (harmless in production)
       window.__dgSpeckleDebug = { viewer, worldTree, runId, project, entityMap: collected.entityMap };
@@ -400,7 +485,7 @@ export default function SpeckleViewport({
     return () => {
       stale = true;
     };
-  }, [viewerReady, resourceKey, project, runId]);
+  }, [viewerReady, resourceKey, project, runId, snapshotId]);
 
   // Validation overlay — visibility, isolation, hiding, coloring and opacity.
   // Ported from the legacy viewer (graph-viewer/model-viewer/src/App.jsx):
@@ -410,6 +495,12 @@ export default function SpeckleViewport({
     const viewer = viewerRef.current;
     const filtering = filteringRef.current;
     if (!sceneTick || !viewer || !filtering) return;
+
+    if (snapshotId) {
+      applySnapshotOverlay(viewer, filtering, nativeMapRef.current, snapshotColorGroups, snapshotHiddenIds,
+        isolateEntityId);
+      return;
+    }
 
     const entityMap = entityMapRef.current;
     const flatten = (ids) => {
@@ -464,42 +555,12 @@ export default function SpeckleViewport({
     }
 
     // Per-group opacity via renderer material overrides. setUserObjectColors
-    // only handles RGB (the Speckle ramp texture has no alpha), so resolve
-    // each group's objectIds to render views and set a material with opacity.
+    // only handles RGB (the Speckle ramp texture has no alpha), so each group's
+    // objectIds get a material with opacity.
     try {
-      const renderer = viewer.getRenderer();
-      const worldTree = viewer.getWorldTree();
-      const renderTree = worldTree.getRenderTree();
-
-      const applyGroupMaterial = (objectIds, hexColor, opacityPercent) => {
-        if (objectIds.length === 0) return;
-        const rvs = [];
-        for (const id of objectIds) {
-          const nodes = worldTree.findId(id);
-          if (nodes) {
-            for (const node of nodes) {
-              const views = renderTree.getRenderViewsForNode(node);
-              if (views) rvs.push(...views);
-            }
-          }
-        }
-        if (rvs.length === 0) return;
-        const colorInt = parseInt(hexColor.slice(1), 16);
-        renderer.setMaterial(rvs, {
-          id: `dg-${hexColor}-${opacityPercent}`,
-          color: colorInt,
-          emissive: 0,
-          opacity: opacityPercent / 100,
-          roughness: 0.6,
-          metalness: 0,
-          vertexColors: false,
-          lineWeight: 1
-        });
-      };
-
-      applyGroupMaterial(failedVisibleIds, failColor, failOpacity);
-      applyGroupMaterial(passedVisibleIds, passColor, passOpacity);
-      applyGroupMaterial(contextVisibleIds, contextColor, contextOpacity);
+      applyMaterial(viewer, failedVisibleIds, failColor, failOpacity);
+      applyMaterial(viewer, passedVisibleIds, passColor, passOpacity);
+      applyMaterial(viewer, contextVisibleIds, contextColor, contextOpacity);
     } catch {
       // renderer material override unavailable — color groups still applied
     }
@@ -518,7 +579,10 @@ export default function SpeckleViewport({
     contextColor,
     contextOpacity,
     hiddenIds,
-    isolateEntityId
+    isolateEntityId,
+    snapshotId,
+    snapshotColorGroups,
+    snapshotHiddenIds
   ]);
 
   // View mode — "map" is a top-down orthographic projection of the real

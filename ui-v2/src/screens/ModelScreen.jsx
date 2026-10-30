@@ -16,8 +16,9 @@ import {
   Slider,
   StatBlock
 } from "../components/index.js";
-import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses } from "../lib/modelApi.js";
+import { fetchValidationRuns, fetchValidationView, fetchRuleDetails, fetchEntityStatuses, fetchSnapshotView } from "../lib/modelApi.js";
 import { groupRunsByState, NO_STATE } from "../lib/runGroups.js";
+import { NO_CLASS, classColours, legendRows, viewGroups } from "../lib/classPalette.js";
 import { classifyObjectSets } from "../lib/objectSets.js";
 import { generateInputs, acceptCandidate, fetchAcceptedCandidates } from "../lib/inputGenApi.js";
 import SpeckleViewport from "../components/speckle/SpeckleViewport.jsx";
@@ -83,6 +84,8 @@ const CAMERA_KEY = "dgv2_model_camera"; // { [project]: { position, target } }
 // Model context of a check (walls, columns, beams of the rule's classes): neutral and see-through by default.
 const DEFAULT_CONTEXT_COLOR = "#a3a3a3";
 const DEFAULT_CONTEXT_OPACITY = 35;
+// Phase 1303-26: thumbnails and the scene of a model snapshot's mapping view are filed under this key.
+const snapshotKey = (stateId) => "snapshot:" + stateId;
 
 // "ex:hasTotalHeightM" → "Total Height M": local name, a leading "has" dropped,
 // camelCase split. The full iri stays visible in the tile-properties menu.
@@ -212,7 +215,22 @@ export default function ModelScreen({ active, onBack, project }) {
       default: return status || t("Unknown");
     }
   };
+  const mappingStateLabel = (state) => {
+    switch (state) {
+      case "confirmed": return t("Confirmed");
+      case "auto": return t("Auto by profile");
+      case "suggested": return t("Suggested");
+      case "ambiguous": return t("Ambiguous");
+      default: return t("Unmapped");
+    }
+  };
   const [runs, setRuns] = React.useState([]);
+  // Phase 1303-26 (D-80..D-82): model snapshots of confirmed mappings and the mapping view of one of them.
+  const [snapshots, setSnapshots] = React.useState([]);
+  const [snapshotSel, setSnapshotSel] = React.useState(null);
+  const [snap, setSnap] = React.useState(null);
+  const [mapMode, setMapMode] = React.useState("classes");
+  const [legendHidden, setLegendHidden] = React.useState(() => new Set());
   const [loadErr, setLoadErr] = React.useState(null); // { err, fallback: "runs" | "view" }
   const [stateKey, setStateKey] = React.useState(null); // design-state group filter
   const [runId, setRunId] = React.useState(null);
@@ -341,7 +359,7 @@ export default function ModelScreen({ active, onBack, project }) {
   // just clicked, whose geometry may still be loading).
   const captureShot = React.useCallback(async () => {
     const api = speckleApiRef.current;
-    const shotRunId = api?.sceneRunId?.();
+    const shotRunId = api?.sceneRunId?.(); // a run id, or snapshotKey(stateId) in a mapping view
     if (!api || !shotRunId) return;
     try {
       const dataUrl = await api.screenshot();
@@ -379,6 +397,7 @@ export default function ModelScreen({ active, onBack, project }) {
       const data = await fetchValidationRuns(project);
       const list = data.runs || [];
       setRuns(list);
+      setSnapshots(Array.isArray(data.snapshots) ? data.snapshots : []);
       // keep the current run only if it still exists under this project scope
       setRunId((prev) => (prev && list.some((r) => r.runId === prev) ? prev : list[0]?.runId || null));
     } catch (err) {
@@ -389,6 +408,9 @@ export default function ModelScreen({ active, onBack, project }) {
   // project switch invalidates every run-scoped bit of state
   React.useEffect(() => {
     setRuns([]);
+    setSnapshots([]);
+    setSnapshotSel(null);
+    setSnap(null);
     setRunId(null);
     setView(null);
     setStateKey(null);
@@ -430,6 +452,30 @@ export default function ModelScreen({ active, onBack, project }) {
       gone = true;
     };
   }, [runId, project, fetchValidationView]);
+
+  // the mapping view of the selected model snapshot
+  React.useEffect(() => {
+    if (!snapshotSel) {
+      setSnap(null);
+      return undefined;
+    }
+    let gone = false;
+    fetchSnapshotView(project, snapshotSel)
+      .then((v) => {
+        if (gone) return;
+        setSnap(v);
+        setSpeckleError(null);
+        setPicked(null);
+        setPropMode("snapshot");
+        setHidden([]);
+        setIsolate(false);
+        setLegendHidden(new Set());
+      })
+      .catch((err) => !gone && setLoadErr({ err, fallback: "view" }));
+    return () => {
+      gone = true;
+    };
+  }, [snapshotSel, project]);
 
   // rule details (SWRL from the metagraph)
   React.useEffect(() => {
@@ -478,7 +524,7 @@ export default function ModelScreen({ active, onBack, project }) {
   }, [picked, runId, project, fetchEntityStatuses]);
 
   /* ---- design-state grouping (stateId from statePayloadJson summaries) ---- */
-  const groups = React.useMemo(() => groupRunsByState(runs), [runs]);
+  const groups = React.useMemo(() => groupRunsByState(runs, snapshots), [runs, snapshots]);
 
   /* ---- tile properties: this project's PropState properties ---- */
   const propCatalogueList = React.useMemo(() => propCatalogue(groups.map((g) => g.state)), [groups]);
@@ -493,6 +539,34 @@ export default function ModelScreen({ active, onBack, project }) {
   };
 
   const visibleRuns = stateKey ? runs.filter((r) => (r.state?.stateId || NO_STATE) === stateKey) : runs;
+  const visibleSnapshots = stateKey ? snapshots.filter((s) => s.stateId === stateKey) : snapshots;
+
+  /* ---- mapping view of a model snapshot (D-82) ---- */
+  const mappingView = Boolean(snapshotSel && snap);
+  const mappingViewRef = React.useRef(false);
+  mappingViewRef.current = mappingView;
+  const snapElements = React.useMemo(() => (Array.isArray(snap?.elements) ? snap.elements : []), [snap]);
+  const snapColours = React.useMemo(() => classColours((snap?.classes || []).map((c) => c.iri)), [snap]);
+  const legend = React.useMemo(() => legendRows(snapElements, mapMode, snapColours, legendHidden),
+    [snapElements, mapMode, snapColours, legendHidden]);
+  const snapGroups = React.useMemo(() => viewGroups(snapElements, mapMode, snapColours, legendHidden),
+    [snapElements, mapMode, snapColours, legendHidden]);
+  const snapHiddenIds = React.useMemo(() => snapGroups.hiddenNativeIds.concat(hidden), [snapGroups, hidden]);
+  const snapResourceUrls = React.useMemo(
+    () => (Array.isArray(snap?.viewerResources) ? snap.viewerResources.filter(Boolean) : []), [snap]);
+  const pickedElement = mappingView && picked ? snapElements.find((e) => e.nativeId === picked) : null;
+  const legendLabel = (row) => (mapMode === "status" ? mappingStateLabel(row.key) : row.key === NO_CLASS ? t("No class") : row.label);
+  const toggleLegend = (key) =>
+    setLegendHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  const switchMapMode = (mode) => {
+    setMapMode(mode);
+    setLegendHidden(new Set()); // the rows of the two legends are different things
+  };
 
   /* ---- entities and map items ---- */
   // Phase 1303-25 (D-71): objects without a verdict (objectSets.unknown, e.g. no data) are neither failing nor passing.
@@ -542,8 +616,14 @@ export default function ModelScreen({ active, onBack, project }) {
 
   const pick = React.useCallback((id) => {
     setPicked(id);
-    setPropMode("instance");
+    setPropMode(mappingViewRef.current ? "snapshot" : "instance");
   }, []);
+
+  const selectSnapshot = (stateId) => {
+    void captureShot(); // snapshot the outgoing scene before switching
+    setSnapshotSel(stateId);
+    if (snapshotSel === stateId && snap) setPropMode("snapshot");
+  };
 
   // Auto-capture: each time the scene finishes loading, and again (debounced)
   // whenever the graphics settings change, refresh the run/state/project
@@ -551,7 +631,7 @@ export default function ModelScreen({ active, onBack, project }) {
   React.useEffect(() => {
     if (!sceneTick) return;
     scheduleShot();
-  }, [sceneTick, mvFail, mvPass, aFail, aPass, failColor, passColor, viewMode, hidden, isolate, scheduleShot]);
+  }, [sceneTick, mvFail, mvPass, aFail, aPass, failColor, passColor, viewMode, hidden, isolate, mapMode, legendHidden, scheduleShot]);
 
   const retry3d = () => {
     setSpeckleError(null);
@@ -745,7 +825,7 @@ export default function ModelScreen({ active, onBack, project }) {
             </span>
           </div>
         )}
-        {!loadErr && runs.length === 0 && (
+        {!loadErr && runs.length === 0 && snapshots.length === 0 && (
           <div className="dg-annotation dg-annotation--muted" style={{ fontSize: 10 }}>
             {t("No validation runs · publish from Grasshopper")}
           </div>
@@ -757,7 +837,8 @@ export default function ModelScreen({ active, onBack, project }) {
           const rules = g.runs.reduce((s, r) => s + (r.ruleCount || 0), 0);
           // the run on screen first, so the tile follows what was just captured
           const stateThumb =
-            (g.runs.some((r) => r.runId === runId) && runShots[runId]) || g.runs.map((r) => runShots[r.runId]).find(Boolean);
+            (g.runs.some((r) => r.runId === runId) && runShots[runId]) || g.runs.map((r) => runShots[r.runId]).find(Boolean) ||
+            (g.snapshot && runShots[snapshotKey(g.key)]);
           const propRows = propCatalogueList.filter((p) => tileProps.indexOf(p.iri) >= 0).map((entry) => ({
             key: entry.iri,
             label: entry.label,
@@ -837,15 +918,23 @@ export default function ModelScreen({ active, onBack, project }) {
       {/* ===== centre: toolbar + map + runs strip ===== */}
       <main style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "10px 16px", background: "var(--surface-card)", borderBottom: "1px solid var(--color-hairline)" }}>
-          <Checkbox label={t("Failing")} checked={mvFail} onChange={setMvFail} />
-          <Checkbox label={t("Passing")} checked={mvPass} onChange={setMvPass} />
-          <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
-          <ColorSwatch label={t("Fail")} color={failColor} onChange={setFailColor} />
-          <Slider label={t("Fail α")} value={aFail} onChange={setAFail} style={{ width: 210 }} />
-          <ColorSwatch label={t("Pass")} color={passColor} onChange={setPassColor} />
-          <Slider label={t("Pass α")} value={aPass} onChange={setAPass} style={{ width: 210 }} />
-          <ColorSwatch label={t("Context")} color={contextColor} onChange={setContextColor} />
-          <Slider label={t("Context α")} value={aContext} onChange={setAContext} style={{ width: 210 }} />
+          {mappingView ? (
+            <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>
+              {t("Mapping view")} · {snap?.document || snap?.label || ""}
+            </span>
+          ) : (
+            <>
+              <Checkbox label={t("Failing")} checked={mvFail} onChange={setMvFail} />
+              <Checkbox label={t("Passing")} checked={mvPass} onChange={setMvPass} />
+              <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
+              <ColorSwatch label={t("Fail")} color={failColor} onChange={setFailColor} />
+              <Slider label={t("Fail α")} value={aFail} onChange={setAFail} style={{ width: 210 }} />
+              <ColorSwatch label={t("Pass")} color={passColor} onChange={setPassColor} />
+              <Slider label={t("Pass α")} value={aPass} onChange={setAPass} style={{ width: 210 }} />
+              <ColorSwatch label={t("Context")} color={contextColor} onChange={setContextColor} />
+              <Slider label={t("Context α")} value={aContext} onChange={setAContext} style={{ width: 210 }} />
+            </>
+          )}
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
           <SearchField
             placeholder={t("Select by Id…")}
@@ -853,8 +942,15 @@ export default function ModelScreen({ active, onBack, project }) {
             style={{ width: 170 }}
             onChange={(e) => {
               setSelById(e.target.value);
-              const hit = entities.find((x) => x.dgEntityId.toLowerCase().includes(e.target.value.toLowerCase()));
-              if (e.target.value && hit) pick(hit.dgEntityId);
+              const q = e.target.value.toLowerCase();
+              if (!q) return;
+              if (mappingView) {
+                const found = snapElements.find((x) => String(x.nativeId).toLowerCase().includes(q) || String(x.revitId ?? "").includes(q));
+                if (found) pick(found.nativeId);
+                return;
+              }
+              const hit = entities.find((x) => x.dgEntityId.toLowerCase().includes(q));
+              if (hit) pick(hit.dgEntityId);
             }}
           />
           <span style={{ width: 1, height: 20, background: "var(--color-hairline)" }} />
@@ -882,12 +978,15 @@ export default function ModelScreen({ active, onBack, project }) {
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", position: "relative" }}>
-          {!speckleError && sceneResourceUrls.length > 0 ? (
+          {!speckleError && (mappingView ? snapResourceUrls : sceneResourceUrls).length > 0 ? (
             <SpeckleViewport
               viewMode={viewMode}
-              resourceUrls={sceneResourceUrls}
+              resourceUrls={mappingView ? snapResourceUrls : sceneResourceUrls}
               project={project}
-              runId={view?.runId}
+              runId={mappingView ? snapshotKey(snapshotSel) : view?.runId}
+              snapshotId={mappingView ? snapshotSel : null}
+              snapshotColorGroups={snapGroups.colorGroups}
+              snapshotHiddenIds={snapHiddenIds}
               failedEntityIds={failedEntityIdList}
               passedEntityIds={passedEntityIdList}
               showFailed={mvFail}
@@ -909,7 +1008,13 @@ export default function ModelScreen({ active, onBack, project }) {
               apiRef={speckleApiRef}
               style={{ position: "absolute", inset: 0 }}
             />
-          ) : (
+          ) : (mappingView && (
+            <div className="dg-blueprint" style={{ flex: "1 1 auto", minWidth: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span className="dg-annotation dg-annotation--muted" style={{ fontSize: 11 }}>
+                {t("No geometry for this model snapshot")}{snap?.viewerResourcesError ? " · " + snap.viewerResourcesError : ""}
+              </span>
+            </div>
+          )) || (
             <div className="dg-blueprint" style={{ flex: "1 1 auto", minWidth: 0, position: "relative" }}>
               <svg
                 ref={svgRef}
@@ -969,14 +1074,52 @@ export default function ModelScreen({ active, onBack, project }) {
               </div>
             </div>
           )}
+          {mappingView && (
+            <div className="dg-frost" data-testid="mapping-legend" style={{ position: "absolute", right: 14, top: 14, zIndex: 5, width: 248, maxHeight: "calc(100% - 28px)", overflow: "auto", boxSizing: "border-box", borderRadius: "var(--radius-nested)", boxShadow: "var(--shadow-panel)", padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", gap: 4, paddingBottom: 6, borderBottom: "1px solid var(--color-hairline)" }}>
+                <Button variant="outline" size="sm" selected={mapMode === "classes"} onClick={() => switchMapMode("classes")}>
+                  {t("Classes")}
+                </Button>
+                <Button variant="outline" size="sm" selected={mapMode === "status"} onClick={() => switchMapMode("status")}>
+                  {t("Status")}
+                </Button>
+              </div>
+              {legend.map((row) => (
+                <div
+                  key={row.key}
+                  role="button"
+                  onClick={() => toggleLegend(row.key)}
+                  title={row.hidden ? t("Show") : t("Hide")}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 4px", borderRadius: 6, cursor: "pointer", opacity: row.hidden ? 0.45 : 1 }}
+                >
+                  <span style={{ width: 12, height: 12, flex: "none", borderRadius: 3, background: row.colour, border: "1px solid #000" }} />
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", font: "500 12px/1.3 var(--font-sans)", textDecoration: row.hidden ? "line-through" : "none" }}>
+                    {legendLabel(row)}
+                  </span>
+                  <span style={{ font: "500 11px/1.3 var(--font-mono)", color: "var(--text-muted)" }}>{row.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ background: "var(--surface-card)", borderTop: "1px solid var(--color-hairline)", padding: "10px 16px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <span style={{ font: "500 11px/1.33 var(--font-sans)", letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("Validation runs")}</span>
-            <Badge variant="outline">{visibleRuns.length}</Badge>
+            <Badge variant="outline">{visibleRuns.length + visibleSnapshots.length}</Badge>
           </div>
           <div style={{ display: "flex", gap: 10, overflowX: "auto" }}>
+            {visibleSnapshots.map((sn) => (
+              <RunTile
+                key={snapshotKey(sn.stateId)}
+                ruleId={t("Mapping")}
+                date={sn.capturedAtUtc ? String(sn.capturedAtUtc).slice(0, 10) : ""}
+                kind={tp("{n} element", sn.elementCount || 0)}
+                thumb={runShots[snapshotKey(sn.stateId)]}
+                active={snapshotSel === sn.stateId}
+                onSelect={() => selectSnapshot(sn.stateId)}
+              />
+            ))}
             {visibleRuns.map((r) => (
               <RunTile
                 key={r.runId}
@@ -984,9 +1127,11 @@ export default function ModelScreen({ active, onBack, project }) {
                 date={r.createdAt ? String(r.createdAt).slice(0, 10) : ""}
                 kind={r.failedRuleCount ? tp("{n} failing", r.failedRuleCount) : t("All pass")}
                 thumb={runShots[r.runId]}
-                active={r.runId === runId}
+                active={!snapshotSel && r.runId === runId}
                 onSelect={() => {
                   void captureShot(); // snapshot the outgoing run before switching
+                  setSnapshotSel(null);
+                  setPropMode("run");
                   setRunId(r.runId);
                 }}
               />
@@ -1002,7 +1147,7 @@ export default function ModelScreen({ active, onBack, project }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 12, borderBottom: "1px solid var(--color-hairline)" }}>
           <span style={{ font: "600 15px/1.2 var(--font-sans)", letterSpacing: "-0.2px" }}>{t("Properties")}</span>
           <span style={{ marginLeft: "auto", font: "400 9px/1.3 var(--font-annotation)", letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-            {propMode === "run" ? t("Validation run") : t("Geometry instance")}
+            {propMode === "snapshot" ? t("Model snapshot") : propMode === "run" ? t("Validation run") : t("Geometry instance")}
           </span>
         </div>
 
@@ -1280,6 +1425,26 @@ export default function ModelScreen({ active, onBack, project }) {
                 </>
               )}
             </Panel>
+          </>
+        )}
+        {propMode === "snapshot" && mappingView && (
+          <>
+            <Panel title={t("Model snapshot")}>
+              <KVRow label={t("Document")} value={snap.document || "—"} mono={false} />
+              <KVRow label={t("Captured")} value={snap.capturedAtUtc ? String(snap.capturedAtUtc).slice(0, 19).replace("T", " ") : "—"} />
+              <KVRow label={t("Elements")} value={String(snapElements.length)} />
+              <KVRow label={t("Classes")} value={String((snap.classes || []).length)} />
+              <KVRow label="StateId" value={snap.stateId || "—"} />
+            </Panel>
+            {pickedElement && (
+              <Panel title={t("Element")}>
+                <KVRow label={t("Display name")} value={pickedElement.label || "—"} mono={false} />
+                <KVRow label="UniqueId" value={pickedElement.nativeId} />
+                <KVRow label={t("Revit Id")} value={pickedElement.revitId != null ? String(pickedElement.revitId) : "—"} />
+                <KVRow label={t("Classes")} value={(pickedElement.classLabels || []).join(", ") || t("No class")} mono={false} />
+                <KVRow label={t("Mapping state")} value={mappingStateLabel(pickedElement.state)} mono={false} />
+              </Panel>
+            )}
           </>
         )}
         {propMode === "run" && !view && (

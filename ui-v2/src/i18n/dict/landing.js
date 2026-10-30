@@ -6,7 +6,7 @@ export const ru = {
   "Classes": "Классы",
   "Properties": "Свойства",
   "Rules": "Правила",
-  "Design States": "Состояния дизайна",
+  "Design States": "Снимки модели",
   "Validation runs": "Прогоны валидации",
   "Provider": "Провайдер",
   "Model": "Модель",

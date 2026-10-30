@@ -23,6 +23,14 @@ export function fetchValidationView(project, runId, ruleId) {
   return getJson(`${base()}/validation/view/${p}${tail}`);
 }
 
+// Phase 1303-26 (D-82): the mapping view of a model snapshot (the «Снимок модели» a confirmed mapping created).
+// → { stateId, label, document, capturedAtUtc, viewerResources, elements: [{nativeId, label, revitId, classIris,
+//      classLabels, state}], classes: [{iri, label, count}], states: {state: count} }
+export function fetchSnapshotView(project, stateId) {
+  const p = encodeURIComponent(project || "default-project");
+  return getJson(`${base()}/validation/snapshot/${p}/${encodeURIComponent(stateId)}`);
+}
+
 // SWRL + naming for a rule from the metagraph (Rule.SWRL per schema v4).
 // GET /rules/{project}/{ruleId} → { ruleId, swrl, name, description }; null when
 // the rule is absent (404) or no project is set.

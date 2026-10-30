@@ -10,7 +10,7 @@ export const ru = {
   "Switching environment…": "Переключение среды…",
   "Environment switch failed. Try again.": "Не удалось переключить среду. Повторите попытку.",
   "Environment is locked by startup settings.": "Среда зафиксирована настройками запуска.",
-  "Resize design states panel": "Изменить ширину панели состояний дизайна",
+  "Resize design states panel": "Изменить ширину панели снимков модели",
   "Resize properties panel": "Изменить ширину панели свойств",
   // ── LLM model screen (D-21: «AI Engine» is now «LLM model»)
   "Region · LLM model": "Раздел · Модель LLM",

@@ -2,15 +2,15 @@
 export const ru = {
   "← Back": "← Назад",
   "Model Viewer": "Просмотр модели",
-  "Design States": "Состояния дизайна",
+  "Design States": "Снимки модели",
   "{selected} / {total} props": "Свойства: {selected} / {total}",
   "Configure tile properties": "Настроить свойства плиток",
   "Tile Properties": "Свойства плиток",
   "PropState values in {project}": "Значения PropState в {project}",
-  "No PropState values in this project's design states": "В состояниях дизайна этого проекта нет значений PropState",
+  "No PropState values in this project's design states": "В снимках модели этого проекта нет значений PropState",
   "Retry": "Повторить",
   "No validation runs · publish from Grasshopper": "Нет прогонов валидации · опубликуйте из Grasshopper",
-  "No design state": "Без состояния дизайна",
+  "No design state": "Без снимка модели",
   "{n} run": { one: "{n} прогон", few: "{n} прогона", many: "{n} прогонов", other: "{n} прогонов" },
   "{n} failing": { one: "{n} нарушение", few: "{n} нарушения", many: "{n} нарушений", other: "{n} нарушений" },
   "{n} values": "{n} значений",
@@ -137,7 +137,18 @@ export const ru = {
   "Geometry requests may only target the DG /speckle-proxy/ routes.":
     "Запросы геометрии разрешены только через маршруты DG /speckle-proxy/.",
   "Not a DG Speckle proxy resource URL; refusing to load geometry from it.":
-    "Это не URL ресурса прокси DG Speckle; загрузка геометрии запрещена."
+    "Это не URL ресурса прокси DG Speckle; загрузка геометрии запрещена.",
+  // Phase 1303-26 (D-82, D-83): the mapping view of a model snapshot
+  "Mapping view": "Вид меппинга",
+  "Model snapshot": "Снимок модели",
+  "No geometry for this model snapshot": "У этого снимка модели нет геометрии",
+  "No class": "Без класса",
+  Show: "Показать",
+  Document: "Документ",
+  Elements: "Элементы",
+  Element: "Элемент",
+  "Revit Id": "ID в Revit",
+  "Mapping state": "Статус меппинга"
 };
 
 export const en = {

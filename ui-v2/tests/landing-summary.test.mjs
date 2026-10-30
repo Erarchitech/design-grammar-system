@@ -127,7 +127,7 @@ test('sources fail independently and Russian summary labels match the contract',
     reasoner: { status: 'error' },
     connectors: source({ connectors: [] })
   });
-  assert.deepEqual(result.model.map(part => part.label), ['Состояния дизайна', 'Прогоны валидации']);
+  assert.deepEqual(result.model.map(part => part.label), ['Снимки модели', 'Прогоны валидации']);
   assert.deepEqual(result.aiengine.map(part => part.label), ['Провайдер', 'Модель']);
   assert.deepEqual(result.connectors.map(part => part.label), ['Активно', 'Выдано доступов']);
   assert.deepEqual(result.reasoner.map(part => part.value), ['—']);
