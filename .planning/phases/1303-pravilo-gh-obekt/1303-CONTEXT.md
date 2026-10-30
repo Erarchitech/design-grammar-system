@@ -295,7 +295,18 @@ Stage 2 of the multi-user test findings (F-06, D-78), taken as an out-of-order p
 - **D-83: The Russian name of Design State becomes «Снимок модели»** (owner, 2026-10-30): «Снимки модели», «Без снимка модели» and so on in the Russian UI and in the Russian demo instructions. The English term stays Design State.
 - **D-84: D-79…D-83 are tracked as new requirement DGOPN-07** (Claude's discretion). Class colouring in Revit itself, from the 2026-10-29 audit sketch, is not part of this plan: the owner confirmed the Model Viewer view only.
 
+### Class override from the mapping view (plan 1303-27, owner decisions 2026-10-30)
+
+Asked after the first live model snapshot of plan 1303-26. Purpose (owner): when the view shows a wrongly classified element, correct its class right there.
+
+- **D-85: «DG класс» of a picked element is editable in the mapping view.** It is a multi-select dropdown of all OntoGraph classes of the project (owner: several classes); an empty selection means no class. Only members with role editor or owner can edit (Claude's discretion); others see it read-only.
+- **D-86: Only the latest model snapshot of the project is editable** (Claude's discretion). The next snapshot is built from the session of the edited snapshot, so editing an older one would publish a snapshot that disagrees with Revit. Older snapshots stay read-only with a hint.
+- **D-87: A change is a draft until confirmed** (owner: accumulate and confirm). It is an answer of type `element-override` for exactly one element in the snapshot's mapping session. The view recolours the element at once and marks it as not confirmed; the overlay under the legend shows «N правок · Подтвердить · Отменить все»; a single draft is taken back in the element panel.
+- **D-88: «Подтвердить» is the existing explicit mapping commit.** It takes every pending answer of the session (the count is shown) and queues one batch; the connector writes `DG_Class` (an empty class set clears it); the written batch creates the next model snapshot (D-79) and the view switches to it.
+- **D-89: A confirmed override is remembered as an element exception** (owner). It is a MappingProfile with `source: "exception"` and selector `{nativeId: UniqueId}`. At later reads it beats the group's profiles and evidence: the element gets the exception's classes without a question (status auto), group answers leave it alone, and the group profile is not retrained. Retiring the profile in the profiles list ends the exception; an absent element is simply not matched.
+- **D-90: D-85…D-89 are tracked as new requirement DGOPN-08** (Claude's discretion).
+
 ---
 
 *Phase: 1303-pravilo-gh-obekt (MVP slice)*
-*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion); 2026-10-29 (D-73..D-78 multi-user test findings); 2026-10-30 (D-79..D-84 model snapshot and mapping view)*
+*Context gathered: 2026-10-17; amended 2026-10-18 (D-33..D-36, D-37..D-38, D-39..D-43, D-44..D-53 Revit slice); 2026-10-20 (D-54 calculator promotion); 2026-10-29 (D-73..D-78 multi-user test findings); 2026-10-30 (D-79..D-84 model snapshot and mapping view; D-85..D-90 class override)*
